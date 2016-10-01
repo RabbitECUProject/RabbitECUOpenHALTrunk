@@ -1,0 +1,670 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="14.0">
+  <PropertyGroup>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectVersion>7.0</ProjectVersion>
+    <ToolchainName>com.Atmel.ARMGCC.C</ToolchainName>
+    <ProjectGuid>dce6c7e3-ee26-4d79-826b-08594b9ad897</ProjectGuid>
+    <avrdevice>ATSAM3X8E</avrdevice>
+    <avrdeviceseries>none</avrdeviceseries>
+    <OutputType>Executable</OutputType>
+    <Language>C</Language>
+    <OutputFileName>$(MSBuildProjectName)</OutputFileName>
+    <OutputFileExtension>.elf</OutputFileExtension>
+    <OutputDirectory>$(MSBuildProjectDirectory)\$(Configuration)</OutputDirectory>
+    <AssemblyName>ECUHost Atmel Kernel</AssemblyName>
+    <Name>ECUHost Atmel Kernel</Name>
+    <RootNamespace>ECUHost Atmel Kernel</RootNamespace>
+    <ToolchainFlavour>Native</ToolchainFlavour>
+    <KeepTimersRunning>true</KeepTimersRunning>
+    <OverrideVtor>false</OverrideVtor>
+    <CacheFlash>true</CacheFlash>
+    <ProgFlashFromRam>true</ProgFlashFromRam>
+    <RamSnippetAddress>0x20000000</RamSnippetAddress>
+    <UncachedRange />
+    <preserveEEPROM>true</preserveEEPROM>
+    <OverrideVtorValue>exception_table</OverrideVtorValue>
+    <BootSegment>2</BootSegment>
+    <eraseonlaunchrule>0</eraseonlaunchrule>
+    <AsfFrameworkConfig>
+      <framework-data xmlns="">
+        <options />
+        <configurations />
+        <files />
+        <documentation help="" />
+        <offline-documentation help="" />
+        <dependencies>
+          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.31.0" />
+        </dependencies>
+      </framework-data>
+    </AsfFrameworkConfig>
+    <avrtool>com.atmel.avrdbg.tool.samice</avrtool>
+    <avrtoolserialnumber>1631096578</avrtoolserialnumber>
+    <avrdeviceexpectedsignature>0x285E0A60</avrdeviceexpectedsignature>
+    <com_atmel_avrdbg_tool_samice>
+      <ToolOptions>
+        <InterfaceProperties>
+          <JtagDbgClock>4000000</JtagDbgClock>
+          <JtagEnableExtResetOnStartSession>true</JtagEnableExtResetOnStartSession>
+          <JtagInChain>false</JtagInChain>
+          <JtagDevicesBefore>0</JtagDevicesBefore>
+          <JtagDevicesAfter>0</JtagDevicesAfter>
+          <JtagInstrBitsBefore>0</JtagInstrBitsBefore>
+          <JtagInstrBitsAfter>0</JtagInstrBitsAfter>
+          <JtagSelectedDeviceIndexInChain>
+          </JtagSelectedDeviceIndexInChain>
+          <JtagDaisyChainDevices>
+          </JtagDaisyChainDevices>
+          <SwdClock>4000000</SwdClock>
+        </InterfaceProperties>
+        <InterfaceName>JTAG</InterfaceName>
+        <JlinkConfigFile>C:\Users\Matthew\Documents\Atmel Studio\7.0\ECUHost Atmel Kernel\ECUHost Atmel Kernel\jlink.config</JlinkConfigFile>
+      </ToolOptions>
+      <ToolType>com.atmel.avrdbg.tool.samice</ToolType>
+      <ToolNumber>1631096578</ToolNumber>
+      <ToolName>J-Link</ToolName>
+    </com_atmel_avrdbg_tool_samice>
+    <avrtoolinterface>JTAG</avrtoolinterface>
+    <avrtoolinterfaceclock>4000000</avrtoolinterfaceclock>
+    <com_atmel_avrdbg_tool_edbgc>
+      <ToolOptions>
+        <InterfaceProperties>
+          <JtagEnableExtResetOnStartSession>true</JtagEnableExtResetOnStartSession>
+          <JtagInChain>false</JtagInChain>
+          <JtagDevicesBefore>0</JtagDevicesBefore>
+          <JtagDevicesAfter>0</JtagDevicesAfter>
+          <JtagInstrBitsBefore>0</JtagInstrBitsBefore>
+          <JtagInstrBitsAfter>0</JtagInstrBitsAfter>
+          <JtagSelectedDeviceIndexInChain>
+          </JtagSelectedDeviceIndexInChain>
+          <JtagDbgClock>4000000</JtagDbgClock>
+          <JtagDaisyChainDevices>
+          </JtagDaisyChainDevices>
+        </InterfaceProperties>
+        <InterfaceName>JTAG</InterfaceName>
+      </ToolOptions>
+      <ToolType>com.atmel.avrdbg.tool.edbgc</ToolType>
+      <ToolNumber>V0010M9E</ToolNumber>
+      <ToolName>EDBG</ToolName>
+    </com_atmel_avrdbg_tool_edbgc>
+    <custom>
+      <ToolOptions>
+        <InterfaceProperties>
+          <JtagDbgClock>4000000</JtagDbgClock>
+        </InterfaceProperties>
+        <InterfaceName>
+        </InterfaceName>
+      </ToolOptions>
+      <ToolType>custom</ToolType>
+      <ToolNumber>
+      </ToolNumber>
+      <ToolName>Custom Programming Tool</ToolName>
+    </custom>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <ToolchainSettings>
+      <ArmGcc>
+  <armgcc.common.outputfiles.hex>True</armgcc.common.outputfiles.hex>
+  <armgcc.common.outputfiles.lss>True</armgcc.common.outputfiles.lss>
+  <armgcc.common.outputfiles.eep>True</armgcc.common.outputfiles.eep>
+  <armgcc.common.outputfiles.bin>True</armgcc.common.outputfiles.bin>
+  <armgcc.common.outputfiles.srec>True</armgcc.common.outputfiles.srec>
+  <armgcc.compiler.symbols.DefSymbols>
+    <ListValues>
+      <Value>NDEBUG</Value>
+    </ListValues>
+  </armgcc.compiler.symbols.DefSymbols>
+  <armgcc.compiler.directories.IncludePaths>
+    <ListValues>
+      <Value>%24(PackRepoDir)\atmel\SAM3X_DFP\1.0.41\include</Value>
+      <Value>%24(PackRepoDir)\arm\cmsis\4.2.0\CMSIS\Include\</Value>
+    </ListValues>
+  </armgcc.compiler.directories.IncludePaths>
+  <armgcc.compiler.optimization.level>Optimize for size (-Os)</armgcc.compiler.optimization.level>
+  <armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>True</armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>
+  <armgcc.compiler.warnings.AllWarnings>True</armgcc.compiler.warnings.AllWarnings>
+  <armgcc.linker.libraries.Libraries>
+    <ListValues>
+      <Value>libm</Value>
+    </ListValues>
+  </armgcc.linker.libraries.Libraries>
+  <armgcc.linker.libraries.LibrarySearchPaths>
+    <ListValues>
+      <Value>%24(ProjectDir)\Device_Startup</Value>
+    </ListValues>
+  </armgcc.linker.libraries.LibrarySearchPaths>
+  <armgcc.linker.optimization.GarbageCollectUnusedSections>True</armgcc.linker.optimization.GarbageCollectUnusedSections>
+  <armgcc.linker.miscellaneous.LinkerFlags>-Tsam3x8e_flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
+  <armgcc.assembler.general.IncludePaths>
+    <ListValues>
+      <Value>%24(PackRepoDir)\atmel\SAM3X_DFP\1.0.41\include</Value>
+      <Value>%24(PackRepoDir)\arm\cmsis\4.2.0\CMSIS\Include\</Value>
+    </ListValues>
+  </armgcc.assembler.general.IncludePaths>
+  <armgcc.preprocessingassembler.general.IncludePaths>
+    <ListValues>
+      <Value>%24(PackRepoDir)\atmel\SAM3X_DFP\1.0.41\include</Value>
+      <Value>%24(PackRepoDir)\arm\cmsis\4.2.0\CMSIS\Include\</Value>
+    </ListValues>
+  </armgcc.preprocessingassembler.general.IncludePaths>
+</ArmGcc>
+    </ToolchainSettings>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <ToolchainSettings>
+      <ArmGcc>
+  <armgcc.common.outputfiles.hex>True</armgcc.common.outputfiles.hex>
+  <armgcc.common.outputfiles.lss>True</armgcc.common.outputfiles.lss>
+  <armgcc.common.outputfiles.eep>True</armgcc.common.outputfiles.eep>
+  <armgcc.common.outputfiles.bin>True</armgcc.common.outputfiles.bin>
+  <armgcc.common.outputfiles.srec>True</armgcc.common.outputfiles.srec>
+  <armgcc.compiler.symbols.DefSymbols>
+    <ListValues>
+      <Value>DEBUG</Value>
+      <Value>BUILD_SAM3X8E</Value>
+      <Value>BUILD_ARDUINO_DUE</Value>
+      <Value>BUILD_KERNEL</Value>
+    </ListValues>
+  </armgcc.compiler.symbols.DefSymbols>
+  <armgcc.compiler.directories.IncludePaths>
+    <ListValues>
+      <Value>%24(PackRepoDir)\atmel\SAM3X_DFP\1.0.41\include</Value>
+      <Value>%24(PackRepoDir)\arm\cmsis\4.2.0\CMSIS\Include\</Value>
+      <Value>../OS</Value>
+      <Value>../System</Value>
+      <Value>../KernelServices</Value>
+      <Value>../Peripherals</Value>
+      <Value>../Support</Value>
+      <Value>../UserServices</Value>
+      <Value>../API</Value>
+      <Value>../GenericDrivers/include</Value>
+      <Value>../Suites/UDS/include</Value>
+    </ListValues>
+  </armgcc.compiler.directories.IncludePaths>
+  <armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>True</armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>
+  <armgcc.compiler.optimization.DebugLevel>Maximum (-g3)</armgcc.compiler.optimization.DebugLevel>
+  <armgcc.compiler.warnings.AllWarnings>True</armgcc.compiler.warnings.AllWarnings>
+  <armgcc.linker.general.DoNotUseStandardStartFiles>True</armgcc.linker.general.DoNotUseStandardStartFiles>
+  <armgcc.linker.libraries.Libraries>
+    <ListValues>
+      <Value>libm</Value>
+    </ListValues>
+  </armgcc.linker.libraries.Libraries>
+  <armgcc.linker.libraries.LibrarySearchPaths>
+    <ListValues>
+      <Value>%24(ProjectDir)\Device_Startup</Value>
+    </ListValues>
+  </armgcc.linker.libraries.LibrarySearchPaths>
+  <armgcc.linker.memorysettings.ExternalRAM />
+  <armgcc.linker.miscellaneous.LinkerFlags>-Tsam3x8e_flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
+  <armgcc.assembler.general.IncludePaths>
+    <ListValues>
+      <Value>%24(PackRepoDir)\atmel\SAM3X_DFP\1.0.41\include</Value>
+      <Value>%24(PackRepoDir)\arm\cmsis\4.2.0\CMSIS\Include\</Value>
+    </ListValues>
+  </armgcc.assembler.general.IncludePaths>
+  <armgcc.assembler.debugging.DebugLevel>Default (-g)</armgcc.assembler.debugging.DebugLevel>
+  <armgcc.preprocessingassembler.general.IncludePaths>
+    <ListValues>
+      <Value>%24(PackRepoDir)\atmel\SAM3X_DFP\1.0.41\include</Value>
+      <Value>%24(PackRepoDir)\arm\cmsis\4.2.0\CMSIS\Include\</Value>
+    </ListValues>
+  </armgcc.preprocessingassembler.general.IncludePaths>
+  <armgcc.preprocessingassembler.debugging.DebugLevel>Default (-Wa,-g)</armgcc.preprocessingassembler.debugging.DebugLevel>
+</ArmGcc>
+    </ToolchainSettings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="API\ADCAPI.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="API\CEMAPI.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="API\CTRLAPI.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="API\DACAPI.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="API\DIAGAPI.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="API\IICAPI.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="API\IOAPI.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="API\PIMAPI.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="API\PROTAPI.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="API\RESAPI.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="API\SPREADSAPI.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="API\TABLESAPI.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="API\TASKAPI.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="API\TEPMAPI.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Device_Startup\startup_sam3xa.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Device_Startup\system_sam3xa.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="ECUHostEFI.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\cbytequeue.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\commonNL.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\DISK.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\DISK.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\DLL.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\DLL.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\DSCRIO.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\DSCRIO.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\DSCRIOHA.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\DSCRIOHA.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\IO.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\IO.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\KERNELDIAG.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\KERNELDIAG.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\PACKEDDLL.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\PACKEDDLL.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\PIM.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\PIM.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\PIMHA.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\PIMHA.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\PIT.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\PIT.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\regset.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\regset.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\resm.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\resm.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\SIM.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\SIM.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\SIMHA.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\SIMHA.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\timer.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="KernelServices\timer.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="main.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="OS.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="OSHA.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="OS\client.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="OS\CLIENT.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="OS\MSG.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="OS\MSG.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="OS\OS.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="OS\OSHA.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="OS\OSTASKS.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="OS\stack.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="OS\stack.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="OS\task.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="OS\task.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="OS\thread.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="OS\thread.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="OS\tqueue.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="OS\tqueue.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="OS\tqueueHA.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="OS\tqueueHA.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\ADC.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\adc.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\ADCHA.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\ADCHA.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\CAN.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\CAN.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\CANHA.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\CANHA.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\CRC16.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\CRC16.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\CRC16HA.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\CRC16HA.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\DAC.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\DAC.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\DACHA.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\DACHA.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\ENE.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\ENE.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\ENEHA.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\ENEHA.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\FEE.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\FEE.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\FEEHA.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\FEEHA.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\IIC.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\IIC.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\IICHA.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\IICHA.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\SDHC.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\SDHC.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\SDHCHA.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\SDHCHA.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\SRLTFR.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\SRLTFR.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\time.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\time.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\UART.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\UART.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\UARTHA.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\UARTHA.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\WIFI.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Peripherals\WIFI.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Suites\UDS\UDSAL.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Suites\UDS\UDSNL.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Suites\UDS\UDSSL.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Support\cqueue.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Support\declarations.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Support\macros.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Support\MATH.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Support\MATH.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="System\build.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="System\CPUAbstract.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="System\CPUAbstract.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="System\IRQ.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="System\IRQ.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="System\sys.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="System\SYSAbstract.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="System\SYSAPI.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="System\types.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="UserServices\CEM.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="UserServices\CEM.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="UserServices\CTRL.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="UserServices\CTRL.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="UserServices\spreads.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="UserServices\spreads.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="UserServices\tables.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="UserServices\tables.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="UserServices\TEPM.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="UserServices\TEPM.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="UserServices\TEPMHA.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="UserServices\TEPMHA.h">
+      <SubType>compile</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Device_Startup\" />
+    <Folder Include="GenericDrivers\include" />
+    <Folder Include="GenericDrivers\source" />
+    <Folder Include="Include" />
+    <Folder Include="KernelServices" />
+    <Folder Include="API" />
+    <Folder Include="GenericDrivers" />
+    <Folder Include="Suites\UDS" />
+    <Folder Include="UserServices" />
+    <Folder Include="Support" />
+    <Folder Include="System" />
+    <Folder Include="Peripherals" />
+    <Folder Include="Suites" />
+    <Folder Include="OS" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Device_Startup\sam3x8e_flash.ld">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="Device_Startup\sam3x8e_sram.ld">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="Device_Startup\sam3xa_flash.ld">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="Device_Startup\sam3xa_sram.ld">
+      <SubType>compile</SubType>
+    </None>
+  </ItemGroup>
+  <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
+</Project>

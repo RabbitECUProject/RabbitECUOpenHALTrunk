@@ -1,0 +1,3 @@
+This code is the operating system files for the ECUHost open automotive operating system. The first release is for Kinetis MK60, future revisions will be incorporate other ARM Cortex micros.
+The code compiles to a monolithic kernel that provides all of the services needed for an automotive controller such as timers, analog I/O, comms, memory, RT tasks, threads, etc.
+The application code resides in a seperate project. The interraction between application code and kernel is via system calls, pointers to shared data and callbacks. This project was compiled in Keil UV4 for MK60.
