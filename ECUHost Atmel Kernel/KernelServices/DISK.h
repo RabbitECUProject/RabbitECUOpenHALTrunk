@@ -2,11 +2,11 @@
 /*    Copyright (c) 2016 MD Automotive Controls. Original Work.               */
 /*    License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher   */
 /******************************************************************************/
-/* CONTEXT:KERNEL                                                                   */                      
-/* PACKAGE TITLE:      DISK Header File                 											*/
-/* DESCRIPTION:        This code provides enum definitions for disk support		*/
-/*										 																												*/	
-/* FILE NAME:          DISK.h                                          				*/
+/* CONTEXT:KERNEL                                                             */                      
+/* PACKAGE TITLE:      DISK Header File                                       */
+/* DESCRIPTION:        This code provides enum definitions for disk support   */
+/*                                                                            */	
+/* FILE NAME:          DISK.h                                                 */
 /* REVISION HISTORY:   28-03-2016 | 1.0 | Initial revision                    */
 /*                                                                            */
 /******************************************************************************/

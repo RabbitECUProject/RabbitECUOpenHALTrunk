@@ -13,6 +13,7 @@
 #define ENE_H
 
 #include "declarations.h"
+//#include "DLL.h"
 #include "DSCRIO.h"
 #include "IOAPI.h"
 #include "macros.h"
@@ -82,14 +83,14 @@ typedef enum
 	enChannelErr
 } ENE_tenChannelStatus;
 
-typedef __packed struct
+typedef BUILDPACKEDKEIL struct
 {
 	uint8 	au8ETHMACDestination[6];
 	uint8 	au8ETHMACSource[6];
 	uint16	u16ETHLengthOrType;
 } ENE_tstETHHeader;
 
-typedef __packed struct
+typedef BUILDPACKEDKEIL struct
 {
 	uint8 	u8IPVersionIHL;
 	uint8 	u8DSCPECN;
@@ -103,17 +104,17 @@ typedef __packed struct
 	uint32	u32DestinationIPAddress;
 } ENE_tstIPHeader;
 
-typedef __packed struct
+typedef BUILDPACKEDKEIL struct
 {
 	uint32 	u32Dummy;
 } ENE_tstTCPHeader;
 
-typedef __packed struct
+typedef BUILDPACKEDKEIL struct
 {
 	uint32 	u32Dummy;
 } ENE_tstICMPHeader;
 
-typedef __packed struct
+typedef BUILDPACKEDKEIL struct
 {
 	uint16	u16SourcePort;
 	uint16  u16DestinationPort;
@@ -121,22 +122,22 @@ typedef __packed struct
 	uint16	u16UDPHeaderChecksum;
 } ENE_tstUDPHeader;
 
-typedef __packed struct
+typedef BUILDPACKEDKEIL struct
 {
 	ENE_tstETHHeader	stETHHeader;
 	// IP header union
-	__packed union
+	BUILDPACKEDKEIL union
 	{
 		ENE_tstIPHeader stIPHeader;
 		uint8 u8ETHData[sizeof(ENE_tstIPHeader)];
 	} uETHData;
 	// UDP header union
-	__packed union
+	BUILDPACKEDKEIL union
 	{
 		ENE_tstUDPHeader stUDPHeader;
 		uint8 u8ETHData[sizeof(ENE_tstUDPHeader)];
 	}	uIPData;
-	__packed uint8 au8UDPData[1];
+	BUILDPACKEDKEIL uint8 au8UDPData[1];
 } ENE_tstETHUnionFrame;
 
 typedef struct
@@ -168,7 +169,7 @@ typedef struct
 	#define EXTERN extern
 #endif
 
-EXTERN bool ENE_boResetComplete;
+EXTERN Bool ENE_boResetComplete;
 
 #define ENE_nPHYAddress 0u
 #define ENE_nNumRXBDs NUM_RXBDS

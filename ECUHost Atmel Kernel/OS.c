@@ -22,12 +22,12 @@
 
 
 /* declare constant task arrays */
-const TASK_tstTask OS_rastTaskStart[] = OSTASKS_nTaskStart;
-const TASK_tstTask OS_rastTaskCyclic[] = OSTASKS_nTaskCyclic;
-const TASK_tstTask OS_rastTaskTerminate[] = OSTASKS_nTaskTerminate;
-#define OS_nKERNELTaskStartCount sizeof(OS_rastTaskStart) / sizeof(TASK_tstTask)
-#define OS_nKERNELTaskCyclicCount sizeof(OS_rastTaskCyclic) / sizeof(TASK_tstTask)
-#define OS_nKERNELTaskTerminateCount sizeof(OS_rastTaskTerminate) / sizeof(TASK_tstTask)
+const struct TASK_tstTask OS_rastTaskStart[] = OSTASKS_nTaskStart;
+const struct TASK_tstTask OS_rastTaskCyclic[] = OSTASKS_nTaskCyclic;
+const struct TASK_tstTask OS_rastTaskTerminate[] = OSTASKS_nTaskTerminate;
+#define OS_nKERNELTaskStartCount sizeof(OS_rastTaskStart) / sizeof(struct TASK_tstTask)
+#define OS_nKERNELTaskCyclicCount sizeof(OS_rastTaskCyclic) / sizeof(struct TASK_tstTask)
+#define OS_nKERNELTaskTerminateCount sizeof(OS_rastTaskTerminate) / sizeof(struct TASK_tstTask)
 #define OS_nTaskCount (OS_nKERNELTaskStartCount + OS_nKERNELTaskCyclicCount + OS_nKERNELTaskTerminateCount + SYS_THREAD_MAX + 1)	/* + 1 for system idle thread */
 
 task_queue OS_apstTaskQueue[OS_enTaskQueueCount] = {NULL};
@@ -53,8 +53,8 @@ typedef struct
 
 /* local functions */
 void OS_vBackgroundDispatcher(void);
-bool OS_boCreateThread(OS_tenQueueType, TASK_tProgramCounter);
-bool OS_boCreateDispatcherTask(OS_tenQueueType, TASK_tProgramCounter);
+Bool OS_boCreateThread(OS_tenQueueType, TASK_tProgramCounter);
+Bool OS_boCreateDispatcherTask(OS_tenQueueType, TASK_tProgramCounter);
 void OS_vSystemDummyThread(uint32* const);
 static void OS_vRunQueues(void);
 
@@ -68,7 +68,7 @@ uint32 OS_u32CLIENTTerminateTaskCount;
 
 OS_tenOSState OS_enOSState;
 OS_tenOSKernelMode enOSKernelMode;
-bool OS_bModuleActive[OS_nKERNELTaskStartCount];
+Bool OS_bModuleActive[OS_nKERNELTaskStartCount];
 uint32 OS_u32StartTaskStatus;
 uint32 OS_u32RunTaskStatus;
 uint32 OS_u32TerminateTaskStatus;
@@ -109,7 +109,7 @@ void OS_vStart(uint32* const u32Stat)
 	for(u8IDX = 0; u8IDX < OS_nKERNELTaskStartCount; u8IDX++)
 	{
 		memcpy((void*)&OS_stKERNELTaskNodePool.stqTask[u8IDX].stTask,
-						(void*)&OS_rastTaskStart[u8IDX], sizeof(TASK_tstTask));
+						(void*)&OS_rastTaskStart[u8IDX], sizeof(struct TASK_tstTask));
 		
 		OS_stKERNELTaskNodePool.stqTask[OS_stKERNELTaskNodePool.u32TotalCount++].stTask.tsTaskQueued = CPUA_OS_u32GetSysTimeStamp();
 		queue_task(&OS_stKERNELTaskNodePool.stqTask[u8IDX], &OS_apstTaskQueue[OS_enKERNELQueueStart]);
@@ -129,7 +129,7 @@ void OS_vStart(uint32* const u32Stat)
 	for(u8IDX = OS_nKERNELTaskStartCount; u8IDX < (OS_nKERNELTaskStartCount + OS_nKERNELTaskCyclicCount); u8IDX++)
 	{
 		memcpy((void*)&OS_stKERNELTaskNodePool.stqTask[OS_stKERNELTaskNodePool.u32TotalCount++].stTask, 
-						(void*)&OS_rastTaskCyclic[u8IDX - OS_nKERNELTaskStartCount], sizeof(TASK_tstTask));		
+						(void*)&OS_rastTaskCyclic[u8IDX - OS_nKERNELTaskStartCount], sizeof(struct TASK_tstTask));		
 	}	
 	
 	
@@ -213,7 +213,7 @@ static void OS_vRunQueues(void)
 	CLIENT_vRunUserCBQueue();
 }
 
-void OS_vSetCyclicTaskList(TASK_tstTask* pstTask)
+void OS_vSetCyclicTaskList(struct TASK_tstTask* pstTask)
 {
 	uint16 u16TaskID = 1000u;
 	while((pstTask->pfTaskFunction != NULL) && 
@@ -221,7 +221,7 @@ void OS_vSetCyclicTaskList(TASK_tstTask* pstTask)
 					(u16TaskID++ < (1000u + OS_nClientTasksMax)))
 	{
 		memcpy((void*)&OS_stCLIENTTaskNodePool.stqTask[OS_stCLIENTTaskNodePool.u32TotalCount++].stTask, 
-						(void*)pstTask++, sizeof(TASK_tstTask));
+						(void*)pstTask++, sizeof(struct TASK_tstTask));
 	}	
 }
 
@@ -308,7 +308,7 @@ void OS_vSuspendThread(OS_tenQueueType enQueueType)
 	
 }
 
-bool OS_boCreateThread(OS_tenQueueType enQueueType, TASK_tProgramCounter pEntryPoint)
+Bool OS_boCreateThread(OS_tenQueueType enQueueType, TASK_tProgramCounter pEntryPoint)
 {
 	/* add the thread to system node pool */
 	OS_stKERNELTaskNodePool.stqTask[OS_stKERNELTaskNodePool.u32TotalCount].stTask.tTaskID = 1000;
@@ -327,7 +327,7 @@ bool OS_boCreateThread(OS_tenQueueType enQueueType, TASK_tProgramCounter pEntryP
 	return true;	
 }
 
-bool OS_boCreateDispatcherTask(OS_tenQueueType enQueueType, TASK_tProgramCounter pEntryPoint)
+Bool OS_boCreateDispatcherTask(OS_tenQueueType enQueueType, TASK_tProgramCounter pEntryPoint)
 {
 	/* add the task to system node pool */
 	OS_stKERNELTaskNodePool.stqTask[OS_stKERNELTaskNodePool.u32TotalCount].stTask.tTaskID = 1000;
@@ -343,14 +343,14 @@ bool OS_boCreateDispatcherTask(OS_tenQueueType enQueueType, TASK_tProgramCounter
 	return true;	
 }
 
-SYSAPI_tenSVCResult OS_enAddTaskToQueue(OS_tenQueueType enQueueType, TASK_tstTask* pstTask)
+SYSAPI_tenSVCResult OS_enAddTaskToQueue(OS_tenQueueType enQueueType, struct TASK_tstTask* pstTask)
 {
 	SYSAPI_tenSVCResult enSVCResult = SYSAPI_enOK;
 	
 	if (OS_nClientTasksMax > OS_stCLIENTTaskNodePool.u32TotalCount)
 	{
 		memcpy((void*)&OS_stCLIENTTaskNodePool.stqTask[OS_stCLIENTTaskNodePool.u32TotalCount].stTask,
-						(void*)pstTask, sizeof(TASK_tstTask));
+						(void*)pstTask, sizeof(struct TASK_tstTask));
 		
 		OS_stCLIENTTaskNodePool.stqTask[OS_stCLIENTTaskNodePool.u32TotalCount].stTask.tsTaskQueued = CPUA_OS_u32GetSysTimeStamp();
 		

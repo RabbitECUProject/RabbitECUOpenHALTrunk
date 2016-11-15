@@ -22,6 +22,7 @@
 #include "types.h"
 #include "IRQ.h"
 #include "TEPM.h"
+#include "TEPMHA.h"
 #include "TEPMAPI.h"
 #include "MSG.h"
 #include "SIM.h"
@@ -39,7 +40,7 @@ const TEPM_tstTEPMChannel TEPMHA_rastTEPMChannel[] = TEPMHA_nChannelInfo;
 /* Private function declarations
    ----------------------------*/
 static void TEPMHA_vRunEventProgramUserQueue(tstTimerModule*, uint32, uint32);
-static void TEPMHA_vRunEventProgramKernelQueue(tstTimerModule*, uint32, uint32, bool);
+static void TEPMHA_vRunEventProgramKernelQueue(tstTimerModule*, uint32, uint32, Bool);
 static void TEPMHA_vInitInterrupts(IRQn_Type);	 
 static tstTimerModule* TEPMHA_pstGetTimerModule(IOAPI_tenEHIOResource);	 
 static uint32 TEPMHA_pstGetFTMChannel(IOAPI_tenEHIOResource);
@@ -53,6 +54,7 @@ void TEPMHA_vInitTEPMChannel(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_tstTE
 	tstTimerModule* pstTimerModule;
 	vpuint32 vpuFTMReg;
 	uint32 u32ChannelIDX;
+	uint32 u32ChannelSubIDX;
 	uint32 u32ControlWord = 0;
 	
 #ifdef BUILD_MK60
@@ -84,6 +86,85 @@ void TEPMHA_vInitTEPMChannel(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_tstTE
 
 	*vpuFTMReg = u32ControlWord;
 #endif //BUILD_MK60
+
+#ifdef BUILD_SAM3X8E
+	pstTimerModule = TEPMHA_pstGetTimerModule(enEHIOResource);
+	u32ChannelIDX = TEPMHA_u32GetFTMTableIndex(enEHIOResource);
+	SIM_boEnablePeripheralClock(TEPMHA_rastTEPMChannel[u32ChannelIDX].enIRQType);
+
+	switch (pstTEPMChannelCB->enAction)
+	{
+		case TEPMAPI_enSetHigh:
+		{
+		    u32ControlWord = pstTimerModule->TC_CHANNEL[TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel].TC_CMR;
+
+			if (0 == TEPMHA_rastTEPMChannel[u32ChannelIDX].u32SubChannel)
+			{
+			    u32ControlWord |= TC_CMR_TCCLKS_TIMER_CLOCK4;
+				u32ControlWord |= TC_CMR_ACPA_SET;
+				u32ControlWord |= TC_CMR_WAVE;
+			    tc_init(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel, u32ControlWord);
+			    tc_start(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel);
+			    tc_enable_interrupt(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel, TC_SR_CPAS);
+			}
+			else
+			{
+				u32ControlWord |= TC_CMR_TCCLKS_TIMER_CLOCK4;
+				u32ControlWord |= TC_CMR_BCPB_SET;
+				u32ControlWord |= TC_CMR_WAVE;
+				tc_init(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel, u32ControlWord);
+				tc_start(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel);
+				tc_enable_interrupt(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel, TC_SR_CPBS);
+			}
+            break;
+        }
+		case TEPMAPI_enSetLow:
+		{
+			u32ControlWord = pstTimerModule->TC_CHANNEL[TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel].TC_CMR;
+
+			if (0 == TEPMHA_rastTEPMChannel[u32ChannelIDX].u32SubChannel)
+			{
+                u32ControlWord |= TC_CMR_TCCLKS_TIMER_CLOCK4;
+                u32ControlWord |= TC_CMR_WAVE; /* Waveform mode is enabled */
+                u32ControlWord |= TC_CMR_ACPA_CLEAR;
+				//u32ControlWord |= TC_CMR_ACPC_CLEAR;
+				tc_init(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel, u32ControlWord);
+				tc_enable_interrupt(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel, TC_SR_CPAS);
+				tc_write_ra(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel, 0xffff);
+				tc_write_rc(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel, 0xffff);
+				tc_start(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel);
+			}
+			else
+			{
+                u32ControlWord |= TC_CMR_TCCLKS_TIMER_CLOCK4;
+                u32ControlWord |= TC_CMR_WAVE; /* Waveform mode is enabled */
+                u32ControlWord |= TC_CMR_BCPB_CLEAR;
+                //u32ControlWord |= TC_CMR_BCPC_CLEAR;
+				tc_init(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel, u32ControlWord);
+				tc_enable_interrupt(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel, TC_SR_CPBS);
+				tc_write_rb(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel, 0xffff);
+				tc_write_rc(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel, 0xffff);
+				tc_start(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel);
+			}
+			break;
+		}
+		case TEPMAPI_enToggle: u32ControlWord = 0; break;
+		case TEPMAPI_enCapRising: u32ControlWord = 0; break;
+		case TEPMAPI_enCapFalling: u32ControlWord = 0; break;
+		case TEPMAPI_enCapAny:
+		{
+			u32ControlWord = TC_CMR_LDRA_EDGE | TC_CMR_LDRB_EDGE | TC_CMR_TCCLKS_TIMER_CLOCK4;
+			tc_init(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel, u32ControlWord);
+			tc_start(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel);
+			tc_enable_interrupt(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel, TC_SR_LDRAS | TC_SR_LDRBS);
+            break;
+		}
+		default:
+		{
+		    break;
+		}
+	}
+#endif //BUILD_SAM3X8E
 }
 
 
@@ -92,9 +173,9 @@ SYSAPI_tenSVCResult TEPMHA_vInitTEPMResource(IOAPI_tenEHIOResource enEHIOResourc
 	tstTimerModule* pstTimerModule;
 	REGSET_tstReg32Val astTEPMReg32Val[2];
 	
+#ifdef BUILD_MK60
 	switch (enEHIOResource)
 	{
-#ifdef BUILD_MK60
 		case EH_VIO_FTM0:
 		{
 			pstTimerModule = FTM0;
@@ -115,17 +196,14 @@ SYSAPI_tenSVCResult TEPMHA_vInitTEPMResource(IOAPI_tenEHIOResource enEHIOResourc
 			pstTimerModule = FTM3;
 			break;
 		}
-#endif //BUILD_MK60
 		default:
 		{
 			pstTimerModule = NULL;
 			break;
-		}			
-	}
-	
-	TEPMHA_xRequestPortClock(pstTimerModule);
-	
-#ifdef BUILD_MK60
+		}	
+	    TEPMHA_xRequestPortClock(pstTimerModule);				
+	}	
+
 	astTEPMReg32Val[0].reg = (vpuint32)(pstTimerModule + offsetof(tstTimerModule, SC));
 	astTEPMReg32Val[0].val = (uint32)(FTM_SC_PS(pstTEPMResourceCB->enPreScalar) | FTM_SC_CLKS(1) |
 			 (pstTEPMResourceCB->enCountType << FTM_SC_CPWMS_SHIFT));														
@@ -134,8 +212,6 @@ SYSAPI_tenSVCResult TEPMHA_vInitTEPMResource(IOAPI_tenEHIOResource enEHIOResourc
 	REGSET_vInitReg32(&astTEPMReg32Val[0]);		
 #endif //BUILD_MK60
 
-	TEPMHA_xInitInterrupts(pstTimerModule);
-	
 	return SYSAPI_enOK;
 }
 
@@ -179,13 +255,13 @@ void TEPMHA_vForceQueueTerminate(tstTimerModule* pstTimerModule, uint32 u32Chann
 	CPU_xExitCritical();	
 }
 
-//static void TEPMHA_vRunEventProgramKernelQueue(tstTimerModule* pstTimerModule, uint32 u32ChannelIDX, uint32 u32TableIDX, bool boSynchroniseUpdate)
+//static void TEPMHA_vRunEventProgramKernelQueue(tstTimerModule* pstTimerModule, uint32 u32ChannelIDX, uint32 u32TableIDX, Bool boSynchroniseUpdate)
 //{
 	//TEPMAPI_tstTimedKernelEvent* pstTimedEvent = NULL;
 	//TEPMAPI_ttEventTime tEventTimeScheduled;
 	//TEPMAPI_ttEventTime tEventTimeRemains;	
 	//uint32 u32Temp;
-	//bool boSynchroniseAbort = FALSE;
+	//Bool boSynchroniseAbort = FALSE;
 	//
 	//if (FALSE == CQUEUE_boIsEmpty(TEPM_astProgramKernelQueue[u32TableIDX]))
 	//{
@@ -403,6 +479,16 @@ tstTimerModule* TEPMHA_pstConvertTimerModule(TEPMHA_tenTimerModule enTimerModule
 		default: pstTimerModule = FTM0; break;
 	}
 #endif //BUILD_MK60
+
+#ifdef BUILD_SAM3X8E
+	switch (enTimerModule)
+	{
+		case TEPMHA_enTC0: pstTimerModule = TC0; break;
+		case TEPMHA_enTC1: pstTimerModule = TC1; break;
+		case TEPMHA_enTC2: pstTimerModule = TC2; break;
+		default: pstTimerModule = TC0; break;
+	}
+#endif //BUILD_SAMX3X8E
 	
 	return pstTimerModule;
 }
@@ -431,40 +517,169 @@ uint32 TEPMHA_u32GetFTMTableIndex(IOAPI_tenEHIOResource enEHIOResource)
 		}
 	}
 #endif //BUILD_MK60
+
+#ifdef BUILD_SAM3X8E
+if ((EH_IO_TMR12 >= enEHIOResource) && (EH_IO_TMR1 <= enEHIOResource))
+{
+	u32ChannelIDX = enEHIOResource - EH_IO_TMR1;
+}
+#endif //BUILD_SAM3X8E
 	
 	return u32ChannelIDX;
 }
 
 
-bool TEPMHA_boFlagIsSet(tstTimerModule* pstTimerModule, uint32 u32ChannelIDX)
+
+
+Bool TEPMHA_boFlagIsSet(tstTimerModule* pstTimerModule, uint32 u32ChannelIDX, Bool boInputMode, puint32 pu32Flags, uint32 u32Sequence)
 {
-	bool boFlagIsSet = false;
+	Bool boFlagIsSet = false;
 
 #ifdef BUILD_MK60
 	boFlagIsSet = (FTM_CnSC_CHF_MASK == (FTM_CnSC_CHF_MASK & pstTimerModule->CONTROLS[u32ChannelIDX].CnSC));
 #endif //BUILD_MK60
+
+#ifdef BUILD_SAM3X8E
+    static uint32 u32Seq;
+    static uint32 u32FlagsCache[9];   /* Once the flags are read they are cleared so cache them */
+	uint32 u32CacheIndex = 0;
+
+	if (u32Seq != u32Sequence)
+	{
+	    memset(&u32FlagsCache, 0, sizeof(u32FlagsCache));
+		u32Seq = u32Sequence;
+	}
+
+	switch ((uint32)pstTimerModule)
+	{
+        case (uint32)TC0: u32CacheIndex = (u32ChannelIDX / 2); break;
+        case (uint32)TC1: u32CacheIndex = 3 + (u32ChannelIDX / 2); break;
+        case (uint32)TC2: u32CacheIndex = 6 + (u32ChannelIDX / 2); break;
+	}
+
+    if (TRUE == boInputMode)
+	{
+	    if (0 == u32FlagsCache[u32CacheIndex])
+		{
+	        u32FlagsCache[u32CacheIndex] = pstTimerModule->TC_CHANNEL[u32ChannelIDX].TC_SR;
+		}
+		*pu32Flags = u32FlagsCache[u32CacheIndex];
+
+		if (0 == (u32ChannelIDX & 0x1))
+		/* Is channel A? */
+		{
+            boFlagIsSet = 0 != (*pu32Flags & TC_SR_LDRAS) ?
+		    TRUE : FALSE;
+		}
+		else
+		/* Is channel B? */
+		{
+			boFlagIsSet = 0 != (*pu32Flags & TC_SR_LDRBS) ?
+			TRUE : FALSE;
+		}
+	}
+    else
+    {
+	    if (0 == u32FlagsCache[u32CacheIndex])
+	    {
+		    u32FlagsCache[u32CacheIndex] = pstTimerModule->TC_CHANNEL[u32ChannelIDX].TC_SR;
+	    }
+	    *pu32Flags = u32FlagsCache[u32CacheIndex];
+
+		if (0 == (u32ChannelIDX & 0x1))
+		/* Is channel A? */
+		{
+	        boFlagIsSet = 0 != (*pu32Flags & TC_IMR_CPAS) ? TRUE : FALSE;
+		}
+		else
+		/* Is channel B? */
+		{
+			boFlagIsSet = 0 != (*pu32Flags & TC_IMR_CPBS) ? TRUE : FALSE;
+		}
+
+    }
+#endif //BUILD_SAM3X8E
+
     return boFlagIsSet;
 }
 
-bool TEMPHA_boInterruptEnabled(tstTimerModule* pstTimerModule, uint32 u32ChannelIDX)
+Bool TEMPHA_boInterruptEnabled(tstTimerModule* pstTimerModule, uint32 u32ChannelIDX, Bool boInputMode)
 {
-    bool boEnableSet = false;
+    Bool boEnableSet = false;
 
 #ifdef BUILD_MK60
 	boEnableSet = (FTM_CnSC_CHIE_MASK == (FTM_CnSC_CHIE_MASK & pstTimerModule->CONTROLS[u32ChannelIDX].CnSC));
 #endif
+
+#ifdef BUILD_SAM3X8E
+    if (TRUE == boInputMode)
+	{
+        boEnableSet = 0 != (pstTimerModule->TC_CHANNEL[u32ChannelIDX].TC_IMR & (TC_IMR_LDRAS | TC_IMR_LDRBS)) ?
+		    TRUE : FALSE;
+    }
+#endif //BUILD_SAM3X8E
+
     return boEnableSet;
 }
 
-uint32 TEPMHA_u32GetScheduledVal(tstTimerModule* pstTimerModule, uint32 u32ChannelIDX)
+TEPMAPI_ttEventTime TEPMHA_tGetScheduledVal(tstTimerModule* pstTimerModule, uint32 u32ChannelIDX, Bool boInputMode, uint32 u32Flags)
 {
-    uint32 u32ScheduledVal;
+    TEPMAPI_ttEventTime tEventTime = 0;
+	uint32 u32Temp;
 
 #ifdef BUILD_MK60
-    u32ScheduledVal = pstTimerModule->CONTROLS[u32ChannelIDX].CnV;
+    tEventTime = pstTimerModule->CONTROLS[u32ChannelIDX].CnV;
 #endif
 
-    return u32ScheduledVal;
+#ifdef BUILD_SAM3X8E
+    if (TRUE == boInputMode)
+	{
+        if (0 != (u32Flags & TC_SR_LDRAS))
+		{
+		    u32Temp = tc_read_ra(pstTimerModule, u32ChannelIDX);
+		    tEventTime = (uint16)(u32Temp >> 1);
+	    }
+        if (0 != (u32Flags & TC_SR_LDRBS))
+		{
+		    u32Temp = tc_read_rb(pstTimerModule, u32ChannelIDX);
+		    tEventTime = (uint16)(u32Temp >> 1);
+	    }
+    }
+#endif //BUILD_SAM3X8E
+
+    return tEventTime;
+}
+
+IOAPI_tenTriState TEPMHA_enGetTimerDigitalState(IOAPI_tenEHIOResource enEHIOResource)
+{
+    IOAPI_tenTriState enTriState = IOAPI_enError;
+	uint32 u32ChannelIDX;
+	tstTimerModule* pstTimerModule;
+	
+	u32ChannelIDX = TEPMHA_u32GetFTMTableIndex(enEHIOResource);
+	pstTimerModule = TEPMHA_pstConvertTimerModule(TEPMHA_rastTEPMChannel[u32ChannelIDX].enTimerModule);
+
+#ifdef BUILD_MK60
+	enTriState = IO_enGetDIOResourceState(enEHIOResource);
+#endif
+
+#ifdef BUILD_SAM3X8E
+    if ((EH_IO_TMR1 <= enEHIOResource) && (EH_IO_TMR12 >= enEHIOResource))
+	{
+	    if (0 == TEPMHA_rastTEPMChannel[u32ChannelIDX].u32SubChannel)
+		{
+		    enTriState = 0 != (pstTimerModule->TC_CHANNEL->TC_SR & TC_SR_MTIOA) ?
+			    IOAPI_enHigh : IOAPI_enLow;
+		}
+		else
+		{
+		    enTriState = 0 != (pstTimerModule->TC_CHANNEL->TC_SR & TC_SR_MTIOB) ?
+		    IOAPI_enHigh : IOAPI_enLow;
+		}
+	}
+#endif
+
+    return enTriState;
 }
 
 void TEMPHA_vResetTimerFlag(tstTimerModule* pstTimerModule, uint32 u32ChannelIDX)
@@ -480,7 +695,7 @@ void TEPMHA_vGetFreeVal(tstTimerModule* pstTimerModule, puint32 pu32Val)
 	*pu32Val = pstTimerModule->CNT;
 #endif
 #ifdef BUILD_SAM3X8E
-    *pu32Val = pstTimerModule->TC_CHANNEL[0].TC_CV;
+    //*pu32Val = pstTimerModule->TC_CHANNEL[0].TC_CV;
 #endif
 }
 
@@ -492,7 +707,7 @@ uint32 TEPMHA_u32GetFreeVal(tstTimerModule* pstTimerModule)
 	u32FreeVal = pstTimerModule->CNT;
 	#endif
 	#ifdef BUILD_SAM3X8E
-	u32FreeVal = pstTimerModule->TC_CHANNEL[0].TC_CV;//matthew
+	//u32FreeVal = pstTimerModule->TC_CHANNEL[0].TC_CV;//matthew
 	#endif
 
 	return u32FreeVal;
@@ -531,4 +746,17 @@ tstTimerModule* TEPMHA_pstGetTimerModuleFromEnum(TEPMHA_tenTimerModule enTimerMo
 	}
 	
 	return pstTimerModule;
+}
+
+static void TEPMHA_vInitInterrupts(IRQn_Type enIrq)
+{
+	IRQ_vEnableIRQ(enIrq, IRQ_enPRIO_15, TEPM_vInterruptHandler, NULL);
+}
+
+static uint32 TEPMHA_pstGetFTMChannel(IOAPI_tenEHIOResource enEHIOResource)
+{
+	uint32 u32ChannelIDX;
+	
+	u32ChannelIDX = TEPMHA_u32GetFTMTableIndex(enEHIOResource);
+	return TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel;
 }

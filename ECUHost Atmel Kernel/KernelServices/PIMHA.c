@@ -24,11 +24,23 @@
 #include "IOAPI.h"
 
 const REGSET_tstReg32Val PIMHA_rastPIMReg32Val[] = PIMHA_nReg32Set;
-const tstPortModule* const PIMHA_rapstPIMPortTypeMap[] = PIMHA_nPortPointerMap;
 
 #ifdef BUILD_MK60
-const tstGPIOModule* const PIMHA_rapstPIMGPIOTypeMap[] = PIMHA_nGPIOPointerMap;
+const tstPortModule* const PIMHA_rapstPIMPortTypeMap[] = PIMHA_nPortPointerMap;
 #endif //BUILD_MK60
+
+#ifdef BUILD_SAM3X8E
+const tstGPIOModule* const PIMHA_rapstPIMGPIOTypeMap[] = PIMHA_nGPIOPointerMap;
+#endif //SAM3X8E
+
+#if defined BUILD_MK60
+#include "mk60f12.h"
+typedef GPIO_Type tstGPIOModule;
+#endif
+#ifdef defined BUILD_SAM3X8E
+#include "sam3x8e.h"
+typedef struct Pio tstGPIOModule;
+#endif
 
 const uint32 PIMHA_rau32PIMClockMasks[] = PIMHA_nPortClockMasks;
 
@@ -56,17 +68,15 @@ void PIMHA_vStart(uint32* const u32Stat)
 }
 
 
-void PIMHA_vInitPortBit(PIMAPI_tenPort enPort, uint32 u32PortBit)
+void PIMHA_vInitPortBit(PIMAPI_tenPort enPort, IOAPI_tenEHIOType enIOType, uint32 u32PortBit)
 {
-	uint32 u32Temp = MATH_u32MaskToIDX(u32PortBit);
-	
 	if (0 == (PIMHA_rau32PIMClockMasks[enPort] & PIM_u32PortClockRequested))
 	/* Request the port clock if not yet requested */
 	{
 		PIMHA_xRequestPortClock(PIM_rau32PIMClockMasks[enPort]);
 	}
 	
-	PIMHA_vSetPortMux(enPort, u32PortBit, 1);
+	PIMHA_vSetPortMux(enPort, enIOType, u32PortBit, 1);
 }
 
 void PIMHA_vAssertPortBit(PIMAPI_tenPort enPort, uint32 u32PortBit, IOAPI_tenTriState enTriState)
@@ -80,7 +90,12 @@ void PIMHA_vAssertPortBit(PIMAPI_tenPort enPort, uint32 u32PortBit, IOAPI_tenTri
 			pstGPIO->PDDR |= u32PortBit;
 			pstGPIO->PCOR = u32PortBit;
 #endif //BUILD_MK60	
-			break;			
+
+#ifdef BUILD_SAM3X8E
+			tstGPIOModule* pstGPIO = (tstGPIOModule*)PIMHA_rapstPIMGPIOTypeMap[enPort];
+			pstGPIO->PIO_CODR = u32PortBit;
+#endif //BUILD_SAM3X8E
+			break;						
 		}
 		case IOAPI_enHigh:
 		{
@@ -89,6 +104,11 @@ void PIMHA_vAssertPortBit(PIMAPI_tenPort enPort, uint32 u32PortBit, IOAPI_tenTri
 			pstGPIO->PDDR |= u32PortBit;
 			pstGPIO->PSOR = u32PortBit;
 #endif //BUILD_MK60	
+
+#ifdef BUILD_SAM3X8E
+			tstGPIOModule* pstGPIO = (tstGPIOModule*)PIMHA_rapstPIMGPIOTypeMap[enPort];
+			pstGPIO->PIO_SODR = u32PortBit;
+#endif //BUILD_SAM3X8E
 			break;			
 		}		
 		case IOAPI_enToggle:
@@ -98,6 +118,18 @@ void PIMHA_vAssertPortBit(PIMAPI_tenPort enPort, uint32 u32PortBit, IOAPI_tenTri
 			pstGPIO->PDDR |= u32PortBit;
 			pstGPIO->PTOR = u32PortBit;
 #endif //BUILD_MK60	
+
+#ifdef BUILD_SAM3X8E
+			tstGPIOModule* pstGPIO = (tstGPIOModule*)PIMHA_rapstPIMGPIOTypeMap[enPort];
+			if (0 < (u32PortBit & pstGPIO->PIO_ODSR))
+			{
+			    pstGPIO->PIO_CODR = u32PortBit;
+			}
+			else
+			{
+			    pstGPIO->PIO_SODR = u32PortBit;
+			}
+#endif //BUILD_SAM3X8E
 			break;			
 		}	
 		case IOAPI_enHiZ:
@@ -112,28 +144,50 @@ void PIMHA_vAssertPortBit(PIMAPI_tenPort enPort, uint32 u32PortBit, IOAPI_tenTri
 	}
 }
 
-bool PIMHA_boGetPortBitState(PIMAPI_tenPort enPort, uint32 u32PortBit)
+Bool PIMHA_boGetPortBitState(PIMAPI_tenPort enPort, uint32 u32PortBit)
 {
-	bool boBitHigh = false;
+	Bool boBitHigh = false;
 
 #ifdef BUILD_MK60
 	volatile tstGPIOModule* pstGPIO = (tstGPIOModule*)PIMHA_rapstPIMGPIOTypeMap[enPort];	
 	boBitHigh = 0 < (pstGPIO->PDIR & u32PortBit);
 #endif //BUILD_MK60	
 
+#ifdef BUILD_SAM3X8E
+
+
+
+
+
+
+#endif
+
 	return boBitHigh;	
 }
 
-void PIMHA_vSetPortMux(PIMAPI_tenPort enPort, uint32 u32PortBit, uint32 u32MuxSel)
+void PIMHA_vSetPortMux(PIMAPI_tenPort enPort, IOAPI_tenEHIOType enIOType, uint32 u32PortBit, uint32 u32MuxSel)
 {
-	//uint32 u32Temp = MATH_u32MaskToIDX(u32PortBit);	
-
 #ifdef BUILD_MK60
 	volatile tstPortModule* pstPort = (tstPortModule*)PIMHA_rapstPIMPortTypeMap[enPort];
 	uint32 u32RegOffset = offsetof(tstPortModule, PCR[u32Temp]);
 	*(puint32)((uint32)pstPort + (uint32)u32RegOffset) &= ~PORT_PCR_MUX_MASK;
 	*(puint32)((uint32)pstPort + (uint32)u32RegOffset) |= PORT_PCR_MUX(u32MuxSel);	
 #endif //BUILD_MK60		
+
+#ifdef BUILD_SAM3X8E
+	tstGPIOModule* pstPort = (tstGPIOModule*)PIMHA_rapstPIMGPIOTypeMap[enPort];
+    pio_type_t pio_type;
+
+	switch (enIOType)
+	{
+	    case IOAPI_enDIOOutput: pio_type = PIO_OUTPUT_0; break;
+		case IOAPI_enDIOInput: pio_type = PIO_INPUT; break;
+		case IOAPI_enTEPM: pio_type = u32MuxSel == 0 ? PIO_PERIPH_A : PIO_PERIPH_B; break;
+		default: pio_type = PIO_INPUT; break;
+	}
+
+	pio_configure(pstPort, pio_type, u32PortBit, PIO_DEFAULT);
+#endif //BUILD_SAM3X8E
 }
 
 

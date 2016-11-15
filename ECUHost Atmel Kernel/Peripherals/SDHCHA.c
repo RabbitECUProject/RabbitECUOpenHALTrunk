@@ -28,13 +28,13 @@
 		
 const REGSET_tstReg32Val SDHCHA_rastSDHCReg32HWInitVal[] = SDHCHA_nReg32HWInitSet; 
 const REGSET_tstReg32Val SDHCHA_rastSDHCReg32HWDeInitVal[] = SDHCHA_nReg32HWDeInitSet; 
-bool SDHCHA_boTimeout;
+Bool SDHCHA_boTimeout;
 uint8 SDHCHA_au8SectorBuffer[SDHCHA_nSectorSize];
 
 SDHCHA_tstSDData stSDData;
 
 #ifdef BUILD_MK60
-static void SDHC_vWait(LDD_SDHC_TSDData*, bool*);
+static void SDHC_vWait(LDD_SDHC_TSDData*, Bool*);
 #endif //BUILD_MK60
 
 void SDHCHA_vStart(uint32* const u32Stat)
@@ -105,7 +105,7 @@ uint8 SDHCHA_u8DiskWrite(uint8* const pu8Buf, const uint32 u32Sector, const uint
 }
 
 #ifdef BUILD_MK60
-static void SDHCHA_vWait(LDD_SDHC_TSDData* pstSDData, bool* pboErrorFlag)
+static void SDHCHA_vWait(LDD_SDHC_TSDData* pstSDData, Bool* pboErrorFlag)
 {
   LDD_SDHC_TError enError;    
 
@@ -132,7 +132,7 @@ void SHDC_vWaitTimeoutCB(void)
 static void SDHCHA_vCardInitialise(void)
 {
 #ifdef BUILD_MK60
-  bool boError = FALSE;
+  Bool boError = FALSE;
 	MPU_Type* pstMPU = MPU;
 
   /* disable memory protection - DMA is used in SD Card init */

@@ -2,10 +2,10 @@
 /*    Copyright (c) 2016 MD Automotive Controls. Original Work.               */
 /*    License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher   */
 /******************************************************************************/
-/* CONTEXT:KERNEL                                                                   */                      
+/* CONTEXT:KERNEL                                                             */                      
 /* PACKAGE TITLE:      XXX                                                    */
-/* DESCRIPTION:        XXX																										*/
-/* FILE NAME:          XXX.c                                          				*/
+/* DESCRIPTION:        XXX                                                    */
+/* FILE NAME:          XXX.c                                                  */
 /* REVISION HISTORY:   19-08-2016 | 1.0 | Initial revision                    */
 /*                                                                            */
 /******************************************************************************/
@@ -75,7 +75,7 @@ TABLEAPI_ttTableIDX TABLE_tRequestKernelTable(TABLEAPI_tstTableCB* pstTableCBReq
 }
 
 
-bool TABLE_vCalculate(TABLEAPI_ttTableIDX tTableIDX)
+Bool TABLE_vCalculate(TABLEAPI_ttTableIDX tTableIDX)
 {
 	uint8 u8DataR; uint16 u16DataR; uint32 u32DataR;	
 	sint8 s8DataL; sint16 s16DataL; sint32 s32DataL;	

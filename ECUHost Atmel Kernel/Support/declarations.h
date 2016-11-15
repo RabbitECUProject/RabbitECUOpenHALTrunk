@@ -16,26 +16,26 @@
 
 /* GLOBAL MACRO DEFINITIONS ***************************************************/
 #ifndef NULL
-	#define NULL ((void*)0)
+#define NULL ((void*)0)
 #endif	
 /*CR1_98*/
 
 #ifndef true
-	#define true 1
+#define true 1u
 #endif
 /*CR1_99*/
 
 #ifndef false
-	#define false 0
+#define false 0u
 #endif
 /*CR1_99*/
 
 #ifndef TRUE
-	#define TRUE 1
+#define TRUE 1u
 #endif
 
 #ifndef FALSE
-	#define FALSE 0
+#define FALSE 0u
 #endif
 
 #define nASCII_CR 0x0d

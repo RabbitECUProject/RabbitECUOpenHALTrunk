@@ -2,12 +2,12 @@
 /*    Copyright (c) 2016 MD Automotive Controls. Original Work.               */
 /*    License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher   */
 /******************************************************************************/
-/* CONTEXT:USER_APP                                               						*/
-/* API TITLE:      		 SpreadsAPI              																*/
-/* DESCRIPTION:        This API provides type definitions for objects and  		*/
-/*                     functions required by Kernel managed spreads 					*/
-/*									   initialisation, functions and events										*/
-/*									  																												*/
+/* CONTEXT:USER_APP                                                           */
+/* API TITLE:          SpreadsAPI                                             */
+/* DESCRIPTION:        This API provides type definitions for objects and     */
+/*                     functions required by Kernel managed spreads           */
+/*                     initialisation, functions and events                   */
+/*                                                                            */
 /* FILE NAME:          SpreadsAPI.h                                           */
 /* REVISION HISTORY:   07-03-2016 | 1.0 | Initial revision                    */
 /*                                                                            */
@@ -21,7 +21,7 @@
 /* GLOBAL TYPE DEFINITIONS ****************************************************/
 typedef sint16 SPREADAPI_ttSpreadIDX;/*CR1_111*/
 
-typedef __packed struct
+typedef BUILDPACKEDKEIL struct
 {
 	uint16 u16SpreadIndex;
 	uint16 u16SpreadOffset;
@@ -45,7 +45,7 @@ typedef enum
 	SPREADAPI_enSpreadCall = 11,	
 } SPREADAPI_tenSpreadRate;
 
-typedef __packed struct
+typedef BUILDPACKEDKEIL struct
 {
 	void* pvSourceData;
 	void* pvSpreadData;

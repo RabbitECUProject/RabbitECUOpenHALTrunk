@@ -6,8 +6,9 @@
  */ 
 
 
-#include "sam.h"
-
+//#include "sam.h"
+extern int EFIMain(void);
+extern void SystemInit(void);
 
 int main(void)
 {
@@ -17,5 +18,6 @@ int main(void)
     /* Replace with your application code */
     while (1) 
     {
+		EFIMain();
     }
 }

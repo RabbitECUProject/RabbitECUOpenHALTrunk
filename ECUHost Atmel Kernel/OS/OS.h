@@ -21,12 +21,12 @@
 #include "OSTASKS.h"
 #include "sys.h"
 #include "TASKAPI.h"
-
 #endif
 
 #include "SYSAPI.h"
 #include "task.h"
 #include "tqueue.h"
+#include "thread.h"
 #include "tqueueHA.h"
 
 typedef enum
@@ -98,7 +98,7 @@ typedef enum
 	#define EXTERN extern
 #endif
 
-EXTERN SYSAPI_stSVCDataStruct OS_stSVCDataStruct;
+EXTERN SYSAPI_tstSVCDataStruct OS_stSVCDataStruct;
 EXTERN uint32 au32SVCResult[10];
 EXTERN uint32 OS_u32TickCounter;
 
@@ -106,7 +106,7 @@ void OS_vStart(uint32* const);
 void OS_vRun(uint32* const);
 void OS_vSchedule(OS_tenOSScheduleCallContext);
 void OS_vTerminate(uint32* const);
-void OS_vSetCyclicTaskList(TASK_tstTask*);
+void OS_vSetCyclicTaskList(struct TASK_tstTask*);
 void OS_vPrioritiseQueue(task_queue*);
 void OS_vBackgroundDispatcher(void);
 OS_tenOSState OS_enGetState(void);
@@ -117,7 +117,7 @@ void OS_vOverrunTaskReport(OS_tenQueueType);
 void OS_vSuspendThread(OS_tenQueueType);
 void OS_vSystemIdleThread(uint32* const);
 void OS_vInterCoopTasks(void);
-SYSAPI_tenSVCResult OS_enAddTaskToQueue(OS_tenQueueType, TASK_tstTask*);
+SYSAPI_tenSVCResult OS_enAddTaskToQueue(OS_tenQueueType, struct TASK_tstTask*);
 
 #endif //OS_H
 	

@@ -12,6 +12,7 @@
 #define _SRLTFR_C
  
 #include <string.h>
+#include "IIC.h"
 #include "IOAPI.h"
 #include "SYSAPI.h"
 #include "types.h"

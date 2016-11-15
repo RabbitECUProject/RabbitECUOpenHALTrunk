@@ -45,7 +45,7 @@ FEE_tstWorkingPage FEE_stWorkingPage;
 
 const REGSET_tstReg8Val FEEHA_rastFTFEReg8Val[] = FEEHA_nReg8Set;
 
-static bool FEEHA_boPartitionDFlash(void);
+static Bool FEEHA_boPartitionDFlash(void);
 static void FEEHA_vInitFlashConfig(void);
 
 void FEEHA_vStartSBL(void)
@@ -61,10 +61,10 @@ void FEEHA_vStartSBL(void)
 #endif	
 }
 
-bool FEEHA_boCheckPartition(void)
+Bool FEEHA_boCheckPartition(void)
 {
 	tstFTFEModule* pstFTFE;	
-	bool boPartitionOK = false;
+	Bool boPartitionOK = false;
 	
 #ifdef BUILD_MK60
     pstFTFE = FTFE;
@@ -83,10 +83,10 @@ bool FEEHA_boCheckPartition(void)
 	return boPartitionOK;
 }
 
-bool FEEHA_boNVMWorkingCopy(bool boNVMToWorking, bool boCheckCRC16MakeCRC16)
+Bool FEEHA_boNVMWorkingCopy(Bool boNVMToWorking, Bool boCheckCRC16MakeCRC16)
 {
 	tstFTFEModule* pstFTFE;		
-	bool boCopyOK = false;
+	Bool boCopyOK = false;
 	puint16 pu16CRC16Computed;
 	puint16 pu16CRC16Stored;
 	uint32 u32NVMWordCount;
@@ -184,10 +184,10 @@ bool FEEHA_boNVMWorkingCopy(bool boNVMToWorking, bool boCheckCRC16MakeCRC16)
 	return boCopyOK;
 }
 
-bool FEEHA_boWriteNVM(puint8 pu8SourceData, puint8 pu8DestData, uint32 u32DataByteCount)
+Bool FEEHA_boWriteNVM(puint8 pu8SourceData, puint8 pu8DestData, uint32 u32DataByteCount)
 {
 	tstFTFEModule* pstFTFE;	
-	bool boCopyOK = TRUE;		
+	Bool boCopyOK = TRUE;		
 	uint32 u32SourceWord = (uint32)pu8SourceData;
 	uint32 u32DestinationWord = (uint32)pu8DestData;	
 	uint32 u32RetCode;
@@ -254,10 +254,10 @@ bool FEEHA_boWriteNVM(puint8 pu8SourceData, puint8 pu8DestData, uint32 u32DataBy
 }	
 
 
-bool FEEHA_boNVMClear(void)
+Bool FEEHA_boNVMClear(void)
 {
 	tstFTFEModule* pstFTFE;		
-	bool boClearOK = false;
+	Bool boClearOK = false;
 	uint32 u32NVMWordCount;
 	uint32 u32NVMWordIDX;
 	uint32 u32SourceWord = 0;
@@ -307,7 +307,7 @@ bool FEEHA_boNVMClear(void)
 	return boClearOK;
 }
 
-bool FEEHA_boEraseForDownload(puint8 pu8TargetAddress, uint32 u32EraseCount)
+Bool FEEHA_boEraseForDownload(puint8 pu8TargetAddress, uint32 u32EraseCount)
 {
 	tstFTFEModule* pstFTFE;
 	uint32 u32ReturnCode;
@@ -315,7 +315,7 @@ bool FEEHA_boEraseForDownload(puint8 pu8TargetAddress, uint32 u32EraseCount)
 	uint16 u16SectorEraseCount;
 	uint32* pu32SectorWord;	
 	puint32 pu32TargetAddress;
-	bool boEraseErr = false;
+	Bool boEraseErr = false;
 	FEE_enPgmErrCode = enErrNone;
 	
 #ifdef BUILD_MK60
@@ -450,12 +450,12 @@ bool FEEHA_boEraseForDownload(puint8 pu8TargetAddress, uint32 u32EraseCount)
 	return boEraseErr;
 }
 
-static bool FEEHA_boPartitionDFlash(void)
+static Bool FEEHA_boPartitionDFlash(void)
 {
 	tstFTFEModule* pstFTFE;
 	uint32* pu32SectorWord;
 
-	bool boWriteErr = false;
+	Bool boWriteErr = false;
 	
 	FEE_enPgmErrCode = enErrNone;
 
@@ -499,7 +499,7 @@ static bool FEEHA_boPartitionDFlash(void)
 	return boWriteErr;
 }
 
-bool FEEHA_boWriteSector(void)
+Bool FEEHA_boWriteSector(void)
 {
 	tstFTFEModule* pstFTFE;
 	uint32* pu32ProgramWord;
@@ -507,7 +507,7 @@ bool FEEHA_boWriteSector(void)
 	uint32* pu32SectorWord;
 	uint16 u16WordCount;
 	uint16 u16ByteCount;	
-	bool boWriteErr = false;
+	Bool boWriteErr = false;
 	
 	FEE_enPgmErrCode = enErrNone;
 	
@@ -627,9 +627,9 @@ bool FEEHA_boWriteSector(void)
 }
 
 
-bool FEEHA_boStart(uint32* const u32Stat)
+Bool FEEHA_boStart(uint32* const u32Stat)
 {
-    bool boStartOK = false;
+    Bool boStartOK = false;
 
 	u8WriteCount = 0;
 	unsecure_key = 0xFFFFFFFE;
@@ -661,9 +661,9 @@ void FEEHA_vTerminate(uint32* const u32Stat)
 
 }
 
-bool FEEHA_boPartition(void)
+Bool FEEHA_boPartition(void)
 {
-	bool boRetVal;
+	Bool boRetVal;
 	
 	boRetVal = FEEHA_boPartitionDFlash();
 	

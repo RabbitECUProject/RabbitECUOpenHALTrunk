@@ -12,16 +12,17 @@
 #ifndef PIM_H
 #define PIM_H
 
+#include "types.h"
 #include "PIMAPI.h"
 #include "IOAPI.h"
 									
 void PIM_vStart(uint32* const);
 void PIM_vRun(uint32* const);
 void PIM_vTerminate(uint32* const);
-void PIM_vInitPortBit(PIMAPI_tenPort, uint32);
+void PIM_vInitPortBit(PIMAPI_tenPort, IOAPI_tenEHIOType, uint32);
 void PIM_vAssertPortBit(PIMAPI_tenPort, uint32, IOAPI_tenTriState);
-void PIM_vSetPortMux(PIMAPI_tenPort, uint32, uint32);
-bool PIM_boGetPortBitState(PIMAPI_tenPort, uint32);
+void PIM_vSetPortMux(PIMAPI_tenPort, IOAPI_tenEHIOType, uint32, uint32);
+Bool PIM_boGetPortBitState(PIMAPI_tenPort, uint32);
 
 #endif //PIM_H
 

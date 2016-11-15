@@ -14,6 +14,7 @@
 
 #include "CPUAbstract.h"
 #include "PIMAPI.h"
+#include "pio.h"
 #include "IOAPI.h"
 #include "types.h"
 
@@ -23,7 +24,7 @@ typedef GPIO_Type tstGPIOModule;
 #endif
 
 #ifdef BUILD_SAM3X8E
-typedef Pio tstPortModule;
+typedef Pio tstGPIOModule;
 #endif
 
 #ifdef BUILD_MK60
@@ -81,7 +82,11 @@ typedef Pio tstPortModule;
 #ifdef BUILD_SAM3X8E
 #define PIMHA_nGPIOPointerMap \
 {                           \
-	{NULL}                  \
+	{PIOA},                  \
+	{PIOB},                  \
+	{PIOC},                  \
+	{PIOD},                  \
+	{PIOD}                   \
 }
 #endif					
 
@@ -122,10 +127,10 @@ PIM_u32PortClockRequested |= x
 void PIMHA_vStart(uint32* const);
 void PIMHA_vRun(uint32* const);
 void PIMHA_vTerminate(uint32* const);
-void PIMHA_vInitPortBit(PIMAPI_tenPort, uint32);
+void PIMHA_vInitPortBit(PIMAPI_tenPort, IOAPI_tenEHIOType, uint32);
 void PIMHA_vAssertPortBit(PIMAPI_tenPort, uint32, IOAPI_tenTriState);
-void PIMHA_vSetPortMux(PIMAPI_tenPort, uint32, uint32);
-bool PIMHA_boGetPortBitState(PIMAPI_tenPort, uint32);
+void PIMHA_vSetPortMux(PIMAPI_tenPort, IOAPI_tenEHIOType, uint32, uint32);
+Bool PIMHA_boGetPortBitState(PIMAPI_tenPort, uint32);
 
 
 #endif //PIMHA_H

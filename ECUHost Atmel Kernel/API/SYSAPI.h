@@ -138,8 +138,12 @@ typedef struct
 {
 	SYSAPI_tenSVCResult enSVCResult;
 	SYSAPI_ttClientHandle tClientHandle;/*CR1_117*/
+	SYSAPI_tenSVCID enSVCID;
+	void* pvArg1;
+	void* pvArg2;
+	void* pvArg3;
 	void* pvData;
-} SYSAPI_stSVCDataStruct;
+} SYSAPI_tstSVCDataStruct;
 
 /* typedef of user start, run and terminate function pointers */
 typedef void (*SYSAPI_tpfUserTaskFunction)(uint32 * const pu32Arg);/*CR1_116*/

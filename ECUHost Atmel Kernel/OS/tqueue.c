@@ -12,6 +12,7 @@
 /******************************************************************************/
 #include <string.h>
 #include "tqueue.h"
+#include "tqueueHA.h"
 #include "types.h"
 #include "task.h"
 #include "CPUAbstract.h"
@@ -31,7 +32,7 @@ void run_cooperative_task_queue(task_queue* list, pfInterTaskFunction pfInterTas
 	tq_struct* save_p;
 	void (*f)(uint32*);
 	
-	p = (tq_struct*)*list;
+	p = (struct tq_struct*)*list;
 	while (p != NULL) 
 	{
 		f      = p -> stTask.pfTaskFunction;		// copy the task function pointer

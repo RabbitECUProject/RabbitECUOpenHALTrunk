@@ -61,7 +61,7 @@ void MSG_vMBXPost(MSG_tstMBX* const, void* const);
 MSG_tenMBXErr MSG_vMBXTryPost(MSG_tstMBX* const, void* const);
 MSG_tenMBXErr MSG_enMBXTryFetchWait(MSG_tstMBX* const, void*);
 MSG_tenMBXErr MSG_enMBXTryFetch(MSG_tstMBX* const, void*);
-bool MSG_boMBXValid(MSG_tstMBX* const);
+Bool MSG_boMBXValid(MSG_tstMBX* const);
 void MSG_boMBXInvalidate(MSG_tstMBX* const);
 	
 #endif //MSG_H

@@ -13,7 +13,7 @@
 #include "CPUAbstract.h"
 #include "types.h"
 
-bool CPU_boCriticalNestCounter;
+Bool CPU_boCriticalNestCounter;
 
 void CPU_vStart(void)
 {

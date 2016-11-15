@@ -29,7 +29,7 @@ void TIME_vTerminate(uint32* const pu32Stat)
 
 }
 
-bool TIME_stGetTime(tstTime* const pstTime)
+Bool TIME_stGetTime(tstTime* const pstTime)
 {
 	return true;
 }

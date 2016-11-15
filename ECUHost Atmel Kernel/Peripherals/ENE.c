@@ -11,6 +11,7 @@
 /******************************************************************************/
 #define _ENE_C
 #include <string.h>
+#include "DLL.h"
 #include "ENE.h"
 #include "ENEHA.h"
 
@@ -89,7 +90,7 @@ void ENE_vReceiveFrame(void)
 		
 		case 0x0008:
 		/* Is IP packet */
-			DLL_vIPBufferRXCB(pstETHUnionFrame);
+			//DLL_vIPBufferRXCB(pstETHUnionFrame);
 			break;
 			
 		default:

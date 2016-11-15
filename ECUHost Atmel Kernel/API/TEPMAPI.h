@@ -102,7 +102,7 @@ typedef struct
 typedef struct
 {
 	TEPMAPI_tenAction enAction;
-	bool boInterruptEnable;
+	Bool boInterruptEnable;
 } TEPMAPI_tstTEPMChannelCB;
 
 

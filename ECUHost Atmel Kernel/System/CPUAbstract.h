@@ -20,7 +20,7 @@
 	#include "mk60f12.h"
 #endif
 #ifdef BUILD_SAM3X8E
-	#include "sam3x8e.h"
+	#include "sam3xa.h"
 #endif
 
 #define CPUA_OS_u32GetSysTimeStamp()			0xFFFFFF; //TODO

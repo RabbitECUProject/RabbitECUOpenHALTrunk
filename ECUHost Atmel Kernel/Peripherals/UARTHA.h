@@ -18,8 +18,8 @@ typedef UART_Type tstUARTModule;
 #endif
 
 #ifdef BUILD_SAM3X8E
-#include "sam3x8e.h"
-typedef Uart tstUARTModule;
+//#include "sam3x8e.h"
+typedef struct Uart tstUARTModule;
 #endif
 
 #ifdef BUILD_MK60

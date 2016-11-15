@@ -44,7 +44,7 @@ typedef enum
 } CTRLAPI_tenPIDRate;
 
 
-typedef __packed struct
+typedef BUILDPACKEDKEIL struct
 {
 	sint32* pi32Target;
 	sint32* pi32Feedback;
@@ -58,10 +58,10 @@ typedef __packed struct
 	sint32* pi32Output;
 	sint32 i32OutputMin;
 	sint32 i32OutputMax;
-	bool boNoWindUp;
-	bool boResetIntegrator;
-	bool boRun;
-	bool boReset;
+	Bool boNoWindUp;
+	Bool boResetIntegrator;
+	Bool boRun;
+	Bool boReset;
 	CTRLAPI_tenPIDRate enPIDRate;
 	CTRLAPI_pfPIDResultCB pfResultCB;
 } CTRLAPI_tstPIDCB;

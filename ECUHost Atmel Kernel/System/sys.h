@@ -21,29 +21,34 @@
 //#define DEBUG
 #define SYS_TASK_PRIORITISE
 
-#define SYS_FREQ_OSC							(50000000u)
-#define SYS_FREQ_OSCER						(50000000u)
-#define SYS_FREQ_PLL 							(100000000u)
-#define SYS_FREQ_NS_IN_1S					(1000000000u)
-
-#define SYS_CORE_CLK_DIV					(1u)
+#if defined(BUILD_SAM3X8E) && defined(BUILD_ARDUINO_DUE)
+#define SYS_FREQ_OSC						(12000000u)
+#define SYS_FREQ_PLL                        (168000000u)
 #define SYS_BUS_CLK_DIV						(2u)
-#define SYS_FLEXBUS_CLK_DIV				(2u)
-#define SYS_FLASH_CLK_DIV					(4u)
+#endif
 
-#define SYS_FREQ_CORE							(SYS_FREQ_PLL / SYS_CORE_CLK_DIV)
-#define SYS_FREQ_BUS							(SYS_FREQ_PLL / SYS_BUS_CLK_DIV)
-#define SYS_FREQ_FLEXBUS					(SYS_FREQ_PLL / SYS_FLEXBUS_CLK_DIV)
-#define SYS_FREQ_FLASH						(SYS_FREQ_PLL / SYS_FLASH_CLK_DIV)
+#if defined(BUILD_MK60) && defined(BUILD_ECUHOST_1_4)
+#define SYS_FREQ_OSC						(50000000u)
+#define SYS_FREQ_PLL                        (100000000u)
+#define SYS_BUS_CLK_DIV						(2u)
+#define SYS_FLEXBUS_CLK_DIV                 (2u)
+#define SYS_FLASH_CLK_DIV					(4u)
+#define SYS_FREQ_FLEXBUS                    (SYS_FREQ_PLL / SYS_FLEXBUS_CLK_DIV)
+#define SYS_FREQ_FLASH                      (SYS_FREQ_PLL / SYS_FLASH_CLK_DIV)
+#endif
+
+#define SYS_FREQ_NS_IN_1S					(1000000000u)
+#define SYS_FREQ_BUS                        (SYS_FREQ_PLL / SYS_BUS_CLK_DIV)
+
 
 #define SYS_PERIOD_OSC_nS					(SYS_FREQ_NS_IN_1S / SYS_FREQ_OSC)
 #define	SYS_PERIOD_PLL_nS					(SYS_FREQ_NS_IN_1S / SYS_FREQ_PLL)
 #define SYS_PERIOD_RTI_nS					(1000000u)
 /*CR1_113*/											
 																	
-#define SYS_THREAD_STACK_SIZE			(512u)	
-#define SYS_THREAD_MAX						(5u)
-#define SYS_CLIENT_MODULES_MAX		(10u)
+#define SYS_THREAD_STACK_SIZE               (512u)	
+#define SYS_THREAD_MAX                      (5u)
+#define SYS_CLIENT_MODULES_MAX              (10u)
 /*CR1_114*/
 
 #endif //SYS_H

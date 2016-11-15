@@ -2,13 +2,13 @@
 /*    Copyright (c) 2016 MD Automotive Controls. Original Work.               */
 /*    License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher   */
 /******************************************************************************/
-/* CONTEXT:USER_APP                                               						*/
-/* API TITLE:      		 PIMAPI              																		*/
-/* DESCRIPTION:        This API provides type definitions for objects and  		*/
-/*                     functions required by Kernel managed port integration 	*/
-/*									   initialisation, functions and events										*/
-/*									  																												*/
-/* FILE NAME:          PIMAPI.h                                           		*/
+/* CONTEXT:USER_APP                                                           */
+/* API TITLE:          PIMAPI                                                 */
+/* DESCRIPTION:        This API provides type definitions for objects and     */
+/*                     functions required by Kernel managed port integration  */
+/*                     initialisation, functions and events                   */
+/*                                                                            */
+/* FILE NAME:          PIMAPI.h                                               */
 /* REVISION HISTORY:   07-03-2016 | 1.0 | Initial revision                    */
 /*                                                                            */
 /******************************************************************************/
@@ -65,7 +65,5 @@ typedef enum
 } PIMAPI_tenPort;
 
 
-
-
-#endif //DIAG_H
+#endif //PIMAPI_H
 

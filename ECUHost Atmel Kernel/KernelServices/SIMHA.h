@@ -15,6 +15,10 @@
 
 #include "regset.h"
 
+#ifdef BUILD_SAM3X8E
+#include "pmc.h"
+#endif //BUILD_SAM3X8E
+
 #ifdef BUILD_MK60
 typedef enum
 {
@@ -37,12 +41,13 @@ typedef enum
 #ifdef BUILD_SAM3X8E
 typedef enum
 {
-	SIM_TBC0,
-	SIM_TBC1
+	SIM_PC0,
+	SIM_PC1
 } SIMHA_tenReg;
 #endif //BUILD_SAM3X8E
 
 void SIMHA_vSetRegAddress(SIMHA_tenReg, REGSET_tstReg32Val*);
+Bool SIMHA_boEnablePeripheralClock(IRQn_Type);
 
 #endif //SIMHA_H
 

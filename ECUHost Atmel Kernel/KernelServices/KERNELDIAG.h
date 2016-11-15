@@ -20,7 +20,7 @@
 #define DIAG_DDDI_COUNT				5
 #define DIAG_DDDI_DATA_COUNT	200
 
-typedef __packed struct
+typedef BUILDPACKEDKEIL struct
 {
 	uint16 u16DDI;
 	uint8 u8AddressAndLength;

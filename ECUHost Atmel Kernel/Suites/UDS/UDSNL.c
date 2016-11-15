@@ -26,7 +26,7 @@ UDSNL_tenSegRXMode UDSNL_enSegRXMode = UDSNL_enSegRXModeInvalid;
 IOAPI_tenEHIOResource UDSNL_enActiveEHIOResource;
 sint32 UDSNL_i32ResourceTimerIDX;
 
-static bool UDSNL_boCheckActiveResource(IOAPI_tenEHIOResource);
+static Bool UDSNL_boCheckActiveResource(IOAPI_tenEHIOResource);
 static void UDSNL_vSegmentTXBuffer(puint8, uint32, puint32, uint32);
 
 void
@@ -195,10 +195,10 @@ UDSNL_vReceiveFrame(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8RXData, puin
 	}
 }
 
-static bool
+static Bool
 UDSNL_boCheckActiveResource(IOAPI_tenEHIOResource enEHIOResource)
 {
-	bool boResourceOK = false;
+	Bool boResourceOK = false;
 	
 	if ((EH_IO_Invalid == UDSNL_enActiveEHIOResource)
 	 || (UDSNL_enActiveEHIOResource == enEHIOResource))

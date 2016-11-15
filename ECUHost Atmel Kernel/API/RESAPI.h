@@ -2,12 +2,12 @@
 /*    Copyright (c) 2016 MD Automotive Controls. Original Work.               */
 /*    License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher   */
 /******************************************************************************/
-/* CONTEXT:USER_APP                                               						*/
-/* API TITLE:      		 ResourceAPI              															*/
-/* DESCRIPTION:        This API provides type definitions for off micro  			*/
-/*                  	 resources																							*/
-/*																																						*/
-/*									  																												*/
+/* CONTEXT:USER_APP                                                           */
+/* API TITLE:          ResourceAPI                                            */
+/* DESCRIPTION:        This API provides type definitions for off micro       */
+/*                     resources                                              */
+/*                                                                            */
+/*                                                                            */
 /* FILE NAME:          SpreadsAPI.h                                           */
 /* REVISION HISTORY:   07-03-2016 | 1.0 | Initial revision                    */
 /*                                                                            */

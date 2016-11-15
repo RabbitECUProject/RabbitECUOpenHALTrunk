@@ -68,9 +68,9 @@ typedef struct
 {
 	DACAPI_tenQueueDepth enQueueDepth;
 	DACAPI_tenWatermarkWords enWatermarkWords;
-	bool boWaterMarkEventEnable;
-	bool boPointerTopEventEnable;
-	bool boPointerBottomEventEnable;
+	Bool boWaterMarkEventEnable;
+	Bool boPointerTopEventEnable;
+	Bool boPointerBottomEventEnable;
 	DACAPI_tenTriggerType enTriggerType;
 	DACAPI_tpfEventCB pfEventCB;
 } DACAPI_tstDACCB;

@@ -14,6 +14,7 @@
 
 #include "types.h"
 #include "IOAPI.h"
+#include "SYSAPI.h"
 
 #define CANHA_nSetTimingData            \
 {                                       \
@@ -99,14 +100,15 @@ typedef struct
 typedef CAN_Type tstCANModule;
 #endif
 #ifdef BUILD_SAM3X8E
-#include "sam3x8e.h"
-typedef Can tstCANModule;
+#include "sam3xa.h"
+typedef struct Can tstCANModule;
 #endif
 
 void CANHA_vStart(uint32* const);
 void CANHA_vRun(uint32* const);
 void CANHA_vTerminate(uint32* const);
 void CANHA_vInitTransfer(IOAPI_tstTransferCB*);
+SYSAPI_tenSVCResult CANHA_enInitBus(IOAPI_tenEHIOResource, IOAPI_tstPortConfigCB*);
 
 #endif //CANHA_H
 

@@ -18,8 +18,8 @@ extern void UDSAL_vStart(puint32);
 extern void UDSAL_vRun(puint32);
 extern void UDSAL_vTerminate(puint32);
 
-#include "ADC.h"
-#include "CAN.h"
+#include "PERADC.h"
+#include "PERCAN.h"
 #include "CEM.h"
 #include "CRC16.h"
 #include "CLIENT.h"
@@ -41,7 +41,7 @@ extern void UDSAL_vTerminate(puint32);
 #include "TEPM.h"
 #include "time.h"
 #include "TIMER.h"
-#include "UART.h"
+#include "PERUART.h"
 #include "WIFI.h"
 #include "task.h"
 

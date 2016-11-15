@@ -38,6 +38,11 @@ void SIM_vClrReg32(SIMHA_tenReg enReg, uint32 u32RegMask)
 	REGSET_vInitReg32(&SIM_astSIMReg32Val[0]);
 }
 
+Bool SIM_boEnablePeripheralClock(IRQn_Type IRQn)
+{
+    return SIMHA_boEnablePeripheralClock(IRQn);
+}
+
 static void SIM_vSetRegAddress(SIMHA_tenReg enReg, REGSET_tstReg32Val* pstReg32Val)
 {
     SIMHA_vSetRegAddress(enReg, pstReg32Val);

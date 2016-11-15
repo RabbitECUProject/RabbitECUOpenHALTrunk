@@ -19,7 +19,7 @@
 #include "TASKAPI.h"
 #include "tqueue.h"
 
-uint32* THREAD_pu32GetThreadStack(tq_struct*);
+uint32* THREAD_pu32GetThreadStack(struct tq_struct*);
 	
 #endif //THREAD_H
 	

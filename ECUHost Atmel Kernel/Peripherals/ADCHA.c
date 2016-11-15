@@ -12,22 +12,30 @@
 
 #include <string.h>
 #include <stddef.h>
-#include "ADC.h"
+#include "MATH.h"
+#include "PERADC.h"
 #include "ADCAPI.h"
 #include "ADCHA.h"
 #include "regset.h"
 
-const REGSET_tstReg32Val ADCHA_rastADCReg32Val;// = ADCHA_nReg32Set;
-const ADCHA_tstADCChannel ADCHA_rastADCChannel[1];// = ADCHA_nChannelInfo;
-const IOAPI_tenEHIOResource ADCHA_raenIOResource[1];// = ADCHA_nIOResourceMap;
+const REGSET_tstReg32Val ADCHA_rastADCReg32Val = ADCHA_nReg32Set;
+const ADCHA_tstADCChannel ADCHA_rastADCChannel[] = ADCHA_nChannelInfo;
+const IOAPI_tenEHIOResource ADCHA_raenIOResource[] = ADCHA_nIOResourceMap;
 uint32 ADCHA_u32PortClockRequested;
 uint32 ADCHA_u32Calibrated;
+Bool ADCHA_aboModuleBusy[ADCHA_enChannelCount];
 
 static void ADCHA_vBackupCalibration(tstADCModule* pstADC, ADCHA_tstADCCalStruct* pstADCCalStruct);
-static tstADCModule* ADCHA_pstGetADCModule(ADCHA_tenADCModule);
 
 void ADCHA_vStart(uint32* const pu32Stat)
 {
+    uint32 u32IDX;
+
+	for (u32IDX = 0; u32IDX < ADCHA_enChannelCount; u32IDX++)
+	{
+        ADCHA_aboModuleBusy[u32IDX] = false;
+	}
+
 #ifdef BUILD_MK60
 	ADC_xInitialise(ADC3, ADC3_IRQn);
 	ADC_xInitialise(ADC2, ADC2_IRQn);
@@ -35,11 +43,19 @@ void ADCHA_vStart(uint32* const pu32Stat)
 	ADC_xInitialise(ADC0, ADC0_IRQn);
 	REGSET_vInitReg32(&ADCHA_rastADCReg32Val[0]);
 #endif
+
+#ifdef BUILD_SAM3X8E
+    tstADCModule* pstADCModule = ADC;
+	(void)SIM_boEnablePeripheralClock(ADC_IRQn);
+	ADCHA_u32PortClockRequested = 1;
+    adc_init(pstADCModule, SYS_FREQ_BUS, ADCHA_nADCCLKFREQ, ADCHA_nADCTRSTTIME);
+	IRQ_vEnableIRQ(ADC_IRQn, IRQ_enPRIO_8, ADC_vInterruptHandler, NULL);
+#endif
 }
 
-bool ADCHA_boBackupCalibrations(void)
+Bool ADCHA_boBackupCalibrations(void)
 {
-	bool boRetCode = FALSE;
+	Bool boRetCode = FALSE;
 #ifdef BUILD_MK60	
 	ADCHA_tstADCCalStruct* pstADCCalStruct = (ADCHA_tstADCCalStruct*)FEE_ADCREC_ADDRESS;
 	
@@ -53,6 +69,16 @@ bool ADCHA_boBackupCalibrations(void)
 	}
 #endif	
 	return boRetCode;
+}
+
+void ADCHA_vInitChannel(IOAPI_tenEHIOResource enIOResource)
+{
+#ifdef BUILD_SAM3X8E
+    tstADCModule* pstADC = ADCHA_pstGetADCModule(ADCHA_enADC0);
+	uint32 u32Channel = ADCHA_rastADCChannel[enIOResource].u32ADChannel;
+    adc_enable_channel(pstADC, u32Channel);
+	//adc_enable_interrupt(pstADC, 1 << u32Channel);
+#endif //BUILD_SAM3X8E
 }
 
 void ADCHA_vInitADCResourcePGA(ADCHA_tstADCConversion* pstADCConversion)
@@ -70,13 +96,14 @@ void ADCHA_vTerminate(uint32* const u32Stat)
 
 }
 
-bool ADCHA_boInitiateConversion(ADCHA_tstADCConversion* pstADCConversion, ADCHA_tenQueue enQueue, uint32 u32QueueIDX)
+Bool ADCHA_boInitiateConversion(ADCHA_tstADCConversion* pstADCConversion, ADCHA_tenQueue enQueue, uint32 u32QueueTail, Bool boPreserveSeq)
 {
-	bool boADCInitPending = TRUE;
+	Bool boADCInitPending = TRUE;
 	tstADCModule* pstADC;
-	uint32 u32Conversion;
+	ADCHA_tstADCConversion* pstADCConversionQueue;
 
 #ifdef BUILD_MK60	
+	uint32 u32Conversion;
 	pstADC = ADCHA_pstGetADCModule(pstADCConversion->stADCChannel.enADCModule);
 	
 	if (ADC_SC1_ADCH_MASK == (ADC_SC1_ADCH_MASK & pstADC->SC1[0]))
@@ -97,13 +124,80 @@ bool ADCHA_boInitiateConversion(ADCHA_tstADCConversion* pstADCConversion, ADCHA_
 		}
 			
 		pstADC->SC1[0] = u32Conversion;		
-	}
-	
+	}	
 #endif //BUILD_MK60	
+
+#ifdef BUILD_SAM3X8E
+    uint32 u32ConversionIDX;
+	enum adc_channel_num_t aenChannels[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	uint32 u32ChannelMask = 0;
+    uint32 u32Temp = 0;
+	uint32 u32TerminateInterrupt = 0;
+
+	boADCInitPending = FALSE;	
+	ADCHA_aboModuleBusy[0] = true;
+
+	pstADC = ADC;
+	//adc_disable_all_channel(pstADC);
+	adc_disable_interrupt(pstADC, 0xffff);
+
+	///* Clear flags */
+	//for (u32ConversionIDX = 0; u32ConversionIDX < 16; u32ConversionIDX++)
+	//{
+		//u32ChannelMask = MATH_u32IDXToMask(u32ConversionIDX);
+//
+		//if (u32ChannelMask == (pstADC->ADC_ISR & u32ChannelMask))
+		//{
+			///* Dummy read the data register to clear the flag */
+			//u32ChannelMask = pstADC->ADC_CDR[u32ConversionIDX];
+		//}
+	//}
+
+	/* Enable the required channels except the last */
+	//pstADCConversionQueue = pstADCConversion;
+	//for (u32ConversionIDX = 0; u32ConversionIDX < u32QueueTail; u32ConversionIDX++)
+	//{
+		//adc_enable_channel(pstADC, (enum adc_channel_num_t)pstADCConversionQueue->stADCChannel.u32ADChannel);
+		//pstADCConversionQueue++;
+	//}
+
+    /* Configure the sequence */
+	u32ChannelMask = 0;
+	pstADCConversionQueue = pstADCConversion;
+	for (u32ConversionIDX = 0; u32ConversionIDX < u32QueueTail; u32ConversionIDX++)
+	{
+		u32ChannelMask |= MATH_u32IDXToMask(pstADCConversionQueue->stADCChannel.u32ADChannel);
+		pstADCConversionQueue++;
+	}
+
+	for (u32ConversionIDX = 0; u32ConversionIDX < 16; u32ConversionIDX++)
+	{
+	    u32Temp = MATH_u32IDXToMask(u32ConversionIDX);
+		u32Temp &= u32ChannelMask;
+
+	    if (0 != u32Temp)
+		{
+		    aenChannels[u32ConversionIDX] = (enum adc_channel_num_t)u32ConversionIDX;
+			u32TerminateInterrupt = u32Temp;
+		}
+	}
+
+	adc_enable_interrupt(pstADC, u32TerminateInterrupt);
+
+    //if (TRUE == boPreserveSeq)
+	{
+	    adc_start_sequencer(pstADC);
+	    adc_configure_sequence(pstADC, aenChannels, 16);
+	}
+
+	adc_start(pstADC);
+
+#endif //BUILD_SAM3X8E
+
 	return boADCInitPending;
 }
 
-static tstADCModule* ADCHA_pstGetADCModule(ADCHA_tenADCModule enADCModule)
+tstADCModule* ADCHA_pstGetADCModule(ADCHA_tenADCModule enADCModule)
 {
 	tstADCModule* pstADC = NULL;
 	
@@ -117,8 +211,34 @@ static tstADCModule* ADCHA_pstGetADCModule(ADCHA_tenADCModule enADCModule)
 		default: pstADC = NULL; break;
 	}
 #endif //BUILD_MK60
+
+#ifdef BUILD_SAM3X8E
+switch(enADCModule)
+{
+	case ADCHA_enADC0: pstADC = ADC; break;
+	default: pstADC = NULL; break;
+}
+#endif //BUILD_SAM3X8E
 	
 	return pstADC;
+}
+
+uint32 ADCHA_u32GetAvailableResultCount(tstADCModule* pstADC)
+{
+    uint32 u32RetVal = 1;
+
+#ifdef BUILD_SAM3X8E
+    u32RetVal = 0;
+	uint32 u32ChannelMask = 1;
+
+	while (0x8000 > u32ChannelMask)
+	{
+		if (u32ChannelMask == (u32ChannelMask & pstADC->ADC_CHSR)) u32RetVal++;
+		u32ChannelMask *= 2;
+	}
+#endif //BUILD_SAM3X8E
+
+    return u32RetVal;
 }
 
 void ADCHA_vCalibrate(tstADCModule* pstADC, uint32 u32ADCIDX, uint32 u32CalFlag)
@@ -195,19 +315,24 @@ static void ADCHA_vBackupCalibration(tstADCModule* pstADC, ADCHA_tstADCCalStruct
 }
 
 
-IOAPI_tenEHIOResource ADCHA_enGetResourceAndResult(ADCHA_tenADCModule enADCModule, tstADCModule* pstADC, puint32 pu32ADCResult)
+IOAPI_tenEHIOResource ADCHA_enGetResourceAndResult(ADCHA_tenADCModule enADCModule, tstADCModule* pstADC, uint32 u32ADCChannel, puint32 pu32ADCResult)
 {
     IOAPI_tenEHIOResource enEHIOResource;
-	uint32 u32ADCChannel;
 
 #ifdef BUILD_MK60
 	/* Get the queue, channel and resource */
-	u32ADCChannel = ADC_SC1_ADCH_MASK & pstADC->SC1[0];
+	//u32ADCChannel = ADC_SC1_ADCH_MASK & pstADC->SC1[0];//matthew check here against channel
 	enEHIOResource = ADC_raenIOResource[32 * enADCModule + u32ADCChannel];
 	
 	/* Deactivate the AD module */
 	pstADC->SC1[0] |= ADC_SC1_ADCH_MASK;
 	*pu32ADCResult = pstADC->R[0];
+#endif //BUILD_MK60
+
+#ifdef BUILD_SAM3X8E
+	/* Get the queue, channel and resource */
+	enEHIOResource = ADCHA_raenIOResource[u32ADCChannel];
+	*pu32ADCResult = pstADC->ADC_CDR[u32ADCChannel];
 #endif //BUILD_MK60
 	return enEHIOResource;
 }
@@ -226,83 +351,35 @@ void ADCHA_vInitConversion(IOAPI_tenEHIOResource enIOResource, ADCHA_tstADCConve
 #endif //BUILD_MK60
 
 #ifdef BUILD_SAM3X8E
-pstADCConversion->stADCChannel.enEHIOResource = enIOResource;
-pstADCConversion->stADCChannel.enADCModule = ADCHA_rastADCChannel[enIOResource].enADCModule;
-pstADCConversion->stADCChannel.u32ADChannel = ADCHA_rastADCChannel[enIOResource].u32ADChannel;
-pstADCConversion->stADCChannel.boIsDiff = ADCHA_rastADCChannel[enIOResource].boIsDiff;
-pstADCConversion->pfResultCB = pstADCCB->pfResultCB;
-pstADCConversion->u32ControlCount = 0;
-#endif //BUILD_MK60
+	pstADCConversion->stADCChannel.enEHIOResource = enIOResource;
+	pstADCConversion->stADCChannel.enADCModule = ADCHA_rastADCChannel[enIOResource].enADCModule;
+	pstADCConversion->stADCChannel.u32ADChannel = ADCHA_rastADCChannel[enIOResource].u32ADChannel;
+	pstADCConversion->stADCChannel.boIsDiff = ADCHA_rastADCChannel[enIOResource].boIsDiff;
+	pstADCConversion->pfResultCB = pstADCCB->pfResultCB;
+	pstADCConversion->u32ControlCount = 0;
+#endif //BUILD_SAM3X8E
 }
 
-void ADCHA_vRunConversionQueues(void)
+Bool ADCHA_boGetModuleBusy(ADCHA_tenADCModule enADCModule)
 {
+    Bool boModuleBusy;
+	tstADCModule* pstADC = ADCHA_pstGetADCModule(enADCModule);
+
 #ifdef BUILD_MK60
-	ADCHA_tenQueue enQueue;	
-	bool boModuleBusy[ADCHA_enADCModuleCount];
-	ADCHA_tenADCModule enADCModule;
-	tstADCModule* pstADC;
-	bool boConversionPending;
-	ADCHA_tstADCConversion* pstConversion;
-	uint32 u32QueueIDX;
-	
-	for(enADCModule = ADCHA_enADC0; enADCModule < ADCHA_enADCModuleCount; enADCModule++)
-	{
-		pstADC = ADCHA_pstGetADCModule(enADCModule);
-		boModuleBusy[enADCModule] = (ADC_SC1_ADCH_MASK == (ADC_SC1_ADCH_MASK & pstADC->SC1[0])) ? FALSE : TRUE;		
-	}
-	
-	for (enQueue = ADCHA_enQueueCyclic; enQueue < ADCHA_enQueueCount; enQueue++)
-	{
-		switch (enQueue)
-		{
-			case ADCHA_enQueueCyclic:
-			{
-				if (-1 < ADC_i32CyclicQueueIDX)
-				{
-					pstConversion = &ADC_astADCConversions[enQueue][ADC_i32CyclicQueueIDX];
-					enADCModule = pstConversion->stADCChannel.enADCModule;
-					
-					if (FALSE == boModuleBusy[enADCModule])
-					{
-						boConversionPending = ADC_boInitiateConversion(pstConversion, enQueue);
-						if (!boConversionPending)
-						{
-							boModuleBusy[enADCModule] = TRUE;
-						}
-					}
-				}				
-				break;
-			}
-			case ADC_enQueueTriggered1:
-			case ADC_enQueueTriggered2:
-			case ADC_enQueueTriggered3:
-			case ADC_enQueueTriggered4:
-			{
-				if (!CQUEUE_boIsEmpty(ADC_astConversionQueue[enQueue]))
-				{
-					u32QueueIDX = ADC_astConversionQueue[enQueue].u32Head;
-					pstConversion = &ADC_astADCConversions[enQueue][u32QueueIDX];
-					enADCModule = pstConversion->stADCChannel.enADCModule;
-					
-					if (FALSE == boModuleBusy[enADCModule])
-					{
-						boConversionPending = ADC_boInitiateConversion(pstConversion, enQueue);
-						
-						if (!boConversionPending)
-						{
-							//CQUEUE_vRemoveItem(stConversionQueue[enQueue]);
-							boModuleBusy[enADCModule] = TRUE;
-						}
-					}
-				}
-				break;
-			}
-		}
-	}
+    pstADC = ADCHA_pstGetADCModule(enADCModule);
+	boModuleBusy = (ADC_SC1_ADCH_MASK == (ADC_SC1_ADCH_MASK & pstADC->SC1[0])) ? FALSE : TRUE;
 #endif //BUILD_MK60
-}
 
+#ifdef BUILD_SAM3X8E
+	pstADC = ADCHA_pstGetADCModule(enADCModule);
+	boModuleBusy = ADCHA_aboModuleBusy[0];
+#endif //BUILD_SAM3X8E
 
-			
+    return boModuleBusy;
+}		
+
+void ADCHA_vClearModuleBusy(ADCHA_tenADCModule enADCModule)
+{
+    ADCHA_aboModuleBusy[enADCModule] = false;
+}	
 			

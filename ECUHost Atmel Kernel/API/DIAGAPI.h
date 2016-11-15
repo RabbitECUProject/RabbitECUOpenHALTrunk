@@ -2,7 +2,7 @@
 /*    Copyright (c) 2016 MD Automotive Controls. Original Work.               */
 /*    License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher   */
 /******************************************************************************/
-/* CONTEXT:USER_APP                                               						*/
+/* CONTEXT:USER_APP                                                           */
 /* API TITLE:      		 DiagAPI              																	*/
 /* DESCRIPTION:        This API provides type definitions for objects and  		*/
 /*                     functions required by Kernel managed diagnostics 			*/
@@ -42,7 +42,7 @@ typedef enum
 
 typedef struct
 {
-	bool boTransferComplete;
+	Bool boTransferComplete;
 	uint16 u16CID;
 	puint8 pu8Data;
 	uint8 u8DataCount;

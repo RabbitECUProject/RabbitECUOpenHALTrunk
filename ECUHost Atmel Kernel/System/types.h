@@ -16,10 +16,12 @@
 #include <stdint.h> //avoid redefinition of standard types error!
 
 #ifdef BUILD_PACKED
-#define BUILDPACKED __packed
+#define BUILDPACKEDKEIL 
+#define BUILDPACKEDATMEL __attribute__ ((packed))
 #endif
 #ifndef BUILD_PACKED
-#define BUILDPACKED
+#define BUILDPACKEDKEIL
+#define BUILDPACKEDATMEL
 #endif
 
 /* GLOBAL TYPE DEFINITIONS ****************************************************/
@@ -39,7 +41,8 @@ typedef volatile unsigned int* vpuint32;
 typedef volatile unsigned short* vpuint16;
 typedef volatile unsigned char* vpuint8;
 
-typedef unsigned char bool;
+typedef unsigned char Bool;
+//typedef unsigned char Bool;
 typedef signed char sint8;
 typedef short sint16;
 typedef int sint32;

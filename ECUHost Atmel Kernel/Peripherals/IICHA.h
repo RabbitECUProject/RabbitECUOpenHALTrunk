@@ -15,7 +15,7 @@
 #include <string.h>
 #include "CPUAbstract.h"
 #include "declarations.h"
-//#include "IRQ.h"
+#include "DLL.h"
 #include "IOAPI.h"
 #include "MATH.h"
 #include "OS.h"

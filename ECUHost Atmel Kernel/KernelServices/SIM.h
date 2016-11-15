@@ -21,6 +21,7 @@
 
 void SIM_vSetReg32(SIMHA_tenReg, uint32);
 void SIM_vClrReg32(SIMHA_tenReg, uint32);
+Bool SIM_boEnablePeripheralClock(IRQn_Type);
 
 #endif //SIM_H
 

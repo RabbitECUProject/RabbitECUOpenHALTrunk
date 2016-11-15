@@ -45,7 +45,7 @@ typedef void* TASK_tStackPointer;
 typedef	void (*TASK_pfTaskFunction)(uint32* const);
 
 
-typedef BUILDPACKED struct TASK_tstTask
+typedef BUILDPACKEDKEIL struct TASK_tstTask
 {
 	TASK_tID tTaskID;                           //0
 	TASK_tenType enTaskType;                    //2
@@ -60,7 +60,7 @@ typedef BUILDPACKED struct TASK_tstTask
 	TASK_tsTime tsTaskFinished;                 //26
 	TASK_tsTime tsTaskAccumulated;              //30
 	TASK_tenPrivilege enPrivilege;              //34
-} TASK_tstTask;
+} BUILDPACKEDATMEL;// TASK_tstTask;
 
 TASK_tsTime TASK_vReportRunTime(struct TASK_tstTask* const);
 	

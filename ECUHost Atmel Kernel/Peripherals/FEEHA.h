@@ -106,7 +106,7 @@ typedef FLASH_SSD_CONFIG tstFTFEConfig;
 typedef Efc tstFTFEModule;
 typedef struct 
 {
-    bool boDummy;
+    Bool boDummy;
 } tstFTFEConfig;//matthew to be found in driver later
 #endif
 
@@ -131,21 +131,21 @@ typedef struct
 }
 #endif
 
-bool FEEHA_boStart(uint32* const);
+Bool FEEHA_boStart(uint32* const);
 void FEEHA_vRun(uint32* const);
 void FEEHA_vTerminate(uint32* const);
 void FEEHA_vStartSBL(void);
-bool FEEHA_boCheckPartition(void);
-bool FEEHA_boSetWorkingData(puint8, uint16);
-bool FEEHA_boNVMWorkingCopy(bool, bool);
-bool FEEHA_boNVMClear(void);
-bool FEEHA_boPartition(void);
-bool FEEHA_boWriteControlBlock(COMMONNL_tstRXLargeBuffer* const, 
+Bool FEEHA_boCheckPartition(void);
+Bool FEEHA_boSetWorkingData(puint8, uint16);
+Bool FEEHA_boNVMWorkingCopy(Bool, Bool);
+Bool FEEHA_boNVMClear(void);
+Bool FEEHA_boPartition(void);
+Bool FEEHA_boWriteControlBlock(COMMONNL_tstRXLargeBuffer* const, 
 															 uint8* const, 
 															 uint32);
-bool FEEHA_boUpdateControlBlock(uint32);
-bool FEEHA_boEraseForDownload(puint8, uint32);
-bool FEEHA_boWriteNVM(puint8, puint8, uint32);
-bool FEEHA_boWriteSector(void);
+Bool FEEHA_boUpdateControlBlock(uint32);
+Bool FEEHA_boEraseForDownload(puint8, uint32);
+Bool FEEHA_boWriteNVM(puint8, puint8, uint32);
+Bool FEEHA_boWriteSector(void);
 #endif //FEEHA_H
 

@@ -2,18 +2,18 @@
 /*    Copyright (c) 2016 MD Automotive Controls. Original Work.               */
 /*    License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher   */
 /******************************************************************************/
-/* CONTEXT:KERNEL                                               							*/
-/* PACKAGE TITLE:      SYSAPI                     														*/
-/* DESCRIPTION:        This code provides functions for running system calls	*/
-/*										 																												*/
-/* FILE NAME:          SYSAPI.c                                             	*/
+/* CONTEXT:KERNEL                                                             */
+/* PACKAGE TITLE:      SYSAPI                                                 */
+/* DESCRIPTION:        This code provides functions for running system calls  */
+/*                                                                            */
+/* FILE NAME:          SYSAPI.c                                               */
 /* REVISION HISTORY:   28-03-2016 | 1.0 | Initial revision                    */
 /*                                                                            */
 /******************************************************************************/
 
 #include "sys.h"
 
-#include "ADC.h"
+#include "PERADC.h"
 #include "ADCAPI.h"
 #include "CEM.h"
 #include "CLIENT.h"
@@ -26,7 +26,7 @@
 #include "DLL.h"
 #include "DIAGAPI.h"
 #include "FEE.h"
-#include "IO.h"
+#include "kernelio.h"
 #include "IOAPI.h"
 #include "KERNELDIAG.h"
 #include "MSG.h"
@@ -44,77 +44,77 @@
 
 void SYS_vAPISVC(void* svc_args)
 {
-	puint32 pu32Arg = (puint32)svc_args;
-	uint32 u32Temp;
-	puint16 pu16Temp;
-	CTRLAPI_ttPIDIDX PIDIDX;
-	SPREADAPI_ttSpreadIDX tSpreadIDX;	
-	TABLEAPI_ttTableIDX tTableIDX;		
-	bool boResult;
+	static uint32 u32Temp;
+	static puint16 pu16Temp;
+	static CTRLAPI_ttPIDIDX PIDIDX;
+	static SPREADAPI_ttSpreadIDX tSpreadIDX;	
+	static TABLEAPI_ttTableIDX tTableIDX;		
+	static Bool boResult;
+
 	
-	switch((SYSAPI_tenSVCID)*pu32Arg)
+	switch (OS_stSVCDataStruct.enSVCID)
 	{
 		case SYSAPI_enSetClientStartTask:
 		{	
 			OS_stSVCDataStruct.enSVCResult =			
-			CLIENT_enAddTask(OS_enCLIENTQueueStart, (SYSAPI_tpfUserTaskFunction)*(puint32)*(pu32Arg + 1), (TASKAPI_tenPriority)*(puint32)*(pu32Arg + 2), (TASKAPI_tenRateMs)*(puint32)*(pu32Arg + 3));						
+			CLIENT_enAddTask(OS_enCLIENTQueueStart, *(SYSAPI_tpfUserTaskFunction*)OS_stSVCDataStruct.pvArg1, *(TASKAPI_tenPriority*)OS_stSVCDataStruct.pvArg2, *(TASKAPI_tenRateMs*)OS_stSVCDataStruct.pvArg3);						
 			break;
 		}
 		
 		case SYSAPI_enSetClientCyclicTask:
 		{	
 			OS_stSVCDataStruct.enSVCResult =			
-			CLIENT_enAddTask(OS_enCLIENTQueueCyclic, (SYSAPI_tpfUserTaskFunction)*(puint32)*(pu32Arg + 1), (TASKAPI_tenPriority)*(puint32)*(pu32Arg + 2), (TASKAPI_tenRateMs)*(puint32)*(pu32Arg + 3));						
+			CLIENT_enAddTask(OS_enCLIENTQueueCyclic, *(SYSAPI_tpfUserTaskFunction*)OS_stSVCDataStruct.pvArg1, *(TASKAPI_tenPriority*)OS_stSVCDataStruct.pvArg2, *(TASKAPI_tenRateMs*)OS_stSVCDataStruct.pvArg3);						
 			break;
 		}		
 		
 		case SYSAPI_enSetClientTerminateTask:
 		{	
 			OS_stSVCDataStruct.enSVCResult =
-			CLIENT_enAddTask(OS_enCLIENTQueueTerminate, (SYSAPI_tpfUserTaskFunction)*(puint32)*(pu32Arg + 1), (TASKAPI_tenPriority)*(puint32)*(pu32Arg + 2), (TASKAPI_tenRateMs)*(puint32)*(pu32Arg + 3));								
+			CLIENT_enAddTask(OS_enCLIENTQueueTerminate, *(SYSAPI_tpfUserTaskFunction*)OS_stSVCDataStruct.pvArg1, *(TASKAPI_tenPriority*)OS_stSVCDataStruct.pvArg2, *(TASKAPI_tenRateMs*)OS_stSVCDataStruct.pvArg3);								
 			break;
 		}		
 
 		case SYSAPI_enRequestIOResource:
 		{						
-			u32Temp = (SYSAPI_ttClientHandle)RESM_RequestEHIOResource((IOAPI_tenEHIOResource)*(puint32)*(pu32Arg + 1), OS_stSVCDataStruct.tClientHandle);			
+			u32Temp = (SYSAPI_ttClientHandle)RESM_RequestEHIOResource(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, OS_stSVCDataStruct.tClientHandle);			
 			OS_stSVCDataStruct.enSVCResult = (u32Temp == OS_stSVCDataStruct.tClientHandle) ? SYSAPI_enOK : SYSAPI_enFail;
 			break;
 		}		
 		
 		case SYSAPI_enInitialiseIOResource:
 		{				
-			if (IOAPI_enDIO == (IOAPI_tenEHIOType)*(puint32)*(pu32Arg + 2))
+			if ((IOAPI_enDIOOutput == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2) || (IOAPI_enDIOOutput == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2))
 			{
-				IO_vInitDIOResource((IOAPI_tenEHIOResource)*(puint32)*(pu32Arg + 1), (IOAPI_tenEHIOType)*(puint32)*(pu32Arg + 2), (IOAPI_tenDriveStrength)*(puint32)*(pu32Arg + 3));
+				IO_vInitDIOResource(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2, *(IOAPI_tenDriveStrength*)OS_stSVCDataStruct.pvArg3);
 			}
 			
-			else if ((IOAPI_enADSE == (IOAPI_tenEHIOType)*(puint32)*(pu32Arg + 2)) || (IOAPI_enADD == (IOAPI_tenEHIOType)*(puint32)*(pu32Arg + 2)))
+			else if ((IOAPI_enADSE == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2) || (IOAPI_enADD == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2))
 			{
-				IO_vInitADCResource((IOAPI_tenEHIOResource)*(puint32)*(pu32Arg + 1), (IOAPI_tenEHIOType)*(puint32)*(pu32Arg + 2), (ADCAPI_tstADCCB*)*(pu32Arg + 3));
+				IO_vInitADCResource(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2, (ADCAPI_tstADCCB*)OS_stSVCDataStruct.pvArg3);
 			}	
 			
-			else if (IOAPI_enDAC == (IOAPI_tenEHIOType)*(puint32)*(pu32Arg + 2))
+			else if (IOAPI_enDAC == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2)
 			{
-				IO_vInitDACResource((IOAPI_tenEHIOResource)*(puint32)*(pu32Arg + 1), (IOAPI_tenEHIOType)*(puint32)*(pu32Arg + 2), (DACAPI_tstDACCB*)*(pu32Arg + 3));
+				IO_vInitDACResource(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2, (DACAPI_tstDACCB*)OS_stSVCDataStruct.pvArg3);
 			}				
 			
-			else if ((IOAPI_enIICBus == (IOAPI_tenEHIOType)*(puint32)*(pu32Arg + 2)) 
-								|| (IOAPI_enUARTBus == (IOAPI_tenEHIOType)*(puint32)*(pu32Arg + 2)) 
-								|| (IOAPI_enCANBus == (IOAPI_tenEHIOType)*(puint32)*(pu32Arg + 2)) 			
-								|| (IOAPI_enENETChannel == (IOAPI_tenEHIOType)*(puint32)*(pu32Arg + 2)))
+			else if ((IOAPI_enIICBus == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2)
+								|| (IOAPI_enUARTBus == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2) 
+								|| (IOAPI_enCANBus == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2)		
+								|| (IOAPI_enENETChannel == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2))
 			{
-				OS_stSVCDataStruct.enSVCResult = IO_enInitCommsResource((IOAPI_tenEHIOResource)*(puint32)*(pu32Arg + 1), (IOAPI_tstPortConfigCB*)*(pu32Arg + 3));			
+				OS_stSVCDataStruct.enSVCResult = IO_enInitCommsResource(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, (IOAPI_tstPortConfigCB*)OS_stSVCDataStruct.pvArg3);			
 			}
 			
-			else if (IOAPI_enTEPM == (IOAPI_tenEHIOType)*(puint32)*(pu32Arg + 2))
+			else if (IOAPI_enTEPM == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2)
 			{
-				OS_stSVCDataStruct.enSVCResult = TEPM_vInitTEPMResource((IOAPI_tenEHIOResource)*(puint32)*(pu32Arg + 1), (TEPMAPI_tstTEPMResourceCB*)*(pu32Arg + 3));
+				OS_stSVCDataStruct.enSVCResult = TEPM_vInitTEPMResource(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, (TEPMAPI_tstTEPMResourceCB*)OS_stSVCDataStruct.pvArg3);
 			}
 			
-			else if (IOAPI_enCaptureCompare == (IOAPI_tenEHIOType)*(puint32)*(pu32Arg + 2))
+			else if (IOAPI_enCaptureCompare == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2)
 			{
-				OS_stSVCDataStruct.enSVCResult = IO_enInitTEPMChannel((IOAPI_tenEHIOResource)*(puint32)*(pu32Arg + 1), (TEPMAPI_tstTEPMChannelCB*)*(pu32Arg + 3));
+				OS_stSVCDataStruct.enSVCResult = IO_enInitTEPMChannel(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, (TEPMAPI_tstTEPMChannelCB*)OS_stSVCDataStruct.pvArg3);
 			}						
 			
 			break;			
@@ -122,9 +122,9 @@ void SYS_vAPISVC(void* svc_args)
 		
 		case SYSAPI_enInitialiseCTRLResource:
 		{
-			if (CTRLAPI_enPID == (CTRLAPI_tenCTRLType)*(puint32)*(pu32Arg + 1))
+			if (CTRLAPI_enPID == *(CTRLAPI_tenCTRLType*)OS_stSVCDataStruct.pvArg1)
 			{
-				PIDIDX = CTRL_tRequestKernelPIDController((CTRLAPI_tstPIDCB*)*(pu32Arg + 2));
+				PIDIDX = CTRL_tRequestKernelPIDController((CTRLAPI_tstPIDCB*)OS_stSVCDataStruct.pvArg2);
 				OS_stSVCDataStruct.tClientHandle = (uint32)PIDIDX;
 				OS_stSVCDataStruct.enSVCResult = (-1 < PIDIDX) ? SYSAPI_enOK : SYSAPI_enResourceUnavailable;
 				break;
@@ -133,9 +133,9 @@ void SYS_vAPISVC(void* svc_args)
 		
 		case SYSAPI_enIterateCTRLResource:
 		{
-			if (CTRLAPI_enPID == (CTRLAPI_tenCTRLType)*(puint32)*(pu32Arg + 1))
+			if (CTRLAPI_enPID == *(CTRLAPI_tenCTRLType*)OS_stSVCDataStruct.pvArg1)
 			{
-				PIDIDX = (CTRLAPI_tenCTRLType)*(puint32)*(pu32Arg + 2);
+				PIDIDX = *(CTRLAPI_tenCTRLType*)OS_stSVCDataStruct.pvArg2;
 				CTRL_vIteratePID(PIDIDX);
 				OS_stSVCDataStruct.enSVCResult = (-1 < PIDIDX) ? SYSAPI_enOK : SYSAPI_enResourceUnavailable;
 				break;
@@ -144,7 +144,7 @@ void SYS_vAPISVC(void* svc_args)
 		
 		case SYSAPI_enInitialiseSpreadResource:
 		{
-			tSpreadIDX = SPREAD_tRequestKernelSpread((SPREADAPI_tstSpreadCB*)*(pu32Arg + 1));
+			tSpreadIDX = SPREAD_tRequestKernelSpread((SPREADAPI_tstSpreadCB*)OS_stSVCDataStruct.pvArg1);
 			OS_stSVCDataStruct.tClientHandle = (uint32)tSpreadIDX;
 			OS_stSVCDataStruct.enSVCResult = (-1 < tSpreadIDX) ? SYSAPI_enOK : SYSAPI_enResourceUnavailable;
 			break;
@@ -152,7 +152,7 @@ void SYS_vAPISVC(void* svc_args)
 		
 		case SYSAPI_enInitialiseTableResource:
 		{
-			tTableIDX = TABLE_tRequestKernelTable((TABLEAPI_tstTableCB*)*(pu32Arg + 1));
+			tTableIDX = TABLE_tRequestKernelTable((TABLEAPI_tstTableCB*)OS_stSVCDataStruct.pvArg1);
 			OS_stSVCDataStruct.tClientHandle = (uint32)tTableIDX;
 			OS_stSVCDataStruct.enSVCResult = (-1 < tSpreadIDX) ? SYSAPI_enOK : SYSAPI_enResourceUnavailable;
 			break;
@@ -160,31 +160,25 @@ void SYS_vAPISVC(void* svc_args)
 		
 		case SYSAPI_enAssertDIOResource:
 		{
-			IO_vAssertDIOResource((IOAPI_tenEHIOResource)*(puint32)*(pu32Arg + 1), (IOAPI_tenTriState)*(puint32)*(pu32Arg + 2));			
-			break;
-		}
-		
-		case SYSAPI_enSetSVCDataPointer:
-		{
-			*(puint32)*(pu32Arg + 1) = (uint32)&OS_stSVCDataStruct;
+			IO_vAssertDIOResource(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, *(IOAPI_tenTriState*)OS_stSVCDataStruct.pvArg2);			
 			break;
 		}
 		
 		case SYSAPI_enTriggerADQueue:
 		{
-			boResult = ADC_vTriggerQueue((ADCAPI_tenTrigger)*(puint32)*(pu32Arg + 1));
+			boResult = ADC_vTriggerQueue(*(ADCAPI_tenTrigger*)OS_stSVCDataStruct.pvArg1);
 			OS_stSVCDataStruct.enSVCResult = (TRUE == boResult) ? SYSAPI_enOK : SYSAPI_enBadArgument;
 			break;
 		}
 		
 		case SYSAPI_enRequestIOBusTransfer:
 		{
-			switch ((IOAPI_tenEHIOType)*(puint32)*(pu32Arg + 2))
+			switch (*(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2)
 			{				
 				case EH_VIO_IIC1:
 				case EH_VIO_IIC2:
 				{				
-					OS_stSVCDataStruct.enSVCResult = SRLTFR_enEnqueue((IOAPI_tstTransferCB*)*(pu32Arg + 2));
+					OS_stSVCDataStruct.enSVCResult = SRLTFR_enEnqueue((IOAPI_tstTransferCB*)OS_stSVCDataStruct.pvArg2);
 					break;
 				}
 				default:
@@ -198,61 +192,61 @@ void SYS_vAPISVC(void* svc_args)
 
 		case SYSAPI_enAppendTEPMQueue:
 		{
-			TEPM_vAppendTEPMQueue((IOAPI_tenEHIOResource)*(puint32)*(pu32Arg + 1), (TEPMAPI_tstTimedUserEvent*)*(pu32Arg + 2), (TEPMAPI_ttEventCount)*(puint32)*(pu32Arg + 3));	
+			TEPM_vAppendTEPMQueue(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, (TEPMAPI_tstTimedUserEvent*)OS_stSVCDataStruct.pvArg2, (TEPMAPI_ttEventCount*)OS_stSVCDataStruct.pvArg3);	
 			break;
 		}
 		
 		case SYSAPI_enConfigureUserTEPMInput:
 		{
-			TEPM_vConfigureUserTEPMInput((IOAPI_tenEHIOResource)*(puint32)*(pu32Arg + 1), (TEPMAPI_tstTimedUserEvent*)*(pu32Arg + 2));	
+			TEPM_vConfigureUserTEPMInput(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, (TEPMAPI_tstTimedUserEvent*)OS_stSVCDataStruct.pvArg2);	
 			break;
 		}			
 		
 		case SYSAPI_enConfigureKernelTEPMOutput:
 		{
-			TEPM_vConfigureKernelTEPMOutput((IOAPI_tenEHIOResource)*(puint32)*(pu32Arg + 1), (TEPMAPI_tstTimedKernelEvent*)*(pu32Arg + 2), (TEPMAPI_ttEventCount)*(puint32)*(pu32Arg + 3));	
+			TEPM_vConfigureKernelTEPMOutput(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, (TEPMAPI_tstTimedKernelEvent*)OS_stSVCDataStruct.pvArg2, *(TEPMAPI_ttEventCount*)OS_stSVCDataStruct.pvArg3);	
 			break;
 		}				
 		
 		case SYSAPI_enWriteDACQueue:
 		{
-			DAC_vWriteDACQueue((IOAPI_tenEHIOResource)*(puint32)*(pu32Arg + 1), (DACAPI_ttOutputVoltage*)*(pu32Arg + 2));	
+			DAC_vWriteDACQueue(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, *(DACAPI_ttOutputVoltage*)OS_stSVCDataStruct.pvArg2);	
 			break;
 		}
 		
 		case SYSAPI_enCalculateSpread:
 		{
-			boResult = SPREAD_vCalculate((SPREADAPI_ttSpreadIDX)*(puint32)*(pu32Arg + 1));
+			boResult = SPREAD_vCalculate(*(SPREADAPI_ttSpreadIDX*)OS_stSVCDataStruct.pvArg1);
 			OS_stSVCDataStruct.enSVCResult = (TRUE == boResult) ? SYSAPI_enOK : SYSAPI_enBadArgument;
 			break;
 		}
 		
 		case SYSAPI_enCalculateTable:
 		{
-			boResult = TABLE_vCalculate((TABLEAPI_ttTableIDX)*(puint32)*(pu32Arg + 1));
+			boResult = TABLE_vCalculate(*(TABLEAPI_ttTableIDX*)OS_stSVCDataStruct.pvArg1);
 			OS_stSVCDataStruct.enSVCResult = (TRUE == boResult) ? SYSAPI_enOK : SYSAPI_enBadArgument;
 			break;
 		}		
 		
 		case SYSAPI_enSetDiagCallback:
 		{
-			DIAG_vSetCallBack((DIAGAPI_tenCallBackType)*(puint32)*(pu32Arg + 1), (void*)(uint32*)*(pu32Arg + 2));
+			DIAG_vSetCallBack(*(DIAGAPI_tenCallBackType*)OS_stSVCDataStruct.pvArg1, OS_stSVCDataStruct.pvArg2);
 			break;
 		}	
 		
 		case SYSAPI_enGetTimerValue:
 		{
-			if ((EH_FIRST_TMR <= (IOAPI_tenEHIOResource)*(puint32)*(pu32Arg + 1)) &&
-			(EH_LAST_TMR >= (IOAPI_tenEHIOResource)*(puint32)*(pu32Arg + 1)))
+			if ((EH_FIRST_TMR <= *(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1) &&
+			(EH_LAST_TMR >= *(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1))
 			{
-				TEPM_u32GetTimerVal((IOAPI_tenEHIOResource)*(puint32)*(pu32Arg + 1), (puint32)*(pu32Arg + 2));
+				TEPM_u32GetTimerVal(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, OS_stSVCDataStruct.pvArg2);
 			}		
 			break;			
 		}
 		
 		case SYSAPI_enGetCRC16:
 		{
-			pu16Temp = (puint16)CRC16_pu16CalcCRC((uint16)*(puint32)*(pu32Arg + 1), (puint8)*(puint32)*(pu32Arg + 2), (uint16)*(puint32)*(pu32Arg + 3));
+			pu16Temp = (puint16)CRC16_pu16CalcCRC((uint16*)OS_stSVCDataStruct.pvArg1, (puint8*)OS_stSVCDataStruct.pvArg2, (uint16*)OS_stSVCDataStruct.pvArg3);
 			OS_stSVCDataStruct.pvData = (void*)pu16Temp;
 			OS_stSVCDataStruct.enSVCResult = SYSAPI_enOK;
 			break;
@@ -267,27 +261,27 @@ void SYS_vAPISVC(void* svc_args)
 
 		case SYSAPI_enNVMWorkingCopy:
 		{
-			boResult = FEE_boNVMWorkingCopy((bool)*(puint32)*(pu32Arg + 1), (bool)*(puint32)*(pu32Arg + 2));
+			boResult = FEE_boNVMWorkingCopy(*(Bool*)OS_stSVCDataStruct.pvArg1, *(Bool*)OS_stSVCDataStruct.pvArg2);
 			OS_stSVCDataStruct.enSVCResult = (TRUE == boResult) ? SYSAPI_enOK : SYSAPI_enBadNVMWorkingCopy;			
 			break;
 		}		
 		
 		case SYSAPI_enSetupWorkingPage:
 		{		
-			boResult = FEE_boSetWorkingData((puint8)*(puint32)*(pu32Arg + 1), (uint16)*(puint32)*(pu32Arg + 2));	
+			boResult = FEE_boSetWorkingData((puint8*)OS_stSVCDataStruct.pvArg1, *(uint16*)OS_stSVCDataStruct.pvArg2);	
 			OS_stSVCDataStruct.enSVCResult = (TRUE == boResult) ? SYSAPI_enOK : SYSAPI_enBadArgument;
 			break;
 		}
 		
 		case SYSAPI_enQueueCANMessage:
 		{
-			boResult = DLL_vQueueCANMessage((IOAPI_tenEHIOResource)*(puint32)*(pu32Arg + 1), (PROTAPI_tstCANMsg*)*(pu32Arg + 2));	
+			boResult = DLL_vQueueCANMessage(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, (PROTAPI_tstCANMsg*)OS_stSVCDataStruct.pvArg2);	
 			break;
 		}		
 
 		case SYSAPI_enSetupCrankTriggerEdgePattern:
 		{
-			boResult = CEM_boPopulateCrankEdgeArrays((puint16)*(pu32Arg + 1), (bool)*(puint32)*(pu32Arg + 2), (uint8)*(puint32)*(pu32Arg + 3));
+			boResult = CEM_boPopulateCrankEdgeArrays((puint16)OS_stSVCDataStruct.pvArg1, *(Bool*)OS_stSVCDataStruct.pvArg2, *(uint8*)OS_stSVCDataStruct.pvArg3);
 			OS_stSVCDataStruct.enSVCResult = (TRUE == boResult) ? SYSAPI_enOK : SYSAPI_enBadArgument;			
 			break;
 		}

@@ -9,7 +9,6 @@
 /* REVISION HISTORY:   19-08-2016 | 1.0 | Initial revision                    */
 /*                                                                            */
 /******************************************************************************/
-#include <string.h>
 #include "build.h"
 #include "CANHA.h"
 #include "CBYTEQUEUE.h"
@@ -22,7 +21,7 @@
 #include "PACKEDDLL.h"
 #include "PROTAPI.h"
 #include "RESM.h"
-#include "uart.h"
+#include "peruart.h"
 #include "UDSNL.h"
 
 
@@ -72,62 +71,62 @@ DLL_tstTXCB DLL_astTXCB[									DLL_nIICTXWorkBuffCount +
 
 static void DLL_vInsertCANIDAndDLC(puint8, puint32, uint32);
 static IOAPI_tenEHIOResource DLL_tGetEHIOResource(DLL_tDLLVirtualChannel);
-static bool DLL_boSendFrame(IOAPI_tenEHIOResource, puint8, uint32);
+static Bool DLL_boSendFrame(IOAPI_tenEHIOResource, puint8, uint32);
 
 static void DLLBYTEQUEUE_vInit(CBYTEQUEUE_tstQueue*, uint32, void*);
 static uint32 DLLBYTEQUEUE_u32GetVacantCount(CBYTEQUEUE_tstQueue*);
 static uint32 DLLBYTEQUEUE_u32GetQueuedCount(CBYTEQUEUE_tstQueue*);
-static bool DLLBYTEQUEUE_vQueueBytes(CBYTEQUEUE_tstQueue*, puint8, uint32);
+static Bool DLLBYTEQUEUE_vQueueBytes(CBYTEQUEUE_tstQueue*, puint8, uint32);
 static void DLLBYTEQUEUE_vDequeueBytes(CBYTEQUEUE_tstQueue*, puint8, puint32);
 static puint8 DLL_pu8GetTXClientBuffer(IOAPI_tenEHIOResource, puint32 pu32TXBufferCap);	
 static void DLL_vReleaseTXClientBuffer(puint8);
 
-void DLL_vIPBufferRXCB(ENE_tstETHUnionFrame* pstETHUnionFrame)
-{	
-	uint8 u8ENEChannelIDX;
-	uint16 u16Temp;
-	puint8 pu8FrameData;
-	
-	IOAPI_tenEHIOResource	enEHIOResource = EH_IO_Invalid;
-	DLL_tDLLVirtualChannel DLLVirtualChannelIDX = DLL_tGetVirtualChannel(EH_VIO_ENET_CH1);		
-	
-	for (u8ENEChannelIDX = 0; u8ENEChannelIDX < (EH_ENET_LAST_CH - EH_ENET_FIRST_CH + 1); u8ENEChannelIDX++)
-	{
-		if ((EH_ENET_FIRST_CH <= 
-				DLL_astPortConfigCB[DLLVirtualChannelIDX + u8ENEChannelIDX].enVIOResource)
-			&&(EH_ENET_LAST_CH >= 
-				DLL_astPortConfigCB[DLLVirtualChannelIDX + u8ENEChannelIDX].enVIOResource))
-		{
-#if (COMMS_ETH_WIFI)
-			if(NTOHS(DLL_astPortConfigCB[DLLVirtualChannelIDX + u8ENEChannelIDX].stNetConfig.uNetInfo.stLANNetInfo.u16RPCREQSourcePort) == 
-						(pstETHUnionFrame -> uIPData.stUDPHeader.u16SourcePort))				
-#endif			
-			{
-				if(NTOHS(DLL_astPortConfigCB[DLLVirtualChannelIDX + u8ENEChannelIDX].stNetConfig.uNetInfo.stLANNetInfo.u16RPCREQDestPort) == 
-							(pstETHUnionFrame -> uIPData.stUDPHeader.u16DestinationPort))	
-				{
-					enEHIOResource = (IOAPI_tenEHIOResource)(EH_VIO_ENET_CH1 + u8ENEChannelIDX);		
-					break;
-				}	
-			}
-		}
-	}
-	
-	if (EH_IO_Invalid != enEHIOResource)
-	{
-		DLLVirtualChannelIDX = DLL_tGetVirtualChannel(enEHIOResource);
-		DLL_au16PacketSeq[DLLVirtualChannelIDX] = NTOHS(pstETHUnionFrame->uETHData.stIPHeader.u16ID);
-		u16Temp = NTOHS(pstETHUnionFrame->uIPData.stUDPHeader.u16UDPLength);
-		u16Temp = MIN(u16Temp, (uint16)RX_BUFF_SIZE);	//matthew	
-		pu8FrameData = &pstETHUnionFrame->au8UDPData[0];
-		
-		DLL_stRXDLLData[DLLVirtualChannelIDX].u8DataCount = u16Temp;			
-		memcpy((void*)&DLL_stRXDLLData[DLLVirtualChannelIDX].u8Data,
-									 (void*)pu8FrameData, u16Temp);	
-
-		DLL_vFrameRXCB(enEHIOResource, (puint8)&DLL_stRXDLLData[DLLVirtualChannelIDX].u8Data[0]);				
-	}
-}
+//void DLL_vIPBufferRXCB(ENE_tstETHUnionFrame* pstETHUnionFrame)
+//{	
+	//uint8 u8ENEChannelIDX;
+	//uint16 u16Temp;
+	//puint8 pu8FrameData;
+	//
+	//IOAPI_tenEHIOResource	enEHIOResource = EH_IO_Invalid;
+	//DLL_tDLLVirtualChannel DLLVirtualChannelIDX = DLL_tGetVirtualChannel(EH_VIO_ENET_CH1);		
+	//
+	//for (u8ENEChannelIDX = 0; u8ENEChannelIDX < (EH_ENET_LAST_CH - EH_ENET_FIRST_CH + 1); u8ENEChannelIDX++)
+	//{
+		//if ((EH_ENET_FIRST_CH <= 
+				//DLL_astPortConfigCB[DLLVirtualChannelIDX + u8ENEChannelIDX].enVIOResource)
+			//&&(EH_ENET_LAST_CH >= 
+				//DLL_astPortConfigCB[DLLVirtualChannelIDX + u8ENEChannelIDX].enVIOResource))
+		//{
+//#if (COMMS_ETH_WIFI)
+			//if(NTOHS(DLL_astPortConfigCB[DLLVirtualChannelIDX + u8ENEChannelIDX].stNetConfig.uNetInfo.stLANNetInfo.u16RPCREQSourcePort) == 
+						//(pstETHUnionFrame -> uIPData.stUDPHeader.u16SourcePort))				
+//#endif			
+			//{
+				//if(NTOHS(DLL_astPortConfigCB[DLLVirtualChannelIDX + u8ENEChannelIDX].stNetConfig.uNetInfo.stLANNetInfo.u16RPCREQDestPort) == 
+							//(pstETHUnionFrame -> uIPData.stUDPHeader.u16DestinationPort))	
+				//{
+					//enEHIOResource = (IOAPI_tenEHIOResource)(EH_VIO_ENET_CH1 + u8ENEChannelIDX);		
+					//break;
+				//}	
+			//}
+		//}
+	//}
+	//
+	//if (EH_IO_Invalid != enEHIOResource)
+	//{
+		//DLLVirtualChannelIDX = DLL_tGetVirtualChannel(enEHIOResource);
+		//DLL_au16PacketSeq[DLLVirtualChannelIDX] = NTOHS(pstETHUnionFrame->uETHData.stIPHeader.u16ID);
+		//u16Temp = NTOHS(pstETHUnionFrame->uIPData.stUDPHeader.u16UDPLength);
+		//u16Temp = MIN(u16Temp, (uint16)RX_BUFF_SIZE);	//matthew	
+		//pu8FrameData = &pstETHUnionFrame->au8UDPData[0];
+		//
+		//DLL_stRXDLLData[DLLVirtualChannelIDX].u8DataCount = u16Temp;			
+		//memcpy((void*)&DLL_stRXDLLData[DLLVirtualChannelIDX].u8Data,
+									 //(void*)pu8FrameData, u16Temp);	
+//
+		//DLL_vFrameRXCB(enEHIOResource, (puint8)&DLL_stRXDLLData[DLLVirtualChannelIDX].u8Data[0]);				
+	//}
+//}
 
 void DLL_vIPBufferTX(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8TXData, uint32 u32TXByteCount)
 {
@@ -206,7 +205,7 @@ void DLL_vFrameRXCB(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8RXData)
 	uint32 u32TXBufferCap;
 	uint32 u32Temp;
 	CANHA_tstCANMB* pstCANMB;
-	bool boQueuedOK;
+	Bool boQueuedOK;
 	
 	DLL_tDLLVirtualChannel DLLVirtualChannelIDX = DLL_tGetVirtualChannel(enEHIOResource);	
 
@@ -424,7 +423,7 @@ void DLL_vRun(uint32* const u32Stat)
 	uint32 u32TXBytesMaxDequeued;
 	uint32 u32TXBufferCap;
 	puint8 pu8TXData;
-	bool boReleaseImmediate;
+	Bool boReleaseImmediate;
 	
 	for (DLLVirtualChannelIDX = 0; DLLVirtualChannelIDX < DLL_nVirtualChannelCount; DLLVirtualChannelIDX++)
 	{
@@ -464,9 +463,9 @@ void DLL_vTerminate(uint32* const u32Stat)
 
 }
 
-bool DLL_boInitDLLChannel(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tstPortConfigCB* pstCommsConfig)
+Bool DLL_boInitDLLChannel(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tstPortConfigCB* pstCommsConfig)
 {
-	bool boRetVal = false;
+	Bool boRetVal = false;
 	SYSAPI_ttClientHandle tClientHandleReq;	
 	SYSAPI_ttClientHandle tClientHandle;
 	DLL_tDLLVirtualChannel DLLVirtualChannelIDX = DLL_tGetVirtualChannel(enEHIOResource);	
@@ -626,12 +625,12 @@ void DLL_vTransmitUARTBytesCB(IOAPI_tenEHIOResource enEHIOResource)
 }
 
 
-static bool DLL_boSendFrame(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8TXData, uint32 u32TXByteCount)
+static Bool DLL_boSendFrame(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8TXData, uint32 u32TXByteCount)
 {
 	DLL_tDLLVirtualChannel DLLVirtualChannelIDX = DLL_tGetVirtualChannel(enEHIOResource);
 	IOAPI_tstTransferCB stTransferCB;	
 	PROTAPI_tstCANMsg stCANMsg;
-	bool boSyncSent = false;
+	Bool boSyncSent = false;
 	
 	if ((EH_FIRST_UART <= enEHIOResource) &&
 	(EH_LAST_UART >= enEHIOResource))
@@ -725,9 +724,9 @@ static bool DLL_boSendFrame(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8TXDa
 	return boSyncSent;
 }
 
-bool DLL_vQueueCANMessage(IOAPI_tenEHIOResource enEHIOResource, PROTAPI_tstCANMsg* pstCANMsg)
+Bool DLL_vQueueCANMessage(IOAPI_tenEHIOResource enEHIOResource, PROTAPI_tstCANMsg* pstCANMsg)
 {
-	bool boRetVal;
+	Bool boRetVal;
 	uint8 au8TXData[12];
 	uint32 u32TXByteCount = pstCANMsg->u8DLC + 4;
 	
@@ -750,16 +749,15 @@ bool DLL_vQueueCANMessage(IOAPI_tenEHIOResource enEHIOResource, PROTAPI_tstCANMs
 	return boRetVal;
 }
 
-bool DLL_boQueueMessage(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8TXBuffer, uint32 u32TXByteCount)
+Bool DLL_boQueueMessage(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8TXBuffer, uint32 u32TXByteCount)
 {
 	DLL_tDLLVirtualChannel DLLVirtualChannelIDX = DLL_tGetVirtualChannel(enEHIOResource);
-	bool boQueueOK = false;
+	Bool boQueueOK = false;
 	
 	boQueueOK = DLLBYTEQUEUE_vQueueBytes(&DLL_astTXDLLByteQueue[DLLVirtualChannelIDX], pu8TXBuffer, u32TXByteCount);	
 	
 	return boQueueOK;
 }
-
 
 DLL_tDLLVirtualChannel DLL_tGetVirtualChannel(IOAPI_tenEHIOResource enEHIOResource)
 {
@@ -821,9 +819,9 @@ static uint32 DLLBYTEQUEUE_u32GetQueuedCount(CBYTEQUEUE_tstQueue* pstQueue)
 	return (pstQueue->u32Size - DLLBYTEQUEUE_u32GetVacantCount(pstQueue) - 1);
 }
 
-static bool DLLBYTEQUEUE_vQueueBytes(CBYTEQUEUE_tstQueue* pstQueue, puint8 pu8TXData, uint32 u32TXByteCount)
+static Bool DLLBYTEQUEUE_vQueueBytes(CBYTEQUEUE_tstQueue* pstQueue, puint8 pu8TXData, uint32 u32TXByteCount)
 {
-	bool boRetVal = FALSE;
+	Bool boRetVal = FALSE;
 	uint32 u32Temp;
 		
 	
@@ -884,7 +882,7 @@ static puint8 DLL_pu8GetTXClientBuffer(IOAPI_tenEHIOResource enEHIOResource, pui
 	uint8 u8BufferIDX;
 	puint8 pu8Buffer;
 	uint32 u32BufferBytes;
-	bool boVacantBuff = false;
+	Bool boVacantBuff = false;
 	
 	if ((EH_FIRST_IIC <= enEHIOResource) &&
 	(EH_LAST_IIC >= enEHIOResource))
@@ -1028,7 +1026,7 @@ static void DLL_vReleaseTXClientBuffer(puint8 pu8TXBuffer)
 	uint8 u8BufferIDX;
 	puint8 pu8Buffer;
 	uint32 u32BufferBytes;
-	bool boBufferReleased = false;
+	Bool boBufferReleased = false;
 
 	/* Try release a IIC client working buffer */
 	u8BufferIDXStart = 0;

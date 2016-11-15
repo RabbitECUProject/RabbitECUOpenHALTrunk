@@ -32,7 +32,7 @@ uint16 UDSAL_au16DDDICacheSIDs[UDSAL_nDDDICacheCount];
 #if BUILD_KERNEL
 	uint8 UDSAL_au8DDDICache[UDSAL_nDDDICacheCount][UDSAL_nDDDICacheSize];
 #endif
-bool UDSAL_boRDBICaching;
+Bool UDSAL_boRDBICaching;
 
 
 static uint8 UDSAL_u8RESET(puint8, uint32, puint8, puint32, uint32);
@@ -51,12 +51,12 @@ static void UDSAL_vResponse(puint8, uint8, uint8, puint32, uint32);
 static void UDSAL_vConfigureDDDICache(uint16, uint8);
 static sint32 UDSAL_i32GetDDDICacheIndex(uint16);
 #if (BUILD_SBL)
-static bool UDSAL_boWriteDLBlock(COMMONNL_tstRXLargeBuffer* const, 
+static Bool UDSAL_boWriteDLBlock(COMMONNL_tstRXLargeBuffer* const, 
 															 uint8* const, 
 															 uint32);
 #endif				
 #if (BUILD_SBL) || (BUILD_PBL)
-static bool UDSAL_boUpdateDLBlock(uint32);
+static Bool UDSAL_boUpdateDLBlock(uint32);
 #endif
 
 const UDSAL_tstALProcessInfo UDSAL_rastALProcessInfo[UDSAL_SID_COUNT] = UDSAL_nALProcessInfo;
@@ -326,7 +326,7 @@ static uint8 UDSAL_u8WDBI(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8T
 	tpfClientCB pfClientCB;	
 	CLIENT_tenErr enErr;
 	
-#if BUILD_KERNEL_OR_KERNEL_APP
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
 	if (TRUE == UDSAL_stWriteDataTransferCB.boTransferComplete)
 	{
 		UDSAL_stWriteDataTransferCB.boTransferComplete = FALSE;		
@@ -378,7 +378,7 @@ static uint8 UDSAL_u8DLREQ(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8
 	uint32 u32DataCount;
 	COMMONNL_tstRXLargeBuffer* pstSourceBuffer;			
 	uint8* pu8TargetAddr;
-	bool boDLReqErr;
+	Bool boDLReqErr;
 	const uint32 ru32AddrMin = BUILD_DL_ADDR_MIN;
 	const uint32 ru32AddrMax = BUILD_DL_ADDR_MAX;
 	
@@ -578,7 +578,7 @@ static uint8 UDSAL_u8RC(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8TXB
 {
 	uint8 u8Response = UDSAL_RSP_OK;
 	uint16 u16RoutineID;
-	bool boRetCode = FALSE;
+	Bool boRetCode = FALSE;
 
 	u16RoutineID = 0x100 * *(pu8RXBuffer + 4);
 	u16RoutineID += *(pu8RXBuffer + 5);
@@ -843,11 +843,11 @@ void UDSAL_vTerminate(uint32* const u32Stat)
 }
 
 #if (BUILD_SBL) || (BUILD_PBL)
-static bool UDSAL_boWriteDLBlock(COMMONNL_tstRXLargeBuffer* const pstSourceBuffer, 
+static Bool UDSAL_boWriteDLBlock(COMMONNL_tstRXLargeBuffer* const pstSourceBuffer, 
 															 uint8* const pu8TargetAddress, 
 															 uint32 u32DataCount)
 {
-	bool boRetVal = FALSE;
+	Bool boRetVal = FALSE;
 	
 	if (false == UDSAL_stDLControlBlock.boPending)
 	{
@@ -865,7 +865,7 @@ static bool UDSAL_boWriteDLBlock(COMMONNL_tstRXLargeBuffer* const pstSourceBuffe
 #endif
 
 #if (BUILD_SBL)
-static bool UDSAL_boUpdateDLBlock(uint32 u32BlockWriteCount)
+static Bool UDSAL_boUpdateDLBlock(uint32 u32BlockWriteCount)
 {		
 	puint8 pu8SourceData;
 	puint8 pu8BufferData;

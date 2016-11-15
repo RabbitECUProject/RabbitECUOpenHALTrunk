@@ -2,10 +2,10 @@
 /*    Copyright (c) 2016 MD Automotive Controls. Original Work.               */
 /*    License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher   */
 /******************************************************************************/
-/* CONTEXT:KERNEL                                                                   */                      
+/* CONTEXT:KERNEL                                                             */                      
 /* PACKAGE TITLE:      XXX                                                    */
-/* DESCRIPTION:        XXX																										*/
-/* FILE NAME:          XXX.c                                          				*/
+/* DESCRIPTION:        XXX                                                    */
+/* FILE NAME:          XXX.c                                                  */
 /* REVISION HISTORY:   19-08-2016 | 1.0 | Initial revision                    */
 /*                                                                            */
 /******************************************************************************/
@@ -18,7 +18,7 @@ uint16 CEM_au16FallingCrankEdge[5];
 uint8 CEM_u8RisingEdgesCount;
 uint8 CEM_u8FallingEdgesCount;
 uint32 CEM_u32CrankEdgeCounter;
-bool CEM_boCrankEdgeFirstRising;
+Bool CEM_boCrankEdgeFirstRising;
 uint32 CEM_u32CrankEdgeTimeoutCount;
 uint32 CEM_u32EventTimeOld;
 
@@ -59,10 +59,10 @@ void CEM_vTerminate(uint32* const u32Stat)
 
 }
 
-bool CEM_boPopulateCrankEdgeArrays(puint16 const pu16EdgeFractionArray, const bool boFirstRising, uint8 u8EdgeCount)
+Bool CEM_boPopulateCrankEdgeArrays(puint16 const pu16EdgeFractionArray, const Bool boFirstRising, uint8 u8EdgeCount)
 {
 	uint32 u32EdgeCount = 0;
-	bool boStat = FALSE;
+	Bool boStat = FALSE;
 	
 	if ((0 == (u8EdgeCount % 2)) && (1 < u8EdgeCount))
 	{	
@@ -100,8 +100,9 @@ void CEM_vPrimaryEventCB(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttEventTi
 {
 	IOAPI_tenTriState enTriState;
 	uint16 u16LastGapFraction;
-	
-	enTriState = IO_enGetDIOResourceState(enEHIOResource);
+
+    enTriState = TEPM_enGetTimerDigitalState(enEHIOResource);
+
 	CEM_u32CrankEdgeTimeoutCount = 0;
 	
 	if (IOAPI_enLow == enTriState)

@@ -22,7 +22,7 @@ void TABLES_vStart(puint32 const pu32Arg);
 void TABLES_vRun(puint32 const pu32Arg);
 void TABLES_vTerminate(puint32 const pu32Arg);
 TABLEAPI_ttTableIDX TABLE_tRequestKernelTable(TABLEAPI_tstTableCB*);
-bool TABLE_vCalculate(TABLEAPI_ttTableIDX);
+Bool TABLE_vCalculate(TABLEAPI_ttTableIDX);
 
 #endif //TABLES_H
 

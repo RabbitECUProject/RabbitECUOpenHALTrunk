@@ -30,9 +30,9 @@ void FEE_vStartSBL(void)
 #endif	
 }
 
-bool FEE_boCheckPartition(void)
+Bool FEE_boCheckPartition(void)
 {
-	bool boRetVal = false;
+	Bool boRetVal = false;
 
 #ifdef BUILD_MK60
 	return FEEHA_boCheckPartition();
@@ -41,9 +41,9 @@ bool FEE_boCheckPartition(void)
     return boRetVal;
 }
 
-bool FEE_boSetWorkingData(puint8 pu8WorkingAddress, uint16 u16WorkingDataCount)
+Bool FEE_boSetWorkingData(puint8 pu8WorkingAddress, uint16 u16WorkingDataCount)
 {
-	bool boWorkingDataOK = FALSE;
+	Bool boWorkingDataOK = FALSE;
 	
 	if (((puint8)FEE_WORK_DATA_START <= pu8WorkingAddress) &&
 			((puint8)FEE_WORK_DATA_END >= pu8WorkingAddress) &&
@@ -58,18 +58,18 @@ bool FEE_boSetWorkingData(puint8 pu8WorkingAddress, uint16 u16WorkingDataCount)
 	return boWorkingDataOK;
 }
 
-bool FEE_boNVMWorkingCopy(bool boNVMToWorking, bool boCheckCRC16MakeCRC16)
+Bool FEE_boNVMWorkingCopy(Bool boNVMToWorking, Bool boCheckCRC16MakeCRC16)
 {
-	bool boCopyOK;
+	Bool boCopyOK;
 
 	boCopyOK = FEEHA_boNVMWorkingCopy(boNVMToWorking, boCheckCRC16MakeCRC16);
 
 	return boCopyOK;
 }
 
-bool FEE_boWriteNVM(puint8 pu8SourceData, puint8 pu8DestData, uint32 u32DataByteCount)
+Bool FEE_boWriteNVM(puint8 pu8SourceData, puint8 pu8DestData, uint32 u32DataByteCount)
 {
-	bool boCopyOK = TRUE;		
+	Bool boCopyOK = TRUE;		
 	
 	boCopyOK = FEEHA_boWriteNVM(pu8SourceData, pu8DestData, u32DataByteCount);
 	
@@ -77,18 +77,18 @@ bool FEE_boWriteNVM(puint8 pu8SourceData, puint8 pu8DestData, uint32 u32DataByte
 }	
 
 
-bool FEE_boNVMClear(void)
+Bool FEE_boNVMClear(void)
 {	
-	bool boClearOK;
+	Bool boClearOK;
 
 	boClearOK = FEEHA_boNVMClear();
 
 	return boClearOK;
 }
 
-bool FEE_boEraseForDownload(puint8 pu8TargetAddress, uint32 u32EraseCount)
+Bool FEE_boEraseForDownload(puint8 pu8TargetAddress, uint32 u32EraseCount)
 {
-	bool boEraseErr = false;
+	Bool boEraseErr = false;
 	
 	boEraseErr = FEEHA_boEraseForDownload(pu8TargetAddress, u32EraseCount);
 	
@@ -98,7 +98,7 @@ bool FEE_boEraseForDownload(puint8 pu8TargetAddress, uint32 u32EraseCount)
 
 void FEE_vStart(uint32* const pu32Stat)
 {
-    bool boStartOK;
+    Bool boStartOK;
 
 	boStartOK = FEEHA_boStart(pu32Stat);
 	
@@ -130,16 +130,16 @@ void FEE_vTerminate(uint32* const u32Stat)
 
 }
 
-bool FEE_boPartition(void)
+Bool FEE_boPartition(void)
 {
-	bool boRetVal;
+	Bool boRetVal;
 	
 	boRetVal = FEEHA_boPartition();
 	
 	return boRetVal;
 }
 
-bool FEE_boWriteControlBlock(COMMONNL_tstRXLargeBuffer* const pstParamSourceBuffer, 
+Bool FEE_boWriteControlBlock(COMMONNL_tstRXLargeBuffer* const pstParamSourceBuffer, 
 															 uint8* const pu8ParamTargetAddress, 
 															 uint32 u32ParamWriteCount)
 {
@@ -160,7 +160,7 @@ bool FEE_boWriteControlBlock(COMMONNL_tstRXLargeBuffer* const pstParamSourceBuff
 	return FEE_stWriteControlBlock.boProgramming;
 }
 
-bool FEE_boUpdateControlBlock(uint32 u32BlockWriteCount)
+Bool FEE_boUpdateControlBlock(uint32 u32BlockWriteCount)
 {		
 	puint8 pu8SourceData;
 	puint8 pu8BufferData;

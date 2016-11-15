@@ -13,7 +13,9 @@
 
 #include "client.h"
 #include "DIAGAPI.h"
-
+#ifdef BUILD_KERNEL_APP	
+#include "user.h"
+#endif //BUILD_KERNEL_APP"
 
 uint32 u32Temp;
 uint32 CLIENT_u32TaskStartCount = 0;
@@ -21,7 +23,7 @@ uint32 CLIENT_u32RunTaskCount = 0;
 CLIENT_tstCBInfo astCBInfo[CLIENT_nUserCBMax];
 CQUEUE_tstQueue stCBQueue;
 
-TASK_tstTask CLIENT_rastTaskCyclic[SYS_CLIENT_MODULES_MAX];
+struct TASK_tstTask CLIENT_rastTaskCyclic[SYS_CLIENT_MODULES_MAX];
 
 void CLIENT_vStart(uint32 * const pu32Arg)
 {
@@ -33,15 +35,16 @@ void CLIENT_vStart(uint32 * const pu32Arg)
 	
 	u32UserAppImageEntry = *pu32UserEntry;
 	
-#if BUILD_KERNEL
+#ifdef BUILD_KERNEL
 	if ((CLIENT_nUserAppImageBase & 0xffff0000) == (0xffff0000 & u32UserAppImageEntry))	
 	{
 		pfUserStart = (tpfUserStart)u32UserAppImageEntry;
-		pfUserStart();
+		pfUserStart(&OS_stSVCDataStruct);
 	}
-#elif BUILD_KERNEL_APP	
-	USER_vStart(&u32Temp);
-#endif
+#endif //BUILD_KERNEL
+#ifdef BUILD_KERNEL_APP	
+	(void)USER_vStart(&OS_stSVCDataStruct);
+#endif //BUILD_KERNEL_APP
 	
 }
 
@@ -122,7 +125,7 @@ CLIENT_tenErr CLIENT_enEnqueueCB(MSG_tstMBX* pstMBX, tpfClientCB pfCB)
 
 SYSAPI_tenSVCResult CLIENT_enAddTask(OS_tenQueueType enQueueType, SYSAPI_tpfUserTaskFunction pfUserTask, TASKAPI_tenPriority enPriority, TASKAPI_tenRateMs enRateMs)
 {
-	TASK_tstTask stTask;
+	struct TASK_tstTask stTask;
 	SYSAPI_tenSVCResult enSVCResult;
 	
 	stTask.tTaskID = 0x2000;

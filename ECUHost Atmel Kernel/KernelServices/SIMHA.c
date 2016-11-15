@@ -80,6 +80,21 @@ void SIMHA_vSetRegAddress(SIMHA_tenReg enReg, REGSET_tstReg32Val* pstReg32Val)
 #endif //BUILD_MK60
 }
 
+Bool SIMHA_boEnablePeripheralClock(IRQn_Type IRQn)
+{
+#ifdef BUILD_SAM3X8E
+    uint32 u32RetVal;
+	Bool boRetVal;
+
+	u32RetVal = pmc_enable_periph_clk(IRQn);
+	boRetVal = (0 == u32RetVal)  ? TRUE : FALSE;
+
+	return boRetVal;
+#endif //BUILD_SAM3X8E
+
+    return FALSE;
+}
+
 		
 			
 

@@ -29,7 +29,9 @@ typedef struct
 	IOAPI_tenEHIOResource enEHIOResource;
 	TEPMHA_tenTimerModule enTimerModule;
 	uint32 u32Channel;
+	uint32 u32SubChannel;
 	uint32 u32MuxSel;
+	IRQn_Type enIRQType;
 } TEPM_tstTEPMChannel;
 
 typedef struct
@@ -54,6 +56,7 @@ void TEPM_vInterruptHandler(IOAPI_tenEHIOResource);
 uint32 TEPM_u32GetFTMTableIndex(IOAPI_tenEHIOResource enEHIOResource);
 void TEPM_vStartEventProgramKernelQueues(void);
 void TEPM_vSynchroniseEventProgramKernelQueues(void);
+IOAPI_tenTriState TEPM_enGetTimerDigitalState(IOAPI_tenEHIOResource);
 
 #endif //TEPM_H
 

@@ -14,7 +14,7 @@
 #include "TASKAPI.h"
 #include "task.h"
 
-TASK_tsTime TASK_vReportRunTime(TASK_tstTask* const pstTask)
+TASK_tsTime TASK_vReportRunTime(struct TASK_tstTask* const pstTask)
 {
 	return pstTask->tsTaskFinished - pstTask->tsTaskStarted;
 }

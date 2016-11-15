@@ -19,6 +19,7 @@
 #endif //BUILD_SAM3X8E
 #include <string.h>
 #include "IRQ.h"
+#include "timer.h"
 
 MPU_Type IRQ_stMPU;
 
@@ -32,7 +33,7 @@ IRQRXCallBack IRQ_apfRXCallBack[PERIPH_COUNT_IRQn];
 IRQTXCallBack IRQ_apfTXCallBack[PERIPH_COUNT_IRQn];
 #endif
 
-#if BUILD_KERNEL_OR_KERNEL_APP
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
 extern uint32 OS_u32SysTickInterval;
 extern uint32 OS_u32SysRunTimeHigh;
 extern uint32 OS_u32SysRunTimeLow;
@@ -40,18 +41,21 @@ extern tq_struct* OS_pstBackgroundDispatcherTask;
 extern void OS_vBackgroundDispatcher(void);
 #endif
 
-extern void NVIC_EnableIRQ(IRQn_Type IRQn);
+extern void NVIC_EnableIRQ(IRQn_Type);
+extern void SYS_vAPISVC(void*);
 DLL_tstRXDLLData CAN_stRXDLLData;
 
 static void IRQ_vCommonUART(tstUARTModule*, IOAPI_tenEHIOResource, IRQn_Type enIRQType);
 static void IRQ_vCommonCAN(tstCANModule*, IOAPI_tenEHIOResource, IRQn_Type enIRQType);
 
 #if defined(BUILD_MK60) || defined(BUILD_SAM3X8E)
-void IRQ_vEnableIRQ(IRQn_Type enIRQType, IRQRXCallBack pfRXCallBack, IRQTXCallBack pfTXCallBack)
+void IRQ_vEnableIRQ(IRQn_Type enIRQType, IRQ_tenPRIO enPRIO, IRQRXCallBack pfRXCallBack, IRQTXCallBack pfTXCallBack)
 {
 	IRQ_apfRXCallBack[enIRQType] = pfRXCallBack;
 	IRQ_apfTXCallBack[enIRQType] = pfTXCallBack;
-	NVIC_EnableIRQ(enIRQType);
+	NVIC_ClearPendingIRQ(enIRQType);                     
+	NVIC_SetPriority(enIRQType, enPRIO);              
+	NVIC_EnableIRQ(enIRQType);                       
 }
 #endif
 
@@ -64,7 +68,8 @@ void IRQ_vDisableIRQ(IRQn_Type enIRQType)
 }
 #endif
 
-#if BUILD_KERNEL_OR_KERNEL_APP
+#ifdef BUILD_MK60
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
 __asm task_queue IRQ_vSuspendThread(task_queue* stTaskQueueToSuspend)
 {
 TASK_PC_OFFSET	EQU	22
@@ -148,7 +153,93 @@ TestQueueLast
 		
 ThreadSwapAbort		
 }
-#endif
+#endif //BUILD_KERNEL
+#endif //BUILD_MK60
+
+#ifdef BUILD_SAM3X8E
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
+task_queue IRQ_vSuspendThread(task_queue* stTaskQueueToSuspend)
+{
+	__asm(".EQU TASK_PC_OFFSET,	22");
+	__asm(".EQU TASK_SP_OFFSET,	18");	
+	__asm(".EQU STACK_FRAME_BASE_OFFSET, 8");
+	__asm(".EQU STACK_FRAME_SIZE, 32");	
+	__asm(".EQU FRAME_R0_OFFSET, 0");
+	__asm(".EQU FRAME_R1_OFFSET, 4");
+	__asm(".EQU FRAME_R2_OFFSET, 8");
+	__asm(".EQU FRAME_R3_OFFSET, 12");
+	__asm(".EQU FRAME_R12_OFFSET, 16");
+	__asm(".EQU FRAME_LR_OFFSET, 20");
+	__asm(".EQU FRAME_PC_OFFSET, 24");
+	__asm(".EQU FRAME_XPSR_OFFSET, 28");	
+	__asm(".EQU MASK_XPSR_THUMB, 16777216");
+	
+	//
+	//
+	//
+	// get first task in R1
+	__asm("LDR		R1, [R0]");
+	
+	// get next task in R2
+	__asm("LDR		R2, [R1]");
+	__asm("B 		TestQueueLast");
+	__asm("FindQueueEndLoop:");
+	__asm("MOV		R3, R2");
+	__asm("LDR		R2,	[R2]");
+	__asm("TestQueueLast:");
+	__asm("CMP		R2, #0");
+	__asm("BNE		FindQueueEndLoop");
+	// queue pointer is in R0, current task R1, end task R3
+
+	// change queue pointer to current task->next
+	__asm("LDR		R2, [R1]");
+	__asm("CMP		R1, R2");
+	__asm("BEQ		ThreadSwapAbort");
+	__asm("STR		R2, [R0]");
+
+	//	set end task->next to current task
+	__asm("STR		R1, [R3]");
+	
+	// set current task->next to NULL
+	__asm("MOV		R3, #0");
+	__asm("STR		R3, [R1]");
+	
+	// get thread address in R4 MATTHEW
+	//		MOV		R4, #255
+	
+	// store current task program counter in task structure program counter
+	//		STR		R4, [R1, #TASK_PC_OFFSET] MATTHEW
+	
+	// update the task saved stack pointer
+	__asm("MRS		R0, PSP");
+	// MATTHEW for R4 PUSH		NO!!!!!!!
+	//		ADD		R0, #4
+	__asm("STR		R0, [R1, #TASK_SP_OFFSET]");
+	
+	// get background dispatcher task stack pointer
+	__asm("LDR		R1, =OS_pstBackgroundDispatcherTask");
+	__asm("LDR		R1, [R1]");
+	__asm("LDR		R1,	[R1, #TASK_SP_OFFSET]");
+	
+	// set	background dispatcher stack frame return address to
+	// dispatcher entry point always
+	__asm("LDR		R2, =OS_vBackgroundDispatcher");
+	__asm("ORR		R2, #1");
+	__asm("STR		R2,	[R1, #FRAME_PC_OFFSET]");
+	
+	// set XPSR thumb bit always
+	//LDR		R2, [R1, #FRAME_XPSR_OFFSET]
+	__asm("MOV		R2, #0");
+	__asm("ORR		R2, #MASK_XPSR_THUMB");
+	__asm("STR		R2, [R1, #FRAME_XPSR_OFFSET]");
+	
+	// store dispatcher stack pointer to PSP
+	__asm("MSR		PSP, R1");
+	
+    __asm("ThreadSwapAbort:");
+}
+#endif //BUILD_KERNEL
+#endif //BUILD_SAM3X8E
 
 void IRQ_vReset(void)
 {
@@ -165,15 +256,12 @@ void IRQ_vReset(void)
 /*----------------------------------------------------------------------------
   SVC_Handler
  *----------------------------------------------------------------------------*/
-#if BUILD_PBL
+ #ifdef BUILD_MK60
+#if defined(BUILD_PBL) || defined (BUILD_SBL)
 __asm void SVC_Handler(void) 
 {}
 #endif	
-#if BUILD_SBL
-__asm void SVC_Handler(void) 
-{}	
-#endif	
-#if BUILD_KERNEL_OR_KERNEL_APP
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
 __asm void SVC_Handler(void) 
 {
 	PRESERVE8
@@ -198,9 +286,43 @@ __asm void SVC_Handler(void)
 	MRSNE		r0, PSP
 	B 			SVC_Handler_Main
 }
-#endif
+#endif //BUILD_KERNEL
+#endif //BUILD_MK60
 
-#if BUILD_KERNEL_OR_KERNEL_APP
+#ifdef BUILD_SAM3X8E
+#if defined(BUILD_PBL) || defined (BUILD_SBL)
+void SVC_Handler(void)
+{}
+#endif
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
+void SVC_Handler(void)
+{
+	//IMPORT 	SVC_Handler_Main
+	//IMPORT 	OS_stSVCDataStruct
+	__asm("TST   lr, #4");
+	__asm("ITE   NE");
+	__asm("MRSNE r0, PSP");
+	__asm("MRSEQ r0, MSP");
+	
+	// load the link register containing user module return address into R0
+	// module return address will be used as module call handle - UID which
+	// infers privilege and is also unique
+	__asm("LDR   R0, [R0, #24]");
+	__asm("PUSH  {R1}");
+	__asm("LDR   R1, =OS_stSVCDataStruct");
+	__asm("STR   R0, [R1, #4]");
+	__asm("POP   {R1}");
+	
+	__asm("TST   lr, #4");
+	__asm("ITE   NE");
+	__asm("MRSNE r0, PSP");
+	__asm("MRSEQ r0, MSP");
+	__asm("B     SVC_Handler_Main");
+}
+#endif //BUILD_KERNEL
+#endif //BUILD_SAM3X8E
+
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
 SVC_Handler_Main(void* svc_args)
 {
 	SYS_vAPISVC(svc_args);
@@ -212,13 +334,13 @@ SVC_Handler_Main(void* svc_args)
  *----------------------------------------------------------------------------*/
 void SysTick_Handler(void) 
 {
-#if BUILD_PBL
+#if (BUILD_PBL == 1)
 	PBL_vCyclicTask();
 #endif	
-#if BUILD_SBL
+#if (BUILD_SBL == 1)
 	SBL_vCyclicTask();	
 #endif
-#if BUILD_KERNEL_OR_KERNEL_APP
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
 	/* declare data static because are usually consuming
 		 a thread stack here for temp data! */
 	static uint32 u32SysRunTimeLowOld;
@@ -448,7 +570,7 @@ void UART5_ERR_IRQHandler(void){}
 #ifdef BUILD_MK60
 void SDHC_IRQHandler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
 	IRQ_apfRXCallBack[0](NULL, NULL);
 #endif	
 }
@@ -460,8 +582,8 @@ void SDHC_IRQHandler(void)
 #ifdef BUILD_SAM3X8E
 void HSMCI_Handler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP
-	IRQ_apfRXCallBack[HSMCI_IRQn](NULL, NULL);
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
+	IRQ_apfRXCallBack[HSMCI_IRQn]((IOAPI_tenEHIOResource)NULL, NULL);
 #endif	
 }
 #endif
@@ -472,28 +594,28 @@ void HSMCI_Handler(void)
 #ifdef BUILD_MK60
 void ADC0_IRQHandler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
 	IRQ_apfRXCallBack[ADC0_IRQn](NULL, NULL);	
 #endif	
 }
 
 void ADC1_IRQHandler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP	
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)	
 	IRQ_apfRXCallBack[ADC1_IRQn](NULL, NULL);
 #endif	
 }
 
 void ADC2_IRQHandler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
 	IRQ_apfRXCallBack[ADC2_IRQn](NULL, NULL);
 #endif
 }
 
 void ADC3_IRQHandler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP	
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)	
 	IRQ_apfRXCallBack[ADC3_IRQn](NULL, NULL);
 #endif	
 }
@@ -502,8 +624,8 @@ void ADC3_IRQHandler(void)
 #ifdef BUILD_SAM3X8E
 void ADC_Handler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP
-	IRQ_apfRXCallBack[ADC_IRQn]((IOAPI_tenEHIOResource)NULL, NULL);
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
+	IRQ_apfRXCallBack[ADC_IRQn](EH_VIO_ADC0, NULL);
 #endif
 }
 #endif //BUILD_SAM3X8E
@@ -514,28 +636,28 @@ void ADC_Handler(void)
 #ifdef BUILD_MK60
 void FTM0_IRQHandler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
 	FTM_Interrupt(FTM_enFTM0);
 #endif	
 }
 
 void FTM1_IRQHandler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
 	FTM_Interrupt(FTM_enFTM1);	
 #endif	
 }
 
 void FTM2_IRQHandler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
 	FTM_Interrupt(FTM_enFTM2);	
 #endif	
 }
 
 void FTM3_IRQHandler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
 	FTM_Interrupt(FTM_enFTM3);	
 #endif	
 }
@@ -547,58 +669,65 @@ void FTM3_IRQHandler(void)
 #ifdef BUILD_SAM3X8E
 void TC0_Handler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP
-	IRQ_apfRXCallBack[TC0_IRQn](NULL, NULL);
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
+	IRQ_apfRXCallBack[TC0_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TC0, NULL);
 #endif	
 }
 
 void TC1_Handler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP
-	IRQ_apfRXCallBack[TC1_IRQn](NULL, NULL);
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
+	IRQ_apfRXCallBack[TC1_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TC0, NULL);
 #endif
 }
 
 void TC2_Handler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP
-	IRQ_apfRXCallBack[TC2_IRQn](NULL, NULL);
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
+	IRQ_apfRXCallBack[TC2_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TC0, NULL);
 #endif
 }
 
 void TC3_Handler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP
-	IRQ_apfRXCallBack[TC3_IRQn](NULL, NULL);
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
+	IRQ_apfRXCallBack[TC3_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TC1, NULL);
 #endif
 }
 
 void TC4_Handler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP
-	IRQ_apfRXCallBack[TC4_IRQn](NULL, NULL);
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
+	IRQ_apfRXCallBack[TC4_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TC1, NULL);
 #endif
 }
 
 void TC5_Handler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP
-	IRQ_apfRXCallBack[TC5_IRQn](NULL, NULL);
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
+	IRQ_apfRXCallBack[TC5_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TC1, NULL);
 #endif
 }
 
 void TC6_Handler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP
-	IRQ_apfRXCallBack[TC6_IRQn](NULL, NULL);
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
+	IRQ_apfRXCallBack[TC6_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TC2, NULL);
 #endif
 }
 
 void TC7_Handler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP
-	IRQ_apfRXCallBack[TC7_IRQn](NULL, NULL);
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
+	IRQ_apfRXCallBack[TC7_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TC2, NULL);
 #endif
+}
+
+void TC8_Handler(void)
+{
+	#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
+	IRQ_apfRXCallBack[TC8_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TC2, NULL);
+	#endif
 }
 #endif //BUILD_SAM3X8E
 
@@ -608,14 +737,14 @@ void TC7_Handler(void)
 #ifdef BUILD_MK60
 void I2C0_IRQHandler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP	
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)	
 	IRQ_apfRXCallBack[I2C0_IRQn](NULL, NULL);
 #endif
 }
 
 void I2C1_IRQHandler(void)
 {
-#if BUILD_KERNEL_OR_KERNEL_APP	
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)	
 	IRQ_apfRXCallBack[I2C1_IRQn](NULL, NULL);
 #endif	
 }

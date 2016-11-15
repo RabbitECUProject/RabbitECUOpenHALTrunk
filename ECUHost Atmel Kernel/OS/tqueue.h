@@ -20,12 +20,12 @@
 /* modified linux task queue header */
 typedef void (*pfInterTaskFunction)(void);
 
-typedef BUILDPACKED struct tq_struct  
+typedef BUILDPACKEDKEIL struct tq_struct  
 {
 	struct tq_struct* next;			/* linked list of queued tasks */
 	struct tq_struct* prev;			/* doubly linked list for removal and insertion */
 	struct TASK_tstTask stTask;			/* the task */
-} tq_struct;
+} BUILDPACKEDATMEL tq_struct;
 
 typedef struct tq_struct* task_queue;
 

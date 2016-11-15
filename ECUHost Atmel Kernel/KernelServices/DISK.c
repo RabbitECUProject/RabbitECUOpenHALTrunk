@@ -20,6 +20,7 @@
 #include "diskio.h"
 //#include "integer.h"
 #include "sdhc.h"
+#include "types.h"
 
 #ifdef BUILD_MK60
 #include "sdhc1.h"
@@ -37,7 +38,7 @@ void DISK_vStart(uint32* const u32Stat)
 
 void DISK_vRun(uint32* const u32Stat)
 {
-	static bool run = false;
+	static Bool run = false;
 	FIL stFIL;
 	FRESULT enResult;
 	

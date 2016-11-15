@@ -15,7 +15,6 @@
 #include "types.h"
 #include "OS.h"
 #include "IOAPI.h"
-#include "ENE.h"
 
 #define RX_BUFF_SIZE 							192u
 #define TX_BUFF_SIZE 							32u
@@ -154,17 +153,17 @@ typedef struct
 } DLL_tstRXSmallBuffer;
 
 
-void DLL_vIPBufferRXCB(ENE_tstETHUnionFrame*);
+//void DLL_vIPBufferRXCB(ENE_tstETHUnionFrame*);
 void DLL_vFrameRXCB(IOAPI_tenEHIOResource, puint8);
 void DLL_vStart(puint32 const);
 void DLL_vRun(puint32 const);
 void DLL_vTerminate(puint32 const);
 void DLL_vReceiveUARTBytes(IOAPI_tenEHIOResource, DLL_tstRXDLLData*);
-bool DLL_vQueueCANMessage(IOAPI_tenEHIOResource, PROTAPI_tstCANMsg*);	
-bool DLL_boQueueMessage(IOAPI_tenEHIOResource, puint8, uint32);
-bool DLL_boCheckCRC(DLL_tstRXDLLData* pRXFrame);
+Bool DLL_vQueueCANMessage(IOAPI_tenEHIOResource, PROTAPI_tstCANMsg*);	
+Bool DLL_boQueueMessage(IOAPI_tenEHIOResource, puint8, uint32);
+Bool DLL_boCheckCRC(DLL_tstRXDLLData* pRXFrame);
 DLL_tDLLVirtualChannel DLL_tGetVirtualChannel(IOAPI_tenEHIOResource);
-bool DLL_boInitDLLChannel(IOAPI_tenEHIOResource, IOAPI_tstPortConfigCB*);
+Bool DLL_boInitDLLChannel(IOAPI_tenEHIOResource, IOAPI_tstPortConfigCB*);
 IOAPI_tenPortMode DLL_enGetChannelMode(IOAPI_tenEHIOResource);
 
 #endif //DLL_H

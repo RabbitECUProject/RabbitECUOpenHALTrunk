@@ -31,7 +31,7 @@ typedef DAC_Type tstDACModule;
 #endif
 #ifdef BUILD_SAM3X8E
 #include "sam3x8e.h"
-typedef Dacc tstDACModule;
+typedef struct Dacc tstDACModule;
 #endif
 
 void DACHA_vStart(puint32 const);

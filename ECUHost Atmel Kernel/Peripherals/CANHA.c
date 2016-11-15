@@ -12,7 +12,8 @@
 /******************************************************************************/
 
 #include <string.h>
-#include "CAN.h"
+#include "can.h"
+#include "PERCAN.h"
 
 const CANHA_tstTimingSettings CANHA_astTimingSettings[] = CANHA_nSetTimingData;
 
@@ -30,9 +31,10 @@ SYSAPI_tenSVCResult CANHA_enInitBus(IOAPI_tenEHIOResource enEHIOResource, IOAPI_
 {
 	tstCANModule* pstCAN;
 	SYSAPI_tenSVCResult enSVCResult = SYSAPI_enBadResource;
+	IRQn_Type	nCANIRQ;
+	sint32 i32IDX = CANHA_u32GetCANIndex(enEHIOResource);
 
 #ifdef BUILD_MK60
-	IRQn_Type	nCANIRQ;
 	REGSET_tstReg32Val astCANReg32Val[54];	
 	uint8 u8RegIDX = 0;
 	uint8 u8TimingIDX;
@@ -41,7 +43,7 @@ SYSAPI_tenSVCResult CANHA_enInitBus(IOAPI_tenEHIOResource enEHIOResource, IOAPI_
 	uint8 u8TSEG1 = 15;
 	uint8 u8TSEG2 = 7;
 	uint8 u8MBXIDX;
-	sint32 i32IDX = CANHA_u32GetCANIndex(enEHIOResource);	
+	
 
 	
 	if ((-1 != i32IDX) && (TRUE == DLL_boInitDLLChannel(enEHIOResource, pstPortConfigCB)))	
@@ -197,6 +199,40 @@ SYSAPI_tenSVCResult CANHA_enInitBus(IOAPI_tenEHIOResource enEHIOResource, IOAPI_
 		}	
 	}
 #endif
+
+#ifdef BUILD_SAM3X8E
+
+	if ((-1 != i32IDX) && (TRUE == DLL_boInitDLLChannel(enEHIOResource, pstPortConfigCB)))
+	{
+		switch (enEHIOResource)
+		{
+			case EH_VIO_CAN1:
+			{
+				pstCAN = (tstCANModule*)CAN0;
+				nCANIRQ = CAN0_IRQn;
+				break;
+			}
+			case EH_VIO_CAN2:
+			{
+				pstCAN = (tstCANModule*)CAN1;
+				nCANIRQ = CAN1_IRQn;
+				break;
+			}
+			default:
+			{
+				pstCAN = NULL;
+				break;
+			}
+		}
+		
+		if (NULL != pstCAN)
+		{
+			/* turn on peripheral clock */
+			SIM_boEnablePeripheralClock(nCANIRQ);
+            can_init(pstCAN, SYS_FREQ_BUS, pstPortConfigCB->u32BaudRateHz);
+		}
+	}
+#endif //BUILD SAM3X8E
 	
 	return enSVCResult;
 }

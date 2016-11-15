@@ -2,10 +2,10 @@
 /*    Copyright (c) 2016 MD Automotive Controls. Original Work.               */
 /*    License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher   */
 /******************************************************************************/
-/* CONTEXT:KERNEL                                                                   */                      
+/* CONTEXT:KERNEL                                                             */                      
 /* PACKAGE TITLE:      XXX                                                    */
-/* DESCRIPTION:        XXX																										*/
-/* FILE NAME:          XXX.c                                          				*/
+/* DESCRIPTION:        XXX                                                    */
+/* FILE NAME:          XXX.c                                                  */
 /* REVISION HISTORY:   19-08-2016 | 1.0 | Initial revision                    */
 /*                                                                            */
 /******************************************************************************/

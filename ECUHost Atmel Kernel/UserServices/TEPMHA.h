@@ -16,12 +16,15 @@
 #include "TEPMAPI.h"
 #include "SYSAPI.h"
 #include "CEM.h"
+#include "tc.h"
 
 #ifdef BUILD_MK60
+#define TEPMHA_nEventChannels       8u
 typedef FTM_Type tstTimerModule;
 #endif //BUILD_MK60
 
 #ifdef BUILD_SAM3X8E
+#define TEPMHA_nEventChannels       6u
 typedef Tc tstTimerModule;
 #endif //BUILD_SAM3X8E
 
@@ -81,56 +84,82 @@ typedef enum
 #endif //BUILD_MK60
 
 #ifdef BUILD_SAM3X8E
-#define TEPMHA_nChannelInfo            \
-{                                      \
-	{EH_IO_TMR1, TEPMHA_enTC0, 7u, 4u}   \
+#define TEPMHA_nChannelInfo                                       \
+{                                                                 \
+	{EH_IO_TMR1, TEPMHA_enTC0, 0u, 0u, 1u, TC0_IRQn},             \
+	{EH_IO_TMR2, TEPMHA_enTC2, 1u, 0u, 1u, TC7_IRQn},             \
+	{EH_IO_Invalid, TEPMHA_enTC0, 0u, 0u, 0u, PERIPH_COUNT_IRQn}, \
+	{EH_IO_TMR4, TEPMHA_enTC2, 0u, 0u, 1u, TC6_IRQn},             \
+	{EH_IO_Invalid, TEPMHA_enTC0, 0u, 0u, 0u, PERIPH_COUNT_IRQn}, \
+	{EH_IO_Invalid, TEPMHA_enTC0, 0u, 0u, 0u, PERIPH_COUNT_IRQn}, \
+	{EH_IO_Invalid, TEPMHA_enTC0, 0u, 0u, 0u, PERIPH_COUNT_IRQn}, \
+	{EH_IO_Invalid, TEPMHA_enTC0, 0u, 0u, 0u, PERIPH_COUNT_IRQn}, \
+	{EH_IO_TMR9, TEPMHA_enTC2, 1u, 1u, 1u, TC7_IRQn},             \
+	{EH_IO_TMR10, TEPMHA_enTC2, 2u, 0u, 1u, TC8_IRQn},            \
+	{EH_IO_TMR11, TEPMHA_enTC2, 2u, 1u, 1u, TC8_IRQn},            \
+	{EH_IO_TMR12, TEPMHA_enTC0, 0u, 1u, 1u, TC0_IRQn}             \
 }
 #endif //BUILD_SAM3X8E
 
 #ifdef BUILD_MK60
 #define TEPMHA_nChannelFastInfo \
-{                             \
-	{EH_IO_TMR16},            \
-	{EH_IO_TMR15},            \
-	{EH_IO_TMR14},            \
-	{EH_IO_TMR13},            \
-	{EH_IO_TMR4},             \
-	{EH_IO_TMR3},             \
-	{EH_IO_TMR2},             \
-	{EH_IO_TMR1}              \
+{                               \
+	{EH_IO_TMR16},              \
+	{EH_IO_TMR15},              \
+	{EH_IO_TMR14},              \
+	{EH_IO_TMR13},              \
+	{EH_IO_TMR4},               \
+	{EH_IO_TMR3},               \
+	{EH_IO_TMR2},               \
+	{EH_IO_TMR1}                \
 }
 #endif //BUILD_MK60
 
 #ifdef BUILD_SAM3X8E
 #define TEPMHA_nChannelFastInfo \
-{                             \
-	{EH_IO_TMR3},             \
-	{EH_IO_TMR2},             \
-	{EH_IO_TMR1}              \
+{                               \
+	{EH_IO_TMR1},               \
+	{EH_IO_TMR12},              \
+	{EH_IO_Invalid},            \
+	{EH_IO_Invalid},            \
+	{EH_IO_Invalid},            \
+	{EH_IO_Invalid},            \
+	{EH_IO_Invalid},            \
+	{EH_IO_Invalid},            \
+	{EH_IO_Invalid},            \
+	{EH_IO_Invalid},            \
+	{EH_IO_Invalid},            \
+	{EH_IO_Invalid},            \
+	{EH_IO_TMR4},               \
+	{EH_IO_Invalid},            \
+	{EH_IO_TMR2},               \
+	{EH_IO_TMR9},               \
+	{EH_IO_TMR10},              \
+	{EH_IO_TMR11}               \
 }
 #endif //BUILD_SAM3X8E
 
 #ifdef BUILD_MK60
 #define TEPMHA_nChannelSlowInfo \
-{                             \
-	{EH_IO_TMR8},             \
-	{EH_IO_TMR7},             \
-	{EH_IO_TMR6},             \
-	{EH_IO_TMR5},             \
-	{EH_IO_TMR9},             \
-	{EH_IO_TMR10},            \
-	{EH_IO_TMR11},            \
-	{EH_IO_TMR12}             \
+{                               \
+	{EH_IO_TMR8},               \
+	{EH_IO_TMR7},               \
+	{EH_IO_TMR6},               \
+	{EH_IO_TMR5},               \
+	{EH_IO_TMR9},               \
+	{EH_IO_TMR10},              \
+	{EH_IO_TMR11},              \
+	{EH_IO_TMR12}               \
 }
 #endif //BUILD_MK60
 
 #ifdef BUILD_SAM3X8E
 #define TEPMHA_nChannelSlowInfo \
-{                             \
-	{EH_IO_TMR8},             \
-	{EH_IO_TMR7},             \
-	{EH_IO_TMR6}              \
-}
+{                               \
+	{EH_IO_TMR8},               \
+	{EH_IO_TMR7},               \
+	{EH_IO_TMR6}                \
+} 
 #endif //BUILD_SAM3X8E
 
 #ifdef BUILD_MK60
@@ -166,27 +195,34 @@ typedef enum
 #define TEPMHA_nMasterInfo   \
 {                            \
 	{EH_VIO_TC0},            \
+	{EH_VIO_TC2},            \
+	{EH_VIO_TC0},            \
+	{EH_VIO_TC2},            \
 	{EH_VIO_TC0},            \
 	{EH_VIO_TC0},            \
 	{EH_VIO_TC0},            \
-	{EH_VIO_TC1},            \
-	{EH_VIO_TC1},            \
-	{EH_VIO_TC1},            \
-	{EH_VIO_TC1}             \
+	{EH_VIO_TC0},            \
+	{EH_VIO_TC2},            \
+	{EH_VIO_TC2},            \
+	{EH_VIO_TC2},            \
+	{EH_VIO_TC0}             \
 }
 #endif //BUILD_SAM3X8E
 
 #ifdef BUILD_MK60
-#define TEPMHA_xRequestPortClock(x)                                                           \
-if (FTM0 == x){SIM_vSetReg32(SIM_SCGC6, SIM_SCGC6_FTM0_MASK);TEPM_u32PortClockRequested |= 1;}\
-if (FTM1 == x){SIM_vSetReg32(SIM_SCGC3, SIM_SCGC6_FTM1_MASK);TEPM_u32PortClockRequested |= 2;}\
-if (FTM2 == x){SIM_vSetReg32(SIM_SCGC6, SIM_SCGC3_FTM2_MASK);TEPM_u32PortClockRequested |= 4;}\
-if (FTM3 == x){SIM_vSetReg32(SIM_SCGC3, SIM_SCGC3_FTM3_MASK);TEPM_u32PortClockRequested |= 8;}
+#define TEPMHA_xRequestPortClock(x)                                                            \
+if (FTM0 == x){SIM_vSetReg32(SIM_SCGC6, SIM_SCGC6_FTM0_MASK);TEPM_u32PortClockRequested |= 1;} \
+if (FTM1 == x){SIM_vSetReg32(SIM_SCGC3, SIM_SCGC6_FTM1_MASK);TEPM_u32PortClockRequested |= 2;} \
+if (FTM2 == x){SIM_vSetReg32(SIM_SCGC6, SIM_SCGC3_FTM2_MASK);TEPM_u32PortClockRequested |= 4;} \
+if (FTM3 == x){SIM_vSetReg32(SIM_SCGC3, SIM_SCGC3_FTM3_MASK);TEPM_u32PortClockRequested |= 8;} 
 #endif //BUILD_MK60
 
-#ifdef BUILD_SAM3X8E
-#define TEPMHA_xRequestPortClock(x) __asm("nop")
-#endif //BUILD_SAM3X8E
+//#ifdef BUILD_SAM3X8E
+//#define TEPMHA_xRequestPortClock(x)                        \
+//if (TC0 == x) (void)SIM_boEnablePeripheralClock(TC0_IRQn); \
+//if (TC1 == x) (void)SIM_boEnablePeripheralClock(TC1_IRQn); \
+//if (TC2 == x) (void)SIM_boEnablePeripheralClock(TC2_IRQn); 
+//#endif //BUILD_SAM3X8E
 
 #ifdef BUILD_MK60
 #define TEPMHA_xInitInterrupts(x)                \
@@ -195,10 +231,6 @@ if (FTM1 == x){TEPM_vInitInterrupts(FTM1_IRQn);} \
 if (FTM2 == x){TEPM_vInitInterrupts(FTM2_IRQn);} \
 if (FTM3 == x){TEPM_vInitInterrupts(FTM3_IRQn);} 
 #endif //BUILD_MK60
-
-#ifdef BUILD_SAM3X8E
-#define TEPMHA_xInitInterrupts(x) __asm("nop")
-#endif //BUILD_SAM3X8E
 
 
 void TEPMHA_vStart(puint32 const pu32Arg);
@@ -218,9 +250,9 @@ uint32 TEPMHA_u32GetFTMTableIndex(IOAPI_tenEHIOResource);
 void TEPMHA_vStartEventProgramKernelQueues(void);
 void TEPMHA_vSynchroniseEventProgramKernelQueues(void);
 void TEPMHA_vForceQueueTerminate(tstTimerModule*, uint32);
-bool TEPMHA_boFlagIsSet(tstTimerModule*, uint32);
-bool TEMPHA_boInterruptEnabled(tstTimerModule*, uint32);
-uint32 TEPMHA_u32GetScheduledVal(tstTimerModule*, uint32);
+Bool TEPMHA_boFlagIsSet(tstTimerModule*, uint32, Bool, puint32, uint32);
+Bool TEMPHA_boInterruptEnabled(tstTimerModule*, uint32, Bool);
+TEPMAPI_ttEventTime TEPMHA_tGetScheduledVal(tstTimerModule*, uint32, Bool, uint32);
 void TEMPHA_vResetTimerFlag(tstTimerModule*, uint32);
 void TEPMHA_vGetFreeVal(tstTimerModule*, puint32);
 uint32 TEPMHA_u32GetFreeVal(tstTimerModule*);
@@ -228,6 +260,7 @@ void TEPMHA_vDisconnectEnable(tstTimerModule*, uint32);
 tstTimerModule* TEPMHA_pstGetTimerModuleFromEnum(TEPMHA_tenTimerModule);
 tstTimerModule* TEPMHA_pstConvertTimerModule(TEPMHA_tenTimerModule);
 void TEPMHA_vCapComAction(TEPMAPI_tenAction, tstTimerModule*, uint32, TEPMAPI_ttEventTime);
+IOAPI_tenTriState TEPMHA_enGetTimerDigitalState(IOAPI_tenEHIOResource);
 
 #endif //TEPMHA_H
 

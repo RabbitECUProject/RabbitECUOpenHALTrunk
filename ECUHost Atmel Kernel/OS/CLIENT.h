@@ -13,7 +13,7 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-//#include "ADC.h"
+//#include "PERADC.h"
 //#include "ADCAPI.h"
 #include "build.h"
 #include "CPUAbstract.h"

@@ -2,10 +2,10 @@
 /*    Copyright (c) 2016 MD Automotive Controls. Original Work.               */
 /*    License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher   */
 /******************************************************************************/
-/* CONTEXT:KERNEL                                                                   */                      
+/* CONTEXT:KERNEL                                                             */                      
 /* PACKAGE TITLE:      XXX                                                    */
-/* DESCRIPTION:        XXX																										*/
-/* FILE NAME:          XXX.c                                          				*/
+/* DESCRIPTION:        XXX                                                    */
+/* FILE NAME:          XXX.c                                                  */
 /* REVISION HISTORY:   19-08-2016 | 1.0 | Initial revision                    */
 /*                                                                            */
 /******************************************************************************/
@@ -74,7 +74,7 @@ SPREADAPI_ttSpreadIDX SPREAD_tRequestKernelSpread(SPREADAPI_tstSpreadCB* pstSpre
 }
 
 
-bool SPREAD_vCalculate(SPREADAPI_ttSpreadIDX tSpreadIDX)
+Bool SPREAD_vCalculate(SPREADAPI_ttSpreadIDX tSpreadIDX)
 {
 	SPREADAPI_tstSpreadCB* pstSpreadCB;
 	puint32 pu32Spread; puint16 pu16Spread; puint8 pu8Spread;
@@ -86,323 +86,327 @@ bool SPREAD_vCalculate(SPREADAPI_ttSpreadIDX tSpreadIDX)
 	sint32 s32Step;
 	sint32 s32Increment;
 	uint32 u32Shift = 0;
-	bool boResultFound = false;
-	
-	pstSpreadCB = SPREAD_apstSpreadCB[tSpreadIDX];
-	
-	switch (pstSpreadCB->enDataType)
-	{
-		{
-		case TYPE_enUInt8:
-			u32Source = *(puint32)(pstSpreadCB->pvSourceData);
-			pu8Spread = (puint8)pstSpreadCB->pvSpreadData;
-			break;			
-		}
-		case TYPE_enUInt16:
-		{
-			u16Source = *(puint16)(pstSpreadCB->pvSourceData);
-			pu16Spread = (puint16)pstSpreadCB->pvSpreadData;	
+	Bool boResultFound = false;
 
-			if (u16Source < *pu16Spread)
+	if ((0 <= tSpreadIDX) &&
+	   ((SPREAD_nKernelSpreadCount + SPREAD_nUserSpreadCount) > tSpreadIDX))
+    {
+		pstSpreadCB = SPREAD_apstSpreadCB[tSpreadIDX];
+	
+		switch (pstSpreadCB->enDataType)
+		{
 			{
-				SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = 0;
-				SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = 0;				
+			case TYPE_enUInt8:
+				u32Source = *(puint32)(pstSpreadCB->pvSourceData);
+				pu8Spread = (puint8)pstSpreadCB->pvSpreadData;
+				break;			
 			}
-			else if (u16Source >= *(pu16Spread + (pstSpreadCB->s16SpreadSize - 1)))
+			case TYPE_enUInt16:
 			{
-				SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = pstSpreadCB->s16SpreadSize - 2;
-				SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = 0xffff;					
-			}
-			else
-			{				
-				/* Start bisection search */
-				u16SpreadIDX = (pstSpreadCB->s16SpreadSize) / 2;
-				u16OldSpreadIDX = pstSpreadCB->s16SpreadSize - 1;
-				
-				while (false == boResultFound)
+				u16Source = *(puint16)(pstSpreadCB->pvSourceData);
+				pu16Spread = (puint16)pstSpreadCB->pvSpreadData;	
+
+				if (u16Source < *pu16Spread)
 				{
-					if (u16Source == *(pu16Spread + u16SpreadIDX))
+					SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = 0;
+					SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = 0;				
+				}
+				else if (u16Source >= *(pu16Spread + (pstSpreadCB->s16SpreadSize - 1)))
+				{
+					SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = pstSpreadCB->s16SpreadSize - 2;
+					SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = 0xffff;					
+				}
+				else
+				{				
+					/* Start bisection search */
+					u16SpreadIDX = (pstSpreadCB->s16SpreadSize) / 2;
+					u16OldSpreadIDX = pstSpreadCB->s16SpreadSize - 1;
+				
+					while (false == boResultFound)
 					{
-						SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = u16SpreadIDX;
-						SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = 0;	
-						boResultFound = true;
-					}
-					else if (u16Source < *(pu16Spread + u16SpreadIDX))
-					{						
-						if (u16Source >= *(pu16Spread + u16SpreadIDX - 1))
+						if (u16Source == *(pu16Spread + u16SpreadIDX))
 						{
-							SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = u16SpreadIDX - 1;							
+							SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = u16SpreadIDX;
+							SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = 0;	
 							boResultFound = true;
 						}
-						else
-						{
-							/* Move left */
-							if (u16OldSpreadIDX < u16SpreadIDX)
+						else if (u16Source < *(pu16Spread + u16SpreadIDX))
+						{						
+							if (u16Source >= *(pu16Spread + u16SpreadIDX - 1))
 							{
-								/* Was moving right */
-								u16TempSpreadIDX = u16OldSpreadIDX;
-								u16OldSpreadIDX = u16SpreadIDX;
-								u16SpreadIDX = (u16SpreadIDX + u16TempSpreadIDX) / 2;	
-							}	
-							else
-							{
-								/* Was moving left */
-								u16OldSpreadIDX = u16SpreadIDX;
-								u16SpreadIDX = u16SpreadIDX / 2;	
-							}	
-						}
-					}
-					else if (u16Source >= *(pu16Spread + u16SpreadIDX))
-					{						
-						if (u16Source <= *(pu16Spread + u16SpreadIDX + 1))							
-						{
-							SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = u16SpreadIDX;							
-							boResultFound = true;
-						}	
-						else
-						{
-							/* Move right */
-							if (u16OldSpreadIDX > u16SpreadIDX)
-							{					
-								/*	Was moving left */					
-								u16TempSpreadIDX = u16OldSpreadIDX;
-								u16OldSpreadIDX = u16SpreadIDX;
-								u16SpreadIDX = (u16SpreadIDX + u16TempSpreadIDX) / 2;	
+								SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = u16SpreadIDX - 1;							
+								boResultFound = true;
 							}
 							else
 							{
-								/* Was moving right */
-								u16OldSpreadIDX = u16SpreadIDX;
-								u16SpreadIDX = (u16SpreadIDX + pstSpreadCB->s16SpreadSize) / 2;
+								/* Move left */
+								if (u16OldSpreadIDX < u16SpreadIDX)
+								{
+									/* Was moving right */
+									u16TempSpreadIDX = u16OldSpreadIDX;
+									u16OldSpreadIDX = u16SpreadIDX;
+									u16SpreadIDX = (u16SpreadIDX + u16TempSpreadIDX) / 2;	
+								}	
+								else
+								{
+									/* Was moving left */
+									u16OldSpreadIDX = u16SpreadIDX;
+									u16SpreadIDX = u16SpreadIDX / 2;	
+								}	
+							}
+						}
+						else if (u16Source >= *(pu16Spread + u16SpreadIDX))
+						{						
+							if (u16Source <= *(pu16Spread + u16SpreadIDX + 1))							
+							{
+								SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = u16SpreadIDX;							
+								boResultFound = true;
 							}	
-						}					
+							else
+							{
+								/* Move right */
+								if (u16OldSpreadIDX > u16SpreadIDX)
+								{					
+									/*	Was moving left */					
+									u16TempSpreadIDX = u16OldSpreadIDX;
+									u16OldSpreadIDX = u16SpreadIDX;
+									u16SpreadIDX = (u16SpreadIDX + u16TempSpreadIDX) / 2;	
+								}
+								else
+								{
+									/* Was moving right */
+									u16OldSpreadIDX = u16SpreadIDX;
+									u16SpreadIDX = (u16SpreadIDX + pstSpreadCB->s16SpreadSize) / 2;
+								}	
+							}					
+						}
 					}
-				}
 				
-				s32Step = *(ps32Spread + SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex + 1) 
-								- *(ps32Spread + SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex);
+					s32Step = *(ps32Spread + SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex + 1) 
+									- *(ps32Spread + SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex);
 
-				while (0xffff < s32Step)
-				{
-					u32Shift++;
-					s32Step = s32Step >> 1;
-				}
+					while (0xffff < s32Step)
+					{
+						u32Shift++;
+						s32Step = s32Step >> 1;
+					}
 				
-				s32Increment = s32Source - *(pu16Spread + SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex);
-				s32Increment = s32Increment >> u32Shift;
-				SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = (0x10000 * (uint32)s32Increment) / (uint32)s32Step;				
-			}		
-			break;		
-		}
-		case TYPE_enUInt32:
-		{
-			u32Source = *(puint32)(pstSpreadCB->pvSourceData);
-			pu32Spread = (puint32)pstSpreadCB->pvSpreadData;		
+					s32Increment = s32Source - *(pu16Spread + SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex);
+					s32Increment = s32Increment >> u32Shift;
+					SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = (0x10000 * (uint32)s32Increment) / (uint32)s32Step;				
+				}		
+				break;		
+			}
+			case TYPE_enUInt32:
+			{
+				u32Source = *(puint32)(pstSpreadCB->pvSourceData);
+				pu32Spread = (puint32)pstSpreadCB->pvSpreadData;		
 			
-			if (u32Source < *pu32Spread)
-			{
-				SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = 0;
-				SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = 0;				
-			}
-			else if (u32Source >= *(pu32Spread + (pstSpreadCB->s16SpreadSize - 1)))
-			{
-				SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = pstSpreadCB->s16SpreadSize - 2;
-				SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = 0xffff;					
-			}
-			else
-			{				
-				/* Start bisection search */
-				u16SpreadIDX = (pstSpreadCB->s16SpreadSize) / 2;
-				u16OldSpreadIDX = pstSpreadCB->s16SpreadSize - 1;
-				
-				while (false == boResultFound)
+				if (u32Source < *pu32Spread)
 				{
-					if ((u32Source == *(pu32Spread + u16SpreadIDX)))
+					SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = 0;
+					SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = 0;				
+				}
+				else if (u32Source >= *(pu32Spread + (pstSpreadCB->s16SpreadSize - 1)))
+				{
+					SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = pstSpreadCB->s16SpreadSize - 2;
+					SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = 0xffff;					
+				}
+				else
+				{				
+					/* Start bisection search */
+					u16SpreadIDX = (pstSpreadCB->s16SpreadSize) / 2;
+					u16OldSpreadIDX = pstSpreadCB->s16SpreadSize - 1;
+				
+					while (false == boResultFound)
 					{
-						SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = u16SpreadIDX;
-						SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = 0;	
-						boResultFound = true;
-					}
-					else if (u32Source < *(pu32Spread + u16SpreadIDX))
-					{						
-						if (u32Source >= *(pu32Spread + u16SpreadIDX - 1))
+						if ((u32Source == *(pu32Spread + u16SpreadIDX)))
 						{
-							SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = u16SpreadIDX - 1;							
+							SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = u16SpreadIDX;
+							SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = 0;	
 							boResultFound = true;
 						}
-						else
-						{
-							/* Move left */
-							if (u16OldSpreadIDX < u16SpreadIDX)
+						else if (u32Source < *(pu32Spread + u16SpreadIDX))
+						{						
+							if (u32Source >= *(pu32Spread + u16SpreadIDX - 1))
 							{
-								/* Was moving right */
-								u16TempSpreadIDX = u16OldSpreadIDX;
-								u16OldSpreadIDX = u16SpreadIDX;
-								u16SpreadIDX = (u16SpreadIDX + u16TempSpreadIDX) / 2;	
-							}	
-							else
-							{
-								/* Was moving left */
-								u16OldSpreadIDX = u16SpreadIDX;
-								u16SpreadIDX = u16SpreadIDX / 2;	
-							}	
-						}
-					}
-					else if (u32Source >= *(pu32Spread + u16SpreadIDX))
-					{						
-						if (u32Source <= *(pu32Spread + u16SpreadIDX + 1))							
-						{
-							SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = u16SpreadIDX;							
-							boResultFound = true;
-						}	
-						else
-						{
-							/* Move right */
-							if (u16OldSpreadIDX > u16SpreadIDX)
-							{					
-								/*	Was moving left */					
-								u16TempSpreadIDX = u16OldSpreadIDX;
-								u16OldSpreadIDX = u16SpreadIDX;
-								u16SpreadIDX = (u16SpreadIDX + u16TempSpreadIDX) / 2;	
+								SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = u16SpreadIDX - 1;							
+								boResultFound = true;
 							}
 							else
 							{
-								/* Was moving right */
-								u16OldSpreadIDX = u16SpreadIDX;
-								u16SpreadIDX = (u16SpreadIDX + pstSpreadCB->s16SpreadSize) / 2;
-							}	
-						}					
-					}
-				}
-				
-				s32Step = *(pu32Spread + SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex + 1) 
-								- *(pu32Spread + SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex);
-
-				while (0xffff < s32Step)
-				{
-					u32Shift++;
-					s32Step = s32Step >> 1;
-				}
-				
-				s32Increment = u32Source - *(pu32Spread + SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex);
-				s32Increment = s32Increment >> u32Shift;
-				SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = (0x10000 * (uint32)s32Increment) / (uint32)s32Step;				
-			}
-			break;	
-		}
-		
-		case TYPE_enInt8:
-		{
-			s32Source = *(psint8)(pstSpreadCB->pvSourceData);	
-			ps8Spread = (psint8)pstSpreadCB->pvSpreadData;
-			break;	
-		}
-		
-		case TYPE_enInt16:
-		{
-			s16Source = *(psint16)(pstSpreadCB->pvSourceData);	
-			ps16Spread = (psint16)pstSpreadCB->pvSpreadData;		
-			break;	
-		}
-		
-		case TYPE_enInt32:
-		{
-			s32Source = *(psint32)(pstSpreadCB->pvSourceData);	
-			ps32Spread = (psint32)pstSpreadCB->pvSpreadData;		
-		
-			if (s32Source < *ps32Spread)
-			{
-				SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = 0;
-				SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = 0;				
-			}
-			else if (s32Source >= *(ps32Spread + (pstSpreadCB->s16SpreadSize - 1)))
-			{
-				SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = pstSpreadCB->s16SpreadSize - 2;
-				SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = 0xffff;					
-			}
-			else
-			{				
-				/* Start bisection search */
-				u16SpreadIDX = (pstSpreadCB->s16SpreadSize) / 2;
-				u16OldSpreadIDX = pstSpreadCB->s16SpreadSize - 1;
-				
-				while (false == boResultFound)
-				{
-					if ((s32Source == *(ps32Spread + u16SpreadIDX)))
-					{
-						SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = u16SpreadIDX;
-						SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = 0;	
-						boResultFound = true;
-					}
-					else if (s32Source < *(ps32Spread + u16SpreadIDX))
-					{						
-						if (s32Source >= *(ps32Spread + u16SpreadIDX - 1))
-						{
-							SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = u16SpreadIDX - 1;							
-							boResultFound = true;
+								/* Move left */
+								if (u16OldSpreadIDX < u16SpreadIDX)
+								{
+									/* Was moving right */
+									u16TempSpreadIDX = u16OldSpreadIDX;
+									u16OldSpreadIDX = u16SpreadIDX;
+									u16SpreadIDX = (u16SpreadIDX + u16TempSpreadIDX) / 2;	
+								}	
+								else
+								{
+									/* Was moving left */
+									u16OldSpreadIDX = u16SpreadIDX;
+									u16SpreadIDX = u16SpreadIDX / 2;	
+								}	
+							}
 						}
-						else
-						{
-							/* Move left */
-							if (u16OldSpreadIDX < u16SpreadIDX)
+						else if (u32Source >= *(pu32Spread + u16SpreadIDX))
+						{						
+							if (u32Source <= *(pu32Spread + u16SpreadIDX + 1))							
 							{
-								/* Was moving right */
-								u16TempSpreadIDX = u16OldSpreadIDX;
-								u16OldSpreadIDX = u16SpreadIDX;
-								u16SpreadIDX = (u16SpreadIDX + u16TempSpreadIDX) / 2;	
+								SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = u16SpreadIDX;							
+								boResultFound = true;
 							}	
 							else
 							{
-								/* Was moving left */
-								u16OldSpreadIDX = u16SpreadIDX;
-								u16SpreadIDX = u16SpreadIDX / 2;	
-							}	
+								/* Move right */
+								if (u16OldSpreadIDX > u16SpreadIDX)
+								{					
+									/*	Was moving left */					
+									u16TempSpreadIDX = u16OldSpreadIDX;
+									u16OldSpreadIDX = u16SpreadIDX;
+									u16SpreadIDX = (u16SpreadIDX + u16TempSpreadIDX) / 2;	
+								}
+								else
+								{
+									/* Was moving right */
+									u16OldSpreadIDX = u16SpreadIDX;
+									u16SpreadIDX = (u16SpreadIDX + pstSpreadCB->s16SpreadSize) / 2;
+								}	
+							}					
 						}
 					}
-					else if (s32Source >= *(ps32Spread + u16SpreadIDX))
-					{						
-						if (s32Source <= *(ps32Spread + u16SpreadIDX + 1))							
+				
+					s32Step = *(pu32Spread + SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex + 1) 
+									- *(pu32Spread + SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex);
+
+					while (0xffff < s32Step)
+					{
+						u32Shift++;
+						s32Step = s32Step >> 1;
+					}
+				
+					s32Increment = u32Source - *(pu32Spread + SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex);
+					s32Increment = s32Increment >> u32Shift;
+					SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = (0x10000 * (uint32)s32Increment) / (uint32)s32Step;				
+				}
+				break;	
+			}
+		
+			case TYPE_enInt8:
+			{
+				s32Source = *(psint8)(pstSpreadCB->pvSourceData);	
+				ps8Spread = (psint8)pstSpreadCB->pvSpreadData;
+				break;	
+			}
+		
+			case TYPE_enInt16:
+			{
+				s16Source = *(psint16)(pstSpreadCB->pvSourceData);	
+				ps16Spread = (psint16)pstSpreadCB->pvSpreadData;		
+				break;	
+			}
+		
+			case TYPE_enInt32:
+			{
+				s32Source = *(psint32)(pstSpreadCB->pvSourceData);	
+				ps32Spread = (psint32)pstSpreadCB->pvSpreadData;		
+		
+				if (s32Source < *ps32Spread)
+				{
+					SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = 0;
+					SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = 0;				
+				}
+				else if (s32Source >= *(ps32Spread + (pstSpreadCB->s16SpreadSize - 1)))
+				{
+					SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = pstSpreadCB->s16SpreadSize - 2;
+					SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = 0xffff;					
+				}
+				else
+				{				
+					/* Start bisection search */
+					u16SpreadIDX = (pstSpreadCB->s16SpreadSize) / 2;
+					u16OldSpreadIDX = pstSpreadCB->s16SpreadSize - 1;
+				
+					while (false == boResultFound)
+					{
+						if ((s32Source == *(ps32Spread + u16SpreadIDX)))
 						{
-							SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = u16SpreadIDX;							
+							SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = u16SpreadIDX;
+							SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = 0;	
 							boResultFound = true;
-						}	
-						else
-						{
-							/* Move right */
-							if (u16OldSpreadIDX > u16SpreadIDX)
-							{					
-								/*	Was moving left */					
-								u16TempSpreadIDX = u16OldSpreadIDX;
-								u16OldSpreadIDX = u16SpreadIDX;
-								u16SpreadIDX = (u16SpreadIDX + u16TempSpreadIDX) / 2;	
+						}
+						else if (s32Source < *(ps32Spread + u16SpreadIDX))
+						{						
+							if (s32Source >= *(ps32Spread + u16SpreadIDX - 1))
+							{
+								SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = u16SpreadIDX - 1;							
+								boResultFound = true;
 							}
 							else
 							{
-								/* Was moving right */
-								u16OldSpreadIDX = u16SpreadIDX;
-								u16SpreadIDX = (u16SpreadIDX + pstSpreadCB->s16SpreadSize) / 2;
+								/* Move left */
+								if (u16OldSpreadIDX < u16SpreadIDX)
+								{
+									/* Was moving right */
+									u16TempSpreadIDX = u16OldSpreadIDX;
+									u16OldSpreadIDX = u16SpreadIDX;
+									u16SpreadIDX = (u16SpreadIDX + u16TempSpreadIDX) / 2;	
+								}	
+								else
+								{
+									/* Was moving left */
+									u16OldSpreadIDX = u16SpreadIDX;
+									u16SpreadIDX = u16SpreadIDX / 2;	
+								}	
+							}
+						}
+						else if (s32Source >= *(ps32Spread + u16SpreadIDX))
+						{						
+							if (s32Source <= *(ps32Spread + u16SpreadIDX + 1))							
+							{
+								SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = u16SpreadIDX;							
+								boResultFound = true;
 							}	
-						}					
+							else
+							{
+								/* Move right */
+								if (u16OldSpreadIDX > u16SpreadIDX)
+								{					
+									/*	Was moving left */					
+									u16TempSpreadIDX = u16OldSpreadIDX;
+									u16OldSpreadIDX = u16SpreadIDX;
+									u16SpreadIDX = (u16SpreadIDX + u16TempSpreadIDX) / 2;	
+								}
+								else
+								{
+									/* Was moving right */
+									u16OldSpreadIDX = u16SpreadIDX;
+									u16SpreadIDX = (u16SpreadIDX + pstSpreadCB->s16SpreadSize) / 2;
+								}	
+							}					
+						}
 					}
-				}
 				
-				s32Step = *(ps32Spread + SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex + 1) 
-								- *(ps32Spread + SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex);
+					s32Step = *(ps32Spread + SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex + 1) 
+									- *(ps32Spread + SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex);
 
-				while (0xffff < s32Step)
-				{
-					u32Shift++;
-					s32Step = s32Step >> 1;
-				}
+					while (0xffff < s32Step)
+					{
+						u32Shift++;
+						s32Step = s32Step >> 1;
+					}
 				
-				s32Increment = s32Source - *(ps32Spread + SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex);
-				s32Increment = s32Increment >> u32Shift;
-				SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = (0x10000 * (uint32)s32Increment) / (uint32)s32Step;				
+					s32Increment = s32Source - *(ps32Spread + SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex);
+					s32Increment = s32Increment >> u32Shift;
+					SPREAD_astSpreadResult[tSpreadIDX].u16SpreadOffset = (0x10000 * (uint32)s32Increment) / (uint32)s32Step;				
+				}
+				break;	
 			}
-			break;	
 		}
 	}
-	
+
 	/* TODO suppress warnings */
 	(void)pu8Spread;
 	(void)ps16Spread;
@@ -411,7 +415,7 @@ bool SPREAD_vCalculate(SPREADAPI_ttSpreadIDX tSpreadIDX)
 		
 	OS_stSVCDataStruct.pvData = (void*)&SPREAD_astSpreadResult;
 	
-	return true;
+	return boResultFound;
 }
 
 SPREADAPI_tstSpreadResult SPREAD_stGetSpread(SPREADAPI_ttSpreadIDX tSpreadIDX)

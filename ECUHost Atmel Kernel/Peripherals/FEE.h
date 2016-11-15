@@ -124,25 +124,25 @@ typedef struct
 	uint8* pu8TargetAddress;
 	uint32 u32WriteCount;
 	uint32 u32AccumulateCount;
-	bool boProgramming;
-	bool boProgErr;
+	Bool boProgramming;
+	Bool boProgErr;
 } FEE_tstWriteControlBlock;
 
 void FEE_vStart(uint32* const);
 void FEE_vRun(uint32* const);
 void FEE_vTerminate(uint32* const);
 void FEE_vStartSBL(void);
-bool FEE_boCheckPartition(void);
-bool FEE_boSetWorkingData(puint8, uint16);
-bool FEE_boNVMWorkingCopy(bool, bool);
-bool FEE_boNVMClear(void);
-bool FEE_boPartition(void);
-bool FEE_boWriteControlBlock(COMMONNL_tstRXLargeBuffer* const, 
+Bool FEE_boCheckPartition(void);
+Bool FEE_boSetWorkingData(puint8, uint16);
+Bool FEE_boNVMWorkingCopy(Bool, Bool);
+Bool FEE_boNVMClear(void);
+Bool FEE_boPartition(void);
+Bool FEE_boWriteControlBlock(COMMONNL_tstRXLargeBuffer* const, 
 															 uint8* const, 
 															 uint32);
-bool FEE_boUpdateControlBlock(uint32);
-bool FEE_boEraseForDownload(puint8, uint32);
-bool FEE_boWriteNVM(puint8, puint8, uint32);
+Bool FEE_boUpdateControlBlock(uint32);
+Bool FEE_boEraseForDownload(puint8, uint32);
+Bool FEE_boWriteNVM(puint8, puint8, uint32);
 
 #endif //FEE_H
 

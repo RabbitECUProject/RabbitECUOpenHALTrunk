@@ -12,7 +12,7 @@
 #include <string.h>
 #include "types.h"
 #include "CPUAbstract.h"
-#include "uart.h"
+#include "peruart.h"
 #include "regset.h"
 #include "sys.h"
 #include "IRQ.h"
@@ -20,6 +20,7 @@
 #include "os.h"
 #include "DLL.h"
 #include "SIM.h"
+#include "uart.h"
 
 const UART_tstUARTCB UARTHA_rastUARTCB[] = UARTHA_nDataCB;
 
@@ -43,15 +44,17 @@ void UARTHA_vTerminate(uint32* const u32Stat)
 
 SYSAPI_tenSVCResult UARTHA_enInitBus(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tstPortConfigCB* pstPortConfigCB)
 {
-	REGSET_tstReg8Val astUARTReg8Val[4];
-	uint16 u16BaudDiv;
-	tstUARTModule* pstUART;
 	sint32 i32IDX = UARTHA_u32GetUARTIndex(enEHIOResource);	
 	SYSAPI_tenSVCResult enSVCResult = SYSAPI_enBadResource;
+	tstUARTModule* pstUART;
+
+#ifdef BUILD_MK60
+	REGSET_tstReg8Val astUARTReg8Val[4];
+	uint16 u16BaudDiv;
 	
 	if ((-1 != i32IDX) && (TRUE == DLL_boInitDLLChannel(enEHIOResource, pstPortConfigCB)))
 	{
-#ifdef BUILD_MK60
+
 		/* turn on UARTn clock */
 		SIM_vSetReg32(UARTHA_rastUARTCB[i32IDX].enSIMReg, UARTHA_rastUARTCB[i32IDX].u32SIMRegMask);		
 	
@@ -79,9 +82,27 @@ SYSAPI_tenSVCResult UARTHA_enInitBus(IOAPI_tenEHIOResource enEHIOResource, IOAPI
 		IRQ_vEnableIRQ(UARTHA_rastUARTCB[i32IDX].IRQn);
 		
 		enSVCResult = SYSAPI_enOK;
-#endif //BUILD_MK60
 	}
-	
+#endif //BUILD_MK60	
+
+#ifdef BUILD_SAM3X8E
+    sam_uart_opt_t stUARTOptions;
+	uint32 u32RetVal;
+
+	if ((-1 != i32IDX) && (TRUE == DLL_boInitDLLChannel(enEHIOResource, pstPortConfigCB)))
+	{
+		pstUART = UARTHA_rastUARTCB[i32IDX].pstUART;
+
+		stUARTOptions.ul_mck = SYS_FREQ_BUS;
+		stUARTOptions.ul_baudrate = pstPortConfigCB->u32BaudRateHz;
+		stUARTOptions.ul_mode = UART_MR_PAR_NO | UART_MR_CHMODE_NORMAL;
+
+		u32RetVal = uart_init(pstUART, &stUARTOptions);
+
+		enSVCResult = (0 == u32RetVal) ? SYSAPI_enOK : SYSAPI_enBaudRateUnavailable;
+	}
+#endif //BUILD_SAM3X8E
+
 	return enSVCResult;
 }
 

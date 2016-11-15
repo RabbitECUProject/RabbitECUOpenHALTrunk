@@ -38,7 +38,7 @@ x##.pvData = (void*)&##z;
 
 #define	CQUEUE_boIsEmpty(x)	(x##.u32Head == x##.u32Tail) ? true : false
 
-#define	CQUEUE_xIsEmpty(x)	(x)->u32Head == (x)->u32Tail ? true : false
+#define	CQUEUE_xIsEmpty(x)	((x)->u32Head == (x)->u32Tail ? true : false)
 
 #define	CQUEUE_boIsStaticActive(x)	(x##.u32Tail != 0) ? true : false
 

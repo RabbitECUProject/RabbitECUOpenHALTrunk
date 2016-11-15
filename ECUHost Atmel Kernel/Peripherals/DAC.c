@@ -36,7 +36,7 @@ void DAC_vTerminate(puint32 const pu32Stat)
 
 SYSAPI_tenSVCResult DAC_vInitDACResource(IOAPI_tenEHIOResource enEHIOResource, DACAPI_tstDACCB* pstDACCB)
 {
-    return DAC_vInitDACResource(enEHIOResource, pstDACCB);
+    return DACHA_vInitDACResource(enEHIOResource, pstDACCB);
 }
 			
 void DAC_vWriteDACQueue(IOAPI_tenEHIOResource enEHIOResource, DACAPI_ttOutputVoltage* pOutputVoltage)

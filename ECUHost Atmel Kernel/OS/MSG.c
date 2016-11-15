@@ -132,7 +132,7 @@ MSG_tenMBXErr MSG_enMBXTryFetch(MSG_tstMBX* const pstMBX, void* pstMSG)
 	return enMBXErr;
 }
 
-bool MSG_boMBXValid(MSG_tstMBX* const pstMBX)
+Bool MSG_boMBXValid(MSG_tstMBX* const pstMBX)
 {
 	return (MSG_enNone != pstMBX->enMSGType);
 }
