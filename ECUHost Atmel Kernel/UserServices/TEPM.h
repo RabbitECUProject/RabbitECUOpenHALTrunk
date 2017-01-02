@@ -17,6 +17,9 @@
 #include "TEPMHA.h"
 #include "SYSAPI.h"
 
+#define TEPM_nSoonCounts  0x10
+#define TEPM_nFarCounts   0xe0000000
+
 
 typedef struct
 {
@@ -24,10 +27,13 @@ typedef struct
 	TEPMAPI_ttEventTime tEventTime;
 } TEPM_tstTEPMResult;
 
+
+
 typedef struct
 {
 	IOAPI_tenEHIOResource enEHIOResource;
-	TEPMHA_tenTimerModule enTimerModule;
+	TEPMHA_tenModule enModule;
+	TEPMHA_tenModuleType enModuleType;
 	uint32 u32Channel;
 	uint32 u32SubChannel;
 	uint32 u32MuxSel;
@@ -53,7 +59,7 @@ void TEPM_vConfigureUserTEPMInput(IOAPI_tenEHIOResource, TEPMAPI_tstTimedUserEve
 void TEPM_vInitiateUserCallBack(IOAPI_tenEHIOResource, TEPMAPI_ttEventTime);
 void TEPM_u32GetTimerVal(IOAPI_tenEHIOResource, puint32);
 void TEPM_vInterruptHandler(IOAPI_tenEHIOResource);
-uint32 TEPM_u32GetFTMTableIndex(IOAPI_tenEHIOResource enEHIOResource);
+uint32 TEPM_u32GetFTMTableIndex(IOAPI_tenEHIOResource);
 void TEPM_vStartEventProgramKernelQueues(void);
 void TEPM_vSynchroniseEventProgramKernelQueues(void);
 IOAPI_tenTriState TEPM_enGetTimerDigitalState(IOAPI_tenEHIOResource);

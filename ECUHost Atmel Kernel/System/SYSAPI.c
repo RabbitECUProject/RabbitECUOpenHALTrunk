@@ -32,6 +32,7 @@
 #include "MSG.h"
 #include "os.h"
 #include "PROTAPI.h"
+#include "PERWDT.h"
 #include "RESM.h"
 #include "SPREADS.h"
 #include "SPREADSAPI.h"
@@ -283,6 +284,13 @@ void SYS_vAPISVC(void* svc_args)
 		{
 			boResult = CEM_boPopulateCrankEdgeArrays((puint16)OS_stSVCDataStruct.pvArg1, *(Bool*)OS_stSVCDataStruct.pvArg2, *(uint8*)OS_stSVCDataStruct.pvArg3);
 			OS_stSVCDataStruct.enSVCResult = (TRUE == boResult) ? SYSAPI_enOK : SYSAPI_enBadArgument;			
+			break;
+		}
+
+		case SYSAPI_enResetWatchdog:
+		{
+		    boResult = WDT_boReset(0);
+			OS_stSVCDataStruct.enSVCResult = (TRUE == boResult) ? SYSAPI_enOK : SYSAPI_enBadArgument;
 			break;
 		}
 	}

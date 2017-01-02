@@ -20,7 +20,7 @@ uint8 CEM_u8FallingEdgesCount;
 uint32 CEM_u32CrankEdgeCounter;
 Bool CEM_boCrankEdgeFirstRising;
 uint32 CEM_u32CrankEdgeTimeoutCount;
-uint32 CEM_u32EventTimeOld;
+TEPMAPI_ttEventTime CEM_tEventTimeOld;
 
 static void CEM_vOriginReset(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttEventTime tEventTime, uint16 u16OriginGlobalCycleFraction);
 static void CEM_vCalculateGlobalTime(TEPMAPI_ttEventTime tEventTime, uint16 u16LastGapFraction);
@@ -31,7 +31,7 @@ void CEM_vStart(uint32* const u32Stat)
 	CEM_u32GlobalCycleTime = 0x0000ffff;
 	CEM_u32GlobalCycleOriginCount = 0;
 	CEM_u32CrankEdgeTimeoutCount = 0;
-	CEM_u32EventTimeOld = 0xffffffff;
+	CEM_tEventTimeOld = ~0;
 	
 	memset((void*)&CEM_au16RisingCrankEdge, 0, sizeof(CEM_au16RisingCrankEdge)); 
 	memset((void*)&CEM_au16FallingCrankEdge, 0, sizeof(CEM_au16FallingCrankEdge));	
@@ -45,7 +45,7 @@ void CEM_vRun(uint32* const u32Stat)
 {
 	if (10 < CEM_u32CrankEdgeTimeoutCount)
 	{
-		CEM_u32EventTimeOld = 0xffffffff;		
+		CEM_tEventTimeOld = ~0;		
 		CEM_u32GlobalCycleOriginCount	= 0;	
 	}
 	else
@@ -100,8 +100,23 @@ void CEM_vPrimaryEventCB(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttEventTi
 {
 	IOAPI_tenTriState enTriState;
 	uint16 u16LastGapFraction;
+	static volatile uint32 u32DebugArrayHigh[10];
+	static volatile uint32 u32DebugArrayLow[10];
+	static volatile uint32 u32DebugIDXHigh;
+	static volatile uint32 u32DebugIDXLow;
 
     enTriState = TEPM_enGetTimerDigitalState(enEHIOResource);
+
+	if (IOAPI_enHigh == enTriState)
+	{
+	    u32DebugIDXHigh = 9 > u32DebugIDXHigh ? u32DebugIDXHigh + 1 : 0;
+		u32DebugArrayHigh[u32DebugIDXHigh] = tEventTime;
+	}
+	else
+	{
+		u32DebugIDXLow = 9 > u32DebugIDXLow ? u32DebugIDXLow + 1 : 0;
+		u32DebugArrayLow[u32DebugIDXLow] = tEventTime;
+	}
 
 	CEM_u32CrankEdgeTimeoutCount = 0;
 	
@@ -119,7 +134,11 @@ void CEM_vPrimaryEventCB(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttEventTi
 		}	
 		else
 		{
-			CEM_u32GlobalCycleFraction = CEM_au16FallingCrankEdge[CEM_u32CrankEdgeCounter / 2];	
+			CEM_u32GlobalCycleFraction = CEM_au16FallingCrankEdge[CEM_u32CrankEdgeCounter / 2];
+			u16LastGapFraction = CEM_au16FallingCrankEdge[CEM_u32CrankEdgeCounter / 2] - 
+				CEM_au16RisingCrankEdge[CEM_u32CrankEdgeCounter / 2];
+			CEM_vCalculateGlobalTime(tEventTime, u16LastGapFraction);		
+			TEPM_vSynchroniseEventProgramKernelQueues();
 		}				
 	}
 	else if (IOAPI_enHigh == enTriState)
@@ -128,8 +147,8 @@ void CEM_vPrimaryEventCB(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttEventTi
 			&& (TRUE == CEM_boCrankEdgeFirstRising))
 		{				
 			CEM_u32CrankEdgeCounter = 0;		
-			u16LastGapFraction = CEM_au16FallingCrankEdge[CEM_u32CrankEdgeCounter / 2] - 
-				CEM_au16RisingCrankEdge[CEM_u8RisingEdgesCount - 1];
+			u16LastGapFraction = CEM_au16RisingCrankEdge[CEM_u32CrankEdgeCounter / 2] - 
+				CEM_au16FallingCrankEdge[CEM_u8FallingEdgesCount - 1];
 			CEM_vCalculateGlobalTime(tEventTime, u16LastGapFraction);			
 			CEM_vOriginReset(enEHIOResource, tEventTime, CEM_au16RisingCrankEdge[CEM_u32CrankEdgeCounter / 2]);		
 		}	
@@ -143,20 +162,41 @@ void CEM_vPrimaryEventCB(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttEventTi
 		}				
 	}
 		
-	CEM_u32EventTimeOld = 0xffff & tEventTime;
+	CEM_tEventTimeOld = tEventTime;
 	CEM_u32CrankEdgeCounter++;
 }
 
 static void CEM_vCalculateGlobalTime(TEPMAPI_ttEventTime tEventTime, uint16 u16LastGapFraction)
 {
-	uint16 u16Temp;
+	TEPMAPI_ttEventTime tTemp;
 	
-	if (0xffffffff != CEM_u32EventTimeOld)
+    tTemp = tEventTime - CEM_tEventTimeOld;		
+
+	if (0xffff >= tTemp)
 	{
-		u16Temp = tEventTime - (uint16)CEM_u32EventTimeOld;		
-		
-		CEM_u32GlobalCycleTime = (0x10000 * (uint32)u16Temp) / (uint32)u16LastGapFraction;
+		CEM_u32GlobalCycleTime = (0x10000u * tTemp) / (uint32)u16LastGapFraction;
 	}
+	else if (0xfffff >= tTemp)
+	{
+		u16LastGapFraction = u16LastGapFraction >> 4;
+		CEM_u32GlobalCycleTime = (0x1000u * tTemp) / (uint32)u16LastGapFraction;
+	}
+	else if (0xffffff >= tTemp)
+	{
+		u16LastGapFraction = u16LastGapFraction >> 8;
+		CEM_u32GlobalCycleTime = (0x100u * tTemp) / (uint32)u16LastGapFraction;
+	}	
+	else if (0xfffffff >= tTemp)
+	{
+		u16LastGapFraction = u16LastGapFraction >> 12;
+		CEM_u32GlobalCycleTime = (0x10u * tTemp) / (uint32)u16LastGapFraction;
+	}	
+	else
+	{
+	    CEM_u32GlobalCycleTime = ~0u;
+	}
+
+	return tTemp;
 }
 
 static void CEM_vOriginReset(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttEventTime tEventTime, uint16 u16OriginGlobalCycleFraction)

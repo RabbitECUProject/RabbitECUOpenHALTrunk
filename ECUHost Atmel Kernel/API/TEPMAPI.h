@@ -24,7 +24,7 @@
 
 
 /* GLOBAL TYPE DEFINITIONS ****************************************************/
-typedef uint16 TEPMAPI_ttEventTime;
+typedef uint32 TEPMAPI_ttEventTime;
 typedef void (*TEPMAPI_tpfEventCB)(IOAPI_tenEHIOResource, TEPMAPI_ttEventTime);
 typedef uint32 TEPMAPI_ttEventCount;
 
@@ -80,7 +80,7 @@ typedef struct
 {
 	TEPMAPI_tenAction enAction;
 	TEPMAPI_tenMethod enMethod;
-	TEPMAPI_ttEventTime  tEventTime;
+	TEPMAPI_ttEventTime tEventTime;
 	TEPMAPI_tpfEventCB pfEventCB;	
 } TEPMAPI_tstTimedUserEvent;/*CR1_122*/
 
@@ -88,7 +88,7 @@ typedef struct
 {
 	TEPMAPI_tenAction enAction;
 	TEPMAPI_tenMethod enMethod;
-	TEPMAPI_ttEventTime*  ptEventTime;
+	TEPMAPI_ttEventTime* ptEventTime;
 	TEPMAPI_tpfEventCB pfEventCB;	
 } TEPMAPI_tstTimedKernelEvent;/*CR1_122*/
 
@@ -102,6 +102,7 @@ typedef struct
 typedef struct
 {
 	TEPMAPI_tenAction enAction;
+	TEPMAPI_tenPreScalar enPreScalar;	
 	Bool boInterruptEnable;
 } TEPMAPI_tstTEPMChannelCB;
 

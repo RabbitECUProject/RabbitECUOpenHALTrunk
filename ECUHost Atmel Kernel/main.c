@@ -5,8 +5,8 @@
  * Author : Matthew
  */ 
 
+#include "PERWDT.h"
 
-//#include "sam.h"
 extern int EFIMain(void);
 extern void SystemInit(void);
 
@@ -14,6 +14,8 @@ int main(void)
 {
     /* Initialize the SAM system */
     SystemInit();
+
+	WDT_vStart(0xff,0xff);
 
     /* Replace with your application code */
     while (1) 

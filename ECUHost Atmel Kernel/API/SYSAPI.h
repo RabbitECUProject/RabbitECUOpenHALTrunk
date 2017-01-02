@@ -103,7 +103,10 @@ typedef enum
 
 	SYSAPI_enConfigureKernelTEPMOutput = 0x1067,
 
-	SYSAPI_enSetupCrankTriggerEdgePattern = 0x1068
+	SYSAPI_enSetupCrankTriggerEdgePattern = 0x1068,
+
+    SYSAPI_enResetWatchdog = 0x1069
+	/* USER_vSVC(enResetWatchdog, uint16*, NULL, NULL) */	
 
 } SYSAPI_tenSVCID;
 

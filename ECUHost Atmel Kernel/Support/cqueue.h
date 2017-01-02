@@ -42,11 +42,11 @@ x##.pvData = (void*)&##z;
 
 #define	CQUEUE_boIsStaticActive(x)	(x##.u32Tail != 0) ? true : false
 
-#define	CQUEUE_xIsStaticActive(x)	(x)->u32Tail != 0 ? true : false
+#define	CQUEUE_xIsStaticActive(x)	((x)->u32Tail != 0 ? true : false)
 
 #define	CQUEUE_boIsAtStaticHead(x)	(x##.u32Head == 0) ? true : false
 
-#define	CQUEUE_xIsAtStaticHead(x)	(x)->u32Head == 0 ? true : false
+#define	CQUEUE_xIsAtStaticHead(x)	((x)->u32Head == 0 ? true : false)
 
 #define	CQUEUE_vResetStaticHead(x)	(x##.u32Head = 0)
 

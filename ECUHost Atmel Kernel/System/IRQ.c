@@ -372,7 +372,7 @@ void SysTick_Handler(void)
 		{	
 			pstTaskQueue = OS_stGetOSQueue(OS_enKERNELQueueCyclic);
 			stTaskQueue = *pstTaskQueue;
-			if(NULL != stTaskQueue)
+			if (NULL != stTaskQueue)
 			{			
 				OS_vOverrunTaskReport(OS_enKERNELQueueCyclic);
 				/* call schedule - no thread to swap out we are still co-op tasking */				
@@ -670,63 +670,63 @@ void FTM3_IRQHandler(void)
 void TC0_Handler(void)
 {
 #if (BUILD_KERNEL_OR_KERNEL_APP == 1)
-	IRQ_apfRXCallBack[TC0_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TC0, NULL);
+	IRQ_apfRXCallBack[TC0_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC0, NULL);
 #endif	
 }
 
 void TC1_Handler(void)
 {
 #if (BUILD_KERNEL_OR_KERNEL_APP == 1)
-	IRQ_apfRXCallBack[TC1_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TC0, NULL);
+	IRQ_apfRXCallBack[TC1_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC1, NULL);
 #endif
 }
 
 void TC2_Handler(void)
 {
 #if (BUILD_KERNEL_OR_KERNEL_APP == 1)
-	IRQ_apfRXCallBack[TC2_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TC0, NULL);
+	IRQ_apfRXCallBack[TC2_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC2, NULL);
 #endif
 }
 
 void TC3_Handler(void)
 {
 #if (BUILD_KERNEL_OR_KERNEL_APP == 1)
-	IRQ_apfRXCallBack[TC3_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TC1, NULL);
+	IRQ_apfRXCallBack[TC3_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC3, NULL);
 #endif
 }
 
 void TC4_Handler(void)
 {
 #if (BUILD_KERNEL_OR_KERNEL_APP == 1)
-	IRQ_apfRXCallBack[TC4_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TC1, NULL);
+	IRQ_apfRXCallBack[TC4_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC4, NULL);
 #endif
 }
 
 void TC5_Handler(void)
 {
 #if (BUILD_KERNEL_OR_KERNEL_APP == 1)
-	IRQ_apfRXCallBack[TC5_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TC1, NULL);
+	IRQ_apfRXCallBack[TC5_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC5, NULL);
 #endif
 }
 
 void TC6_Handler(void)
 {
 #if (BUILD_KERNEL_OR_KERNEL_APP == 1)
-	IRQ_apfRXCallBack[TC6_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TC2, NULL);
+	IRQ_apfRXCallBack[TC6_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC6, NULL);
 #endif
 }
 
 void TC7_Handler(void)
 {
 #if (BUILD_KERNEL_OR_KERNEL_APP == 1)
-	IRQ_apfRXCallBack[TC7_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TC2, NULL);
+	IRQ_apfRXCallBack[TC7_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC7, NULL);
 #endif
 }
 
 void TC8_Handler(void)
 {
 	#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
-	IRQ_apfRXCallBack[TC8_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TC2, NULL);
+	IRQ_apfRXCallBack[TC8_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC8, NULL);
 	#endif
 }
 #endif //BUILD_SAM3X8E

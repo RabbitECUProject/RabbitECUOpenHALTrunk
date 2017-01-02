@@ -217,6 +217,15 @@ typedef enum
 	EH_VIO_TC0,
 	EH_VIO_TC1,
 	EH_VIO_TC2,
+	EH_VIO_TCC0,
+	EH_VIO_TCC1,
+	EH_VIO_TCC2,
+	EH_VIO_TCC3,
+	EH_VIO_TCC4,
+	EH_VIO_TCC5,
+	EH_VIO_TCC6,
+	EH_VIO_TCC7,
+	EH_VIO_TCC8,
 	EH_VIO_IIC1,	/* Recommended to have contiguous virtual comms devices/channels here */
 	EH_VIO_IIC2,    /* Don't change the IIC, SPI, UART, CAN, ENET order */
 	EH_VIO_SPI1,
@@ -228,12 +237,13 @@ typedef enum
     EH_VIO_ENET_CH1,
     EH_VIO_ENET_CH2,
 	EH_VIO_ADC0,
+	EH_VIO_PWM,
 	IO_Total_Count,
 	EH_IO_Invalid
 } IOAPI_tenEHIOResource;
 
 #define EH_FIRST_TMR        EH_IO_TMR1
-#define EH_LAST_TMR	        EH_IO_TMR9
+#define EH_LAST_TMR	        EH_IO_TMR12
 #define EH_ENET_FIRST_CH    EH_VIO_ENET_CH1
 #define EH_ENET_LAST_CH	    EH_VIO_ENET_CH2
 #define EH_FIRST_UART       EH_VIO_UART1

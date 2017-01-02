@@ -17,18 +17,20 @@
 #include "SYSAPI.h"
 #include "CEM.h"
 #include "tc.h"
+#include "pwm.h"
 
 #ifdef BUILD_MK60
-#define TEPMHA_nEventChannels       8u
+#define TEPMHA_nEventChannels       16u
 typedef FTM_Type tstTimerModule;
 #endif //BUILD_MK60
 
 #ifdef BUILD_SAM3X8E
-#define TEPMHA_nEventChannels       6u
+#define TEPMHA_nEventChannels       15u
 typedef Tc tstTimerModule;
+typedef Pwm tstPWMModule;
 #endif //BUILD_SAM3X8E
 
-#define TEPMHA_nEventChannels       24u
+
 #define TEPMHA_nUserEventsMax       4u
 #define TEPMHA_nKernelEventsMax     4u
 #define TEPMHA_nMastersMax		    1u
@@ -50,8 +52,19 @@ typedef enum
 	TEPMHA_enTC0,
 	TEPMHA_enTC1,
 	TEPMHA_enTC2,
-	TEPMHA_enTimerModuleCount
-} TEPMHA_tenTimerModule;
+	TEPMHA_enPWM0,
+	TEPMHA_enModuleCount,
+	TEPMHA_enModuleInvalid
+} TEPMHA_tenModule;
+
+typedef enum
+{
+    TEPMHA_enCapCom,
+	TEPMHA_enPWM,
+	TEPMHA_enSoft
+} TEPMHA_tenModuleType;
+
+
 #endif //BUILD_SAM3X8E
 
 #ifdef BUILD_MK60
@@ -84,20 +97,23 @@ typedef enum
 #endif //BUILD_MK60
 
 #ifdef BUILD_SAM3X8E
-#define TEPMHA_nChannelInfo                                       \
-{                                                                 \
-	{EH_IO_TMR1, TEPMHA_enTC0, 0u, 0u, 1u, TC0_IRQn},             \
-	{EH_IO_TMR2, TEPMHA_enTC2, 1u, 0u, 1u, TC7_IRQn},             \
-	{EH_IO_Invalid, TEPMHA_enTC0, 0u, 0u, 0u, PERIPH_COUNT_IRQn}, \
-	{EH_IO_TMR4, TEPMHA_enTC2, 0u, 0u, 1u, TC6_IRQn},             \
-	{EH_IO_Invalid, TEPMHA_enTC0, 0u, 0u, 0u, PERIPH_COUNT_IRQn}, \
-	{EH_IO_Invalid, TEPMHA_enTC0, 0u, 0u, 0u, PERIPH_COUNT_IRQn}, \
-	{EH_IO_Invalid, TEPMHA_enTC0, 0u, 0u, 0u, PERIPH_COUNT_IRQn}, \
-	{EH_IO_Invalid, TEPMHA_enTC0, 0u, 0u, 0u, PERIPH_COUNT_IRQn}, \
-	{EH_IO_TMR9, TEPMHA_enTC2, 1u, 1u, 1u, TC7_IRQn},             \
-	{EH_IO_TMR10, TEPMHA_enTC2, 2u, 0u, 1u, TC8_IRQn},            \
-	{EH_IO_TMR11, TEPMHA_enTC2, 2u, 1u, 1u, TC8_IRQn},            \
-	{EH_IO_TMR12, TEPMHA_enTC0, 0u, 1u, 1u, TC0_IRQn}             \
+#define TEPMHA_nChannelInfo                                                                      \
+{                                                                                                \
+	{EH_IO_TMR1,  TEPMHA_enTC0,           TEPMHA_enCapCom,  0u, 0u, 1u, TC0_IRQn},               \
+	{EH_IO_TMR2,  TEPMHA_enTC2,           TEPMHA_enCapCom,  2u, 0u, 1u, TC7_IRQn},               \
+	{EH_IO_TMR3,  TEPMHA_enTC2,           TEPMHA_enCapCom,  0u, 1u, 1u, TC6_IRQn},               \
+	{EH_IO_TMR4,  TEPMHA_enTC2,           TEPMHA_enCapCom,  0u, 0u, 1u, TC6_IRQn},               \
+	{EH_IO_TMR5,  TEPMHA_enPWM0,          TEPMHA_enPWM,     7u, 0u, 1u, PWM_IRQn},               \
+	{EH_IO_TMR6,  TEPMHA_enPWM0,          TEPMHA_enPWM,     6u, 0u, 1u, PWM_IRQn},               \
+	{EH_IO_TMR7,  TEPMHA_enPWM0,          TEPMHA_enPWM,     5u, 0u, 1u, PWM_IRQn},               \
+	{EH_IO_TMR8,  TEPMHA_enPWM0,          TEPMHA_enPWM,     4u, 0u, 1u, PWM_IRQn},               \
+	{EH_IO_TMR9,  TEPMHA_enTC2,           TEPMHA_enCapCom,  2u, 1u, 1u, TC7_IRQn},               \
+	{EH_IO_TMR10, TEPMHA_enTC2,           TEPMHA_enCapCom,  4u, 0u, 1u, TC8_IRQn},               \
+	{EH_IO_TMR11, TEPMHA_enTC2,           TEPMHA_enCapCom,  4u, 1u, 1u, TC8_IRQn},               \
+	{EH_IO_TMR12, TEPMHA_enTC0,           TEPMHA_enCapCom,  0u, 1u, 1u, TC0_IRQn},               \
+	{EH_IO_ADD4,  TEPMHA_enTC1,           TEPMHA_enCapCom,  0u, 0u, 1u, TC4_IRQn},               \
+	{EH_IO_ADD6,  TEPMHA_enTC1,           TEPMHA_enCapCom,  2u, 0u, 1u, TC5_IRQn},               \
+	{EH_IO_ADD7,  TEPMHA_enTC1,           TEPMHA_enCapCom,  2u, 1u, 1u, TC5_IRQn},               \
 }
 #endif //BUILD_SAM3X8E
 
@@ -217,12 +233,33 @@ if (FTM2 == x){SIM_vSetReg32(SIM_SCGC6, SIM_SCGC3_FTM2_MASK);TEPM_u32PortClockRe
 if (FTM3 == x){SIM_vSetReg32(SIM_SCGC3, SIM_SCGC3_FTM3_MASK);TEPM_u32PortClockRequested |= 8;} 
 #endif //BUILD_MK60
 
-//#ifdef BUILD_SAM3X8E
-//#define TEPMHA_xRequestPortClock(x)                        \
-//if (TC0 == x) (void)SIM_boEnablePeripheralClock(TC0_IRQn); \
-//if (TC1 == x) (void)SIM_boEnablePeripheralClock(TC1_IRQn); \
-//if (TC2 == x) (void)SIM_boEnablePeripheralClock(TC2_IRQn); 
-//#endif //BUILD_SAM3X8E
+#ifdef BUILD_SAM3X8E
+#define TEPMHA_xRequestTimerClock(x)                       \
+if (TC0 == x)                                              \
+{                                                          \
+    (void)SIM_boEnablePeripheralClock(TC0_IRQn);           \
+    (void)SIM_boEnablePeripheralClock(TC1_IRQn);           \
+    (void)SIM_boEnablePeripheralClock(TC2_IRQn);           \
+}                                                          \
+if (TC1 == x)                                              \
+{                                                          \
+	(void)SIM_boEnablePeripheralClock(TC3_IRQn);           \
+	(void)SIM_boEnablePeripheralClock(TC4_IRQn);           \
+	(void)SIM_boEnablePeripheralClock(TC5_IRQn);           \
+}                                                          \
+if (TC2 == x)                                              \
+{                                                          \
+	(void)SIM_boEnablePeripheralClock(TC6_IRQn);           \
+	(void)SIM_boEnablePeripheralClock(TC7_IRQn);           \
+	(void)SIM_boEnablePeripheralClock(TC8_IRQn);           \
+}
+
+#define TEPMHA_xRequestPWMClock(x)                         \
+if (PWM == x)                                              \
+{                                                          \
+	(void)SIM_boEnablePeripheralClock(PWM_IRQn);           \
+}
+#endif //BUILD_SAM3X8E
 
 #ifdef BUILD_MK60
 #define TEPMHA_xInitInterrupts(x)                \
@@ -245,22 +282,27 @@ void TEPMHA_vConfigureKernelTEPMOutput(IOAPI_tenEHIOResource, TEPMAPI_tstTimedKe
 void TEPMHA_vConfigureUserTEPMInput(IOAPI_tenEHIOResource, TEPMAPI_tstTimedUserEvent*);
 void TEPMHA_vInitiateUserCallBack(IOAPI_tenEHIOResource, TEPMAPI_ttEventTime);
 void TEPMHA_u32GetTimerVal(IOAPI_tenEHIOResource, puint32);
-void TEPMHA_Interrupt(TEPMHA_tenTimerModule);
+void TEPMHA_Interrupt(TEPMHA_tenModule);
 uint32 TEPMHA_u32GetFTMTableIndex(IOAPI_tenEHIOResource);
 void TEPMHA_vStartEventProgramKernelQueues(void);
 void TEPMHA_vSynchroniseEventProgramKernelQueues(void);
-void TEPMHA_vForceQueueTerminate(tstTimerModule*, uint32);
-Bool TEPMHA_boFlagIsSet(tstTimerModule*, uint32, Bool, puint32, uint32);
-Bool TEMPHA_boInterruptEnabled(tstTimerModule*, uint32, Bool);
-TEPMAPI_ttEventTime TEPMHA_tGetScheduledVal(tstTimerModule*, uint32, Bool, uint32);
-void TEMPHA_vResetTimerFlag(tstTimerModule*, uint32);
-void TEPMHA_vGetFreeVal(tstTimerModule*, puint32);
-uint32 TEPMHA_u32GetFreeVal(tstTimerModule*);
-void TEPMHA_vDisconnectEnable(tstTimerModule*, uint32);
-tstTimerModule* TEPMHA_pstGetTimerModuleFromEnum(TEPMHA_tenTimerModule);
-tstTimerModule* TEPMHA_pstConvertTimerModule(TEPMHA_tenTimerModule);
-void TEPMHA_vCapComAction(TEPMAPI_tenAction, tstTimerModule*, uint32, TEPMAPI_ttEventTime);
+void TEPMHA_vForceQueueTerminate(void*, uint32, uint32);
+Bool TEPMHA_boFlagIsSet(void*, uint32, puint32, uint32);
+Bool TEMPHA_boInterruptEnabled(void*, uint32);
+TEPMAPI_ttEventTime TEPMHA_tGetScheduledVal(void*, uint32, Bool, uint32);
+void TEMPHA_vResetTimerFlag(void*, uint32);
+void TEPMHA_vGetFreeVal(void*, puint32);
+uint32 TEPMHA_u32GetFreeVal(void*, uint32);
+void TEPMHA_vDisconnectEnable(void*, uint32);
+void* TEPMHA_pvGetModuleFromEnum(TEPMHA_tenModule);
+void TEPMHA_vCapComAction(TEPMAPI_tenAction, void*, uint32, uint32, TEPMAPI_ttEventTime);
 IOAPI_tenTriState TEPMHA_enGetTimerDigitalState(IOAPI_tenEHIOResource);
+void* TEPMHA_pvGetTimerModuleFromVIO(IOAPI_tenEHIOResource);
+uint32 TEPMHA_u32GetTimerChannelsPerInterruptGroup(void);
+uint32 TEPMHA_u32GetTimerStartChannelInterruptGroup(IOAPI_tenEHIOResource);
+uint32 TEPMHA_u32GetTimerHardwareSubChannel(uint32);
+TEPMHA_tenModule TEPMHA_enTimerEnumFromResource(IOAPI_tenEHIOResource);
+IOAPI_tenEHIOResource TEPMHA_enGetTimerResourceFromVIOAndIndex(IOAPI_tenEHIOResource, uint32);
 
 #endif //TEPMHA_H
 
