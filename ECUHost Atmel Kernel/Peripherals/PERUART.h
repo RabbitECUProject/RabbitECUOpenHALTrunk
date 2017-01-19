@@ -9,17 +9,38 @@
 /* REVISION HISTORY:   19-08-2016 | 1.0 | Initial revision                    */
 /*                                                                            */
 /******************************************************************************/
-#include "sys.h"
-#include "time.h"
+#ifndef UART_H
+#define UART_H
 
-
-#ifndef SYSABSTRACT_H
-#define SYSABSTRACT_H
-
+#include <stddef.h>
 #include "CPUAbstract.h"
-#define get_fattime TIME_u32GetFATTime 
+#include "DLL.h"
+#include "IOAPI.h"
+#include "SIMHA.h"
+#include "sys.h"
+#include "types.h"
+#include "UARTHA.h"
 
 
-#endif //SYSABSTRACT_H
+typedef struct
+{
+	uint32 u32SourceClockHz;
+	SIMHA_tenReg enSIMReg;
+	uint32 u32SIMRegMask;
+	tstUARTModule* pstUART;
+	IRQn_Type IRQn;
+} UART_tstUARTCB;
 
+void UART_vStart(uint32* const);
+void UART_vRun(uint32* const);
+void UART_vTerminate(uint32* const);
+SYSAPI_tenSVCResult UART_enInitBus(IOAPI_tenEHIOResource, IOAPI_tstPortConfigCB*);
+void UART_vSendChar(IOAPI_tenEHIOResource, uint8);
+uint8 UART_u8GetChar(IOAPI_tenEHIOResource);
+void UART_vDisableTXInterrupt(IOAPI_tenEHIOResource);
+void UART_vEnableTXInterrupt(IOAPI_tenEHIOResource);
+void UART_vDisableRXInterrupt(IOAPI_tenEHIOResource);
+void UART_vEnableRXInterrupt(IOAPI_tenEHIOResource);
+
+#endif //UART_H
 

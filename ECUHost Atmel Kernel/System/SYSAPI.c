@@ -102,6 +102,7 @@ void SYS_vAPISVC(void* svc_args)
 			
 			else if ((IOAPI_enIICBus == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2)
 								|| (IOAPI_enUARTBus == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2) 
+								|| (IOAPI_enSPIBus == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2) 
 								|| (IOAPI_enCANBus == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2)		
 								|| (IOAPI_enENETChannel == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2))
 			{
