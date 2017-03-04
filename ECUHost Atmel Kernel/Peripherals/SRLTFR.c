@@ -14,6 +14,7 @@
 #include <string.h>
 #include "IIC.h"
 #include "IOAPI.h"
+#include "PERSPI.h"
 #include "SYSAPI.h"
 #include "types.h"
 #include "CQUEUE.h"
@@ -38,6 +39,12 @@ void SRLTFR_vRun(puint32 const pu32Arg)
 			case EH_VIO_IIC2:	
 			{
 				IIC_vInitTransfer(&astTransferInfo[stTransferQueue.u32Head]);
+				SRLTFR_enActiveEHIOResource = astTransferInfo[stTransferQueue.u32Head].enEHIOResource;
+			}
+			case EH_VIO_SPI1:
+			case EH_VIO_SPI2:
+			{
+				SPI_vInitTransfer(&astTransferInfo[stTransferQueue.u32Head]);
 				SRLTFR_enActiveEHIOResource = astTransferInfo[stTransferQueue.u32Head].enEHIOResource;
 			}
 			default:

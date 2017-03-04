@@ -101,14 +101,19 @@ typedef CAN_Type tstCANModule;
 #endif
 #ifdef BUILD_SAM3X8E
 #include "sam3xa.h"
-typedef struct Can tstCANModule;
+typedef Can tstCANModule;
+#define CAN_MB_TYPE_NDIS 0
+#define CAN_MB_TYPE_RX 1
+#define CAN_MB_TYPE_TX 3
 #endif
 
 void CANHA_vStart(uint32* const);
 void CANHA_vRun(uint32* const);
 void CANHA_vTerminate(uint32* const);
 void CANHA_vInitTransfer(IOAPI_tstTransferCB*);
-SYSAPI_tenSVCResult CANHA_enInitBus(IOAPI_tenEHIOResource, IOAPI_tstPortConfigCB*);
+uint32 CANHA_u32InitBus(IOAPI_tenEHIOResource, IOAPI_tstPortConfigCB*);
+Bool CANHA_boReadMB(tstCANModule*, CANHA_tstCANMB*);
+void CANHA_vInterrupt(IOAPI_tenEHIOResource);
 
 #endif //CANHA_H
 

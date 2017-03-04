@@ -750,6 +750,18 @@ void I2C1_IRQHandler(void)
 }
 #endif //BUILD_MK60	
 
+/*----------------------------------------------------------------------------
+  SAM3X8E SPI_Handlers
+ *----------------------------------------------------------------------------*/
+#ifdef BUILD_SAM3X8E
+void SPI0_Handler(void)
+{
+#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
+	IRQ_apfRXCallBack[SPI0_IRQn]((IOAPI_tenEHIOResource)EH_VIO_SPI1, NULL);
+#endif	
+}
+
+#endif //BUILD_SAM3X8E
 
 /*----------------------------------------------------------------------------
   MK60 CANX_Handlers
@@ -770,10 +782,26 @@ void CAN1_ORed_Message_buffer_IRQHandler(void)
 }
 #endif //BUILD_MK60
 
+#ifdef BUILD_SAM3X8E
+void CAN0_Handler(void)
+{
+	tstCANModule* pstCAN = CAN0;
+
+	IRQ_apfRXCallBack[CAN0_IRQn]((IOAPI_tenEHIOResource)EH_VIO_CAN1, NULL);
+}
+
+void CAN1_Handler(void)
+{
+	tstCANModule* pstCAN = CAN1;
+	
+	IRQ_apfRXCallBack[CAN1_IRQn]((IOAPI_tenEHIOResource)EH_VIO_CAN2, NULL);
+}
+#endif //BUILD_MK60
+
 void IRQ_vCommonCAN(tstCANModule* pstCAN, IOAPI_tenEHIOResource enEHIOResource, IRQn_Type enIRQType)
 {
 #ifdef BUILD_MK60
-	CAN_tstCANMB* pstCANMB;
+	CANHA_tstCANMB* pstCANMB;
 	uint32 u32IMask = 1;
 	uint32 u32MBIDX;
 	uint32 u32IMaskMax = MATH_u32IDXToMask(CAN_nCANMailboxCount);
@@ -782,7 +810,7 @@ void IRQ_vCommonCAN(tstCANModule* pstCAN, IOAPI_tenEHIOResource enEHIOResource, 
 	{
 		if((u32IMask & (pstCAN -> IFLAG1)) == u32IMask)
 		{
-			pstCANMB = (CAN_tstCANMB*)&pstCAN -> MB[0];
+			pstCANMB = (CANHA_tstCANMB*)&pstCAN -> MB[0];
 			u32MBIDX = MATH_u32MaskToIDX(u32IMask);
 			pstCANMB += u32MBIDX;
 			

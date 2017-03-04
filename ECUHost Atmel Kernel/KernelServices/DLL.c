@@ -268,7 +268,8 @@ void DLL_vFrameRXCB(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8RXData)
 							/* Get message ID */
 							pstCANMB = (CANHA_tstCANMB*)pu8RXData;
 							
-							u32Temp = (pstCANMB -> u32ID) >> CANHA_nCANIDSTDSHIFT;
+							//u32Temp = (pstCANMB -> u32ID) >> CANHA_nCANIDSTDSHIFT;
+							u32Temp = pstCANMB -> u32ID;
 							
 							/* Is the message ID for diagnostics? */
 							if ((DLL_astPortConfigCB[DLLVirtualChannelIDX].stNetConfig.uNetInfo.stCANNetInfo.u32GlobalCANDiagAddress
@@ -498,6 +499,15 @@ Bool DLL_boInitDLLChannel(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tstPortCon
 			tClientHandle &= (SYSAPI_ttClientHandle)RESM_RequestEHIOResource(pstCommsConfig->stPinConfig.uPinInfo.stIICPinInfo.enSCLPin, tClientHandleReq);
 		}
 
+	    else if ((EH_FIRST_SPI <= pstCommsConfig->enVIOResource) &&
+	    (EH_LAST_SPI >= pstCommsConfig->enVIOResource))
+		{
+			tClientHandleReq = DLL_xGetClientHandle();				
+			tClientHandle  = (SYSAPI_ttClientHandle)RESM_RequestEHIOResource(pstCommsConfig->stPinConfig.uPinInfo.stSPIPinInfo.enMISOPin, tClientHandleReq);
+			tClientHandle &= (SYSAPI_ttClientHandle)RESM_RequestEHIOResource(pstCommsConfig->stPinConfig.uPinInfo.stSPIPinInfo.enMOSIPin, tClientHandleReq);
+		    tClientHandle &= (SYSAPI_ttClientHandle)RESM_RequestEHIOResource(pstCommsConfig->stPinConfig.uPinInfo.stSPIPinInfo.enSCKPin, tClientHandleReq);
+		}
+
 	    else if ((EH_ENET_FIRST_CH <= pstCommsConfig->enVIOResource) &&
 	    (EH_ENET_LAST_CH >= pstCommsConfig->enVIOResource))
 		{
@@ -521,7 +531,7 @@ Bool DLL_boInitDLLChannel(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tstPortCon
 		}
 			
 			
-	  if (tClientHandleReq == tClientHandle)
+	    if (tClientHandleReq == tClientHandle)
 		/* Proceed if required resources were obtained */
 		{
 			memcpy(&DLL_astPortConfigCB[DLLVirtualChannelIDX], pstCommsConfig, sizeof(IOAPI_tstPortConfigCB));			

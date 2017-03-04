@@ -789,13 +789,13 @@ IOAPI_tenTriState TEPMHA_enGetTimerDigitalState(IOAPI_tenEHIOResource enEHIOReso
 		    tstTimerModule* pstModule = (tstTimerModule*)pvModule;
 			if (0 == TEPMHA_rastTEPMChannel[u32ChannelIDX].u32SubChannel)
 			{
-				enTriState = 0 != (pstModule->TC_CHANNEL[TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel / 2].TC_SR & TC_SR_MTIOA) ?
-					IOAPI_enHigh : IOAPI_enLow;
+				enTriState = 0 == (pstModule->TC_CHANNEL[TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel / 2].TC_SR & TC_SR_MTIOA) ?
+					IOAPI_enHigh : IOAPI_enLow;//matthew
 			}
 			else
 			{
-				enTriState = 0 != (pstModule->TC_CHANNEL[TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel / 2].TC_SR & TC_SR_MTIOB) ?
-				IOAPI_enHigh : IOAPI_enLow;
+				enTriState = 0 == (pstModule->TC_CHANNEL[TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel / 2].TC_SR & TC_SR_MTIOB) ?
+				IOAPI_enHigh : IOAPI_enLow;//matthew
 			}
 		}
 	}

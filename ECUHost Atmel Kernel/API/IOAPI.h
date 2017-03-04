@@ -213,6 +213,9 @@ typedef enum
 	EH_IO_TMR12 = 69,
 	EH_IO_IIC2_SDA = 70,
 	EH_IO_IIC2_SCL = 71,
+	EH_IO_SPI1_MOSI = 72,
+	EH_IO_SPI1_MISO = 73,
+	EH_IO_SPI1_SCK = 74,
 	IO_Total_Discrete_Count,
 	EH_VIO_TC0,
 	EH_VIO_TC1,
@@ -276,6 +279,13 @@ typedef enum
 	IOAPI_enENETChannel,
 	IOAPI_enTEPM
 } IOAPI_tenEHIOType;
+
+typedef enum
+{
+    IOAPI_enEdgeRising,
+	IOAPI_enEdgeFalling,
+	IOAPI_enEdgeBoth
+} IOAPI_tenEdgePolarity;
 
 typedef enum
 {
@@ -346,11 +356,22 @@ typedef struct
 } IOAPI_tstIICPinInfo;
 
 typedef struct
+{
+	IOAPI_tenEHIOResource enMOSIPin;
+	IOAPI_tenEHIOResource enMISOPin;
+	IOAPI_tenEHIOResource enSCKPin;
+	Bool boCaptureRising;
+	Bool boShiftRising;
+	Bool boIdleHigh;
+} IOAPI_tstSPIPinInfo;
+
+typedef struct
 { 
 	union
 	{
 		IOAPI_tstUARTPinInfo stUARTPinInfo;
 		IOAPI_tstIICPinInfo stIICPinInfo;
+		IOAPI_tstSPIPinInfo stSPIPinInfo;
 		IOAPI_tstCANPinInfo stCANPinInfo;
 	} uPinInfo;
 } IOAPI_tstPinConfig;

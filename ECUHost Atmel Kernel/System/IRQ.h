@@ -20,6 +20,7 @@
 #include "dll.h"
 #include "IOAPI.h"
 #include "math.h"
+#include "PERCAN.h"
 #include "SYSAPI.h"
 #include "UARTHA.h"
 

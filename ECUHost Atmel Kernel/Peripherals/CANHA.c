@@ -12,12 +12,15 @@
 /******************************************************************************/
 
 #include <string.h>
+#include "build.h"
 #include "can.h"
+#include "macros.h"
 #include "PERCAN.h"
 
 const CANHA_tstTimingSettings CANHA_astTimingSettings[] = CANHA_nSetTimingData;
 
 static sint32 CANHA_u32GetCANIndex(IOAPI_tenEHIOResource);
+static Bool CANHA_boWriteMB(tstCANModule*, PROTAPI_tstCANMsg*);
 
 #define CANHA_nTimingOptionsCount	(sizeof(CANHA_astTimingSettings) / sizeof(CANHA_tstTimingSettings))
 
@@ -27,12 +30,12 @@ void CANHA_vStart(uint32* const u32Stat)
 	
 }
 
-SYSAPI_tenSVCResult CANHA_enInitBus(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tstPortConfigCB* pstPortConfigCB)
+uint32 CANHA_u32InitBus(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tstPortConfigCB* pstPortConfigCB)
 {
 	tstCANModule* pstCAN;
-	SYSAPI_tenSVCResult enSVCResult = SYSAPI_enBadResource;
 	IRQn_Type	nCANIRQ;
 	sint32 i32IDX = CANHA_u32GetCANIndex(enEHIOResource);
+	uint32 u32MuxSel = ~1ul;
 
 #ifdef BUILD_MK60
 	REGSET_tstReg32Val astCANReg32Val[54];	
@@ -44,7 +47,6 @@ SYSAPI_tenSVCResult CANHA_enInitBus(IOAPI_tenEHIOResource enEHIOResource, IOAPI_
 	uint8 u8TSEG2 = 7;
 	uint8 u8MBXIDX;
 	
-
 	
 	if ((-1 != i32IDX) && (TRUE == DLL_boInitDLLChannel(enEHIOResource, pstPortConfigCB)))	
 	{
@@ -195,12 +197,13 @@ SYSAPI_tenSVCResult CANHA_enInitBus(IOAPI_tenEHIOResource enEHIOResource, IOAPI_
 			IRQ_vEnableIRQ(nCANIRQ);
 			pstCAN -> IMASK1 = 0x0000FFFF;				
 			
-			enSVCResult = SYSAPI_enOK;
+			u32MuxSel = 2;
 		}	
 	}
 #endif
 
 #ifdef BUILD_SAM3X8E
+	can_mb_conf_t stMBConfig;
 
 	if ((-1 != i32IDX) && (TRUE == DLL_boInitDLLChannel(enEHIOResource, pstPortConfigCB)))
 	{
@@ -229,17 +232,104 @@ SYSAPI_tenSVCResult CANHA_enInitBus(IOAPI_tenEHIOResource enEHIOResource, IOAPI_
 		{
 			/* turn on peripheral clock */
 			SIM_boEnablePeripheralClock(nCANIRQ);
-            can_init(pstCAN, SYS_FREQ_BUS, pstPortConfigCB->u32BaudRateHz);
+            can_init(pstCAN, SYS_FREQ_BUS, pstPortConfigCB->u32BaudRateHz / 1000u);
+
+			stMBConfig.ul_mb_idx = 0;
+			stMBConfig.uc_obj_type = CAN_MB_TYPE_RX;
+			stMBConfig.uc_id_ver = pstPortConfigCB->enLLProtocol == PROTAPI_enLLCAN11 ? 0 : 1;
+			stMBConfig.uc_length = 8;
+			stMBConfig.uc_tx_prio = 0;
+			stMBConfig.ul_status = 0;
+			stMBConfig.ul_id_msk = 0x7ff;
+			stMBConfig.ul_id = pstPortConfigCB->stNetConfig.uNetInfo.stCANNetInfo.u32CANDiagAddress;
+			stMBConfig.ul_fid = 0;
+			stMBConfig.ul_datal = 0;
+			stMBConfig.ul_datah = 0;
+			can_mailbox_init(pstCAN, &stMBConfig);
+
+			stMBConfig.ul_mb_idx++;//1
+			stMBConfig.ul_id_msk = 0x7ff;
+			stMBConfig.ul_id = pstPortConfigCB->stNetConfig.uNetInfo.stCANNetInfo.u32GlobalCANDiagAddress;
+			can_mailbox_init(pstCAN, &stMBConfig);
+
+			stMBConfig.ul_mb_idx++;//2
+			stMBConfig.ul_id_msk = pstPortConfigCB->stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityMask[0];
+			stMBConfig.ul_id = pstPortConfigCB->stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityAddress[0];
+			can_mailbox_init(pstCAN, &stMBConfig);
+
+			stMBConfig.ul_mb_idx++;//3
+			stMBConfig.ul_id_msk = pstPortConfigCB->stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityMask[1];
+			stMBConfig.ul_id = pstPortConfigCB->stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityAddress[1];
+			can_mailbox_init(pstCAN, &stMBConfig);
+
+			stMBConfig.ul_mb_idx++;//4
+			stMBConfig.ul_id_msk = pstPortConfigCB->stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityMask[2];
+			stMBConfig.ul_id = pstPortConfigCB->stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityAddress[2];
+			can_mailbox_init(pstCAN, &stMBConfig);
+
+			stMBConfig.ul_mb_idx++;//5
+			stMBConfig.ul_id_msk = pstPortConfigCB->stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityMask[3];
+			stMBConfig.ul_id = pstPortConfigCB->stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityAddress[3];
+			can_mailbox_init(pstCAN, &stMBConfig);
+
+			stMBConfig.ul_mb_idx++;//6
+			stMBConfig.uc_obj_type = CAN_MB_TYPE_TX;
+			stMBConfig.ul_id_msk = 0;
+			stMBConfig.ul_id = 0;
+			can_mailbox_init(pstCAN, &stMBConfig);
+
+			stMBConfig.ul_mb_idx++;//7
+			can_mailbox_init(pstCAN, &stMBConfig);
+			
+			can_enable_interrupt(pstCAN, 0x3f);
+		    IRQ_vEnableIRQ(nCANIRQ, IRQ_enPRIO_15, CAN_vInterrupt, NULL);
+			u32MuxSel = 0;
 		}
 	}
 #endif //BUILD SAM3X8E
 	
-	return enSVCResult;
+	return u32MuxSel;
 }
 
 void CANHA_vRun(uint32* const u32Stat)
 {
 
+}
+
+void CANHA_vInterrupt(IOAPI_tenEHIOResource enEHIOResource)
+{
+    CANHA_tstCANMB stCANMB;
+	tstCANModule* pstCAN;
+
+	switch (enEHIOResource)
+	{
+	    case EH_VIO_CAN1:
+		{
+		    pstCAN = CAN0;
+			break;
+		}
+	    case EH_VIO_CAN2:
+		{
+		    pstCAN = CAN1;
+			break;
+		}
+		default:
+		{
+		    pstCAN = NULL;
+		}
+	}
+
+	if (NULL != pstCAN)
+	{
+	    Bool boReadOK;
+
+		boReadOK = CANHA_boReadMB(pstCAN, &stCANMB);
+
+		if (TRUE == boReadOK)
+		{
+            DLL_vFrameRXCB(enEHIOResource, (puint8)&stCANMB);
+		}
+	}
 }
 
 void CANHA_vInitTransfer(IOAPI_tstTransferCB* pstTransferCB)
@@ -306,7 +396,116 @@ void CANHA_vInitTransfer(IOAPI_tstTransferCB* pstTransferCB)
 		}
 	}	
 #endif
+
+#ifdef BUILD_SAM3X8E
+	uint32 u32MBIDX;
+	
+	switch (pstTransferCB->enEHIOResource)
+	{
+		case EH_VIO_CAN1:
+		{			
+			pstCAN = CAN0;
+			break;
+		}
+		case EH_VIO_CAN2:
+		{			
+			pstCAN = CAN1;
+			break;
+		}
+		default:
+		{
+			pstCAN = NULL;
+			break;
+		}
+	}
+
+	if (NULL != pstCAN)
+	{
+		/* Data must be CAN frame so cast the pointer */
+		pstCANMsg = (PROTAPI_tstCANMsg*)pstTransferCB->pvData;	
+		(void)CANHA_boWriteMB(pstCAN, pstCANMsg);
+	}
+#endif
+
+
 }
+
+Bool CANHA_boReadMB(tstCANModule* pstCAN, CANHA_tstCANMB* pstCANMB)
+{
+	Bool boReadOK = false;
+
+#ifdef BUILD_SAM3X8E
+	can_mb_conf_t mailbox;
+	uint8 u8MBIDX = 0;
+	uint8 u32MBMask = 1;
+	uint32 u32TempSource;
+	uint32 u32TempDest;
+
+
+	while (u8MBIDX < 8)
+	{
+	    if (0 < (u32MBMask & (pstCAN->CAN_SR)))
+		{
+		    break;
+		}
+		u32MBMask *= 2;
+		u8MBIDX++;
+	}
+
+	if (u8MBIDX < 8)
+	{
+		mailbox.ul_mb_idx = u8MBIDX;
+		can_mailbox_read(pstCAN, &mailbox);
+
+		pstCANMB->u32ID = mailbox.ul_fid;
+
+		u32TempSource = mailbox.ul_datal;
+		u32TempDest = HTONL(u32TempSource);
+		pstCANMB->u32DWH = u32TempDest;
+
+		u32TempSource = mailbox.ul_datah;
+		u32TempDest = HTONL(u32TempSource);
+		pstCANMB->u32DWL = u32TempDest;
+
+		boReadOK = true;
+	}
+#endif //BUILD_SAM3X8E
+    return boReadOK;
+}
+
+static Bool CANHA_boWriteMB(tstCANModule* pstCAN, PROTAPI_tstCANMsg* pstCANMSG)
+{
+	Bool boWriteOK = false;
+
+#ifdef BUILD_SAM3X8E
+	can_mb_conf_t mailbox;
+	uint8 u8MBIDX = 6;
+	uint8 u32MBMask = 0x40;
+	uint32 u32TempSource;
+	uint32 u32TempDest;
+
+	mailbox.ul_mb_idx = u8MBIDX;
+	mailbox.ul_id = (pstCANMSG->u32ID) << 0x12;//matthew macro?
+	mailbox.uc_length = pstCANMSG->u8DLC;
+
+	u32TempSource = pstCANMSG->u32DWH;
+	u32TempDest = HTONL(u32TempSource);
+	mailbox.ul_datal = u32TempDest;
+
+	u32TempSource = pstCANMSG->u32DWL;
+	u32TempDest = HTONL(u32TempSource);
+	mailbox.ul_datah = u32TempDest;
+
+	can_mailbox_write(pstCAN, &mailbox);
+
+	//can_mailbox_send_transfer_cmd(pstCAN, &mailbox);
+	can_global_send_transfer_cmd(pstCAN, 0x40);
+	boWriteOK = true;
+
+#endif //BUILD_SAM3X8E
+    return boWriteOK;
+}
+
 
 void CANHA_vTerminate(uint32* const u32Stat)
 {
@@ -318,6 +517,13 @@ static sint32 CANHA_u32GetCANIndex(IOAPI_tenEHIOResource enEHIOResource)
 	sint32 i32IDX = -1;
 	
 #ifdef BUILD_MK60
+	if ((EH_VIO_CAN1 <= enEHIOResource) && (EH_VIO_CAN2 >= enEHIOResource)) 
+	{
+		i32IDX = enEHIOResource - EH_VIO_CAN1;
+	}
+#endif
+
+#ifdef BUILD_SAM3X8E
 	if ((EH_VIO_CAN1 <= enEHIOResource) && (EH_VIO_CAN2 >= enEHIOResource)) 
 	{
 		i32IDX = enEHIOResource - EH_VIO_CAN1;

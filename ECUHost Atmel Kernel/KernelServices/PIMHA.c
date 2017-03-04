@@ -183,6 +183,8 @@ void PIMHA_vSetPortMux(PIMAPI_tenPort enPort, IOAPI_tenEHIOType enIOType, uint32
 	    case IOAPI_enDIOOutput: pio_type = PIO_OUTPUT_0; break;
 		case IOAPI_enDIOInput: pio_type = PIO_INPUT; break;
 		case IOAPI_enTEPM: pio_type = u32MuxSel == 0 ? PIO_PERIPH_A : PIO_PERIPH_B; break;
+		case IOAPI_enSPIBus: pio_type = u32MuxSel == 0 ? PIO_PERIPH_A : PIO_PERIPH_B; break;
+		case IOAPI_enCANBus: pio_type = u32MuxSel == 0 ? PIO_PERIPH_A : PIO_PERIPH_B; break;
 		default: pio_type = PIO_INPUT; break;
 	}
 

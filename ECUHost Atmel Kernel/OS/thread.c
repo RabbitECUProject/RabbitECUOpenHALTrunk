@@ -31,7 +31,7 @@ uint32* THREAD_pu32GetThreadStack(tq_struct* pstStackOwnerTask)
 	
 	for(u32StackIDX = 0; u32StackIDX < SYS_THREAD_MAX; u32StackIDX++)
 	{
-		if(NULL == THREAD_pstStackOwner[u32StackIDX])
+		if (NULL == THREAD_pstStackOwner[u32StackIDX])
 		{
 			THREAD_pstStackOwner[u32StackIDX] = pstStackOwnerTask;
 			pu32StackPointer = (uint32*)((uint32)&THREAD_astThreadStack[u32StackIDX] +
