@@ -36,7 +36,11 @@ Bool FEE_boCheckPartition(void)
 
 #ifdef BUILD_MK60
 	return FEEHA_boCheckPartition();
-#endif		
+#endif
+
+#ifdef BUILD_SAM3X8E
+    boRetVal = true;
+#endif //BUILD_SAM3X8E			
 
     return boRetVal;
 }
@@ -45,9 +49,9 @@ Bool FEE_boSetWorkingData(puint8 pu8WorkingAddress, uint16 u16WorkingDataCount)
 {
 	Bool boWorkingDataOK = FALSE;
 	
-	if (((puint8)FEE_WORK_DATA_START <= pu8WorkingAddress) &&
-			((puint8)FEE_WORK_DATA_END >= pu8WorkingAddress) &&
-			((uint16)FEE_WORK_DATA_MAX > u16WorkingDataCount) &&
+	if (((puint8)FEEHA_WORK_DATA_START <= pu8WorkingAddress) &&
+			((puint8)FEEHA_WORK_DATA_END >= pu8WorkingAddress) &&
+			((uint16)FEEHA_WORK_DATA_MAX > u16WorkingDataCount) &&
 			(2 <= u16WorkingDataCount))
 	{
 		FEE_stWorkingPage.pu8WorkingData = pu8WorkingAddress;
@@ -121,7 +125,7 @@ void FEE_vStart(uint32* const pu32Stat)
 
 void FEE_vRun(uint32* const u32Stat)
 {	
-
+    FEEHA_vRun(u32Stat);
 }
 
 
@@ -167,7 +171,7 @@ Bool FEE_boUpdateControlBlock(uint32 u32BlockWriteCount)
 	
 	if (FEE_stWriteControlBlock.boProgramming == true)
 	{
-		if ((FEE_PFLASH_SCTR_BYTES >= 
+		if ((FEEHA_PFLASH_SCTR_BYTES >= 
 				(u32BlockWriteCount + FEE_stWriteControlBlock.u32AccumulateCount)) &&
 				(0 != u32BlockWriteCount))
 		{			
@@ -178,12 +182,12 @@ Bool FEE_boUpdateControlBlock(uint32 u32BlockWriteCount)
 		
 			FEE_stWriteControlBlock.u32AccumulateCount += u32BlockWriteCount;
 			
-			if (FEE_PFLASH_SCTR_BYTES == FEE_stWriteControlBlock.u32AccumulateCount)
+			if (FEEHA_PFLASH_SCTR_BYTES == FEE_stWriteControlBlock.u32AccumulateCount)
 			{
 				FEE_stWriteControlBlock.u32AccumulateCount = 0;
 				FEEHA_boWriteSector();
 			}
-			else if (FEE_PFLASH_SCTR_BYTES < FEE_stWriteControlBlock.u32AccumulateCount)
+			else if (FEEHA_PFLASH_SCTR_BYTES < FEE_stWriteControlBlock.u32AccumulateCount)
 			{
 				/* Uh oh too many bytes received - ran past the sector size */
 				/* matthew deal with this */

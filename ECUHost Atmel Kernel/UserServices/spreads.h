@@ -15,8 +15,8 @@
 #include "SPREADSAPI.h"
 #include "SYSAPI.h"
 
-#define SPREAD_nKernelSpreadCount	15u
-#define SPREAD_nUserSpreadCount	15u
+#define SPREAD_nKernelSpreadCount	20u
+#define SPREAD_nUserSpreadCount	    20u
 
 void SPREADS_vStart(puint32 const pu32Arg);
 void SPREADS_vRun(puint32 const pu32Arg);
@@ -24,6 +24,7 @@ void SPREADS_vTerminate(puint32 const pu32Arg);
 SPREADAPI_ttSpreadIDX SPREAD_tRequestKernelSpread(SPREADAPI_tstSpreadCB*);
 Bool SPREAD_vCalculate(SPREADAPI_ttSpreadIDX);
 SPREADAPI_tstSpreadResult SPREAD_stGetSpread(SPREADAPI_ttSpreadIDX);
+SPREADAPI_tstSpreadResult* SPREAD_pstGetSpread(SPREADAPI_ttSpreadIDX);
 
 #endif //TEPM_H
 

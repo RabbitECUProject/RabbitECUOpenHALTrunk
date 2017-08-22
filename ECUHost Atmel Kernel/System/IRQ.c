@@ -853,6 +853,18 @@ void IRQ_vCommonUART(tstUARTModule* pstUART, IOAPI_tenEHIOResource enEHIOResourc
 }
 
 
+/*----------------------------------------------------------------------------
+  USBOTG Handler
+ *----------------------------------------------------------------------------*/
+void UOTGHS_Handler(void)
+{
+#ifdef BUILD_SAM3X8E
+    udd_interrupt();
+#endif //BUILD_SAM3X8E
+}
+
+
+
 
 
 

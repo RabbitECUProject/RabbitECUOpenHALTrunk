@@ -105,9 +105,19 @@ typedef enum
 
 	SYSAPI_enSetupCrankTriggerEdgePattern = 0x1068,
 
-    SYSAPI_enResetWatchdog = 0x1069
+    SYSAPI_enResetWatchdog = 0x1069,
+
+	SYSAPI_enSetupSyncPointsPattern = 0x1070,
 	/* USER_vSVC(enResetWatchdog, uint16*, NULL, NULL) */	
 
+	SYSAPI_enInitialiseMapResource = 0x1071,
+	/* USER_vSVC(SYSAPI_enInitialiseMapResource, MAPSAPI_tstMapCB*, NULL, NULL) */
+
+	SYSAPI_enCalculateMap = 0x1072,
+	/* USER_vSVC(SYSAPI_enCalculateMap, MAPSAPI_ttMapIDX*, NULL, NULL) */
+
+	SYSAPI_enGetSpreadResult = 0x1073
+	/* USER_vSVC(SYSAPI_enGetSpreadResult, TABLEAPI_ttTableIDX*, NULL, NULL) */	
 } SYSAPI_tenSVCID;
 
 typedef enum

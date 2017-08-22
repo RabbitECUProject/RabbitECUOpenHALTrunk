@@ -74,10 +74,26 @@ TABLEAPI_ttTableIDX TABLE_tRequestKernelTable(TABLEAPI_tstTableCB* pstTableCBReq
 	return TableIDX;	
 }
 
+Bool TABLE_vSetKernelTableAddress(TABLEAPI_ttTableIDX tTableIDX, void* pvTableData)
+{
+    Bool boRetVal = false;
+
+	if (TABLE_nKernelTableCount < tTableIDX)
+	{
+		if (NULL != TABLE_apstTableCB[tTableIDX])
+		{
+			TABLE_apstTableCB[tTableIDX]->pvTableData = pvTableData;
+			boRetVal = true;
+		}			
+	}		
+
+	return boRetVal;
+}
+
 
 Bool TABLE_vCalculate(TABLEAPI_ttTableIDX tTableIDX)
 {
-	uint8 u8DataR; uint16 u16DataR; uint32 u32DataR;	
+	uint8 u8DataR; uint16 u16DataR; uint32 u32DataR; uint32 u32DataL;	
 	sint8 s8DataL; sint16 s16DataL; sint32 s32DataL;	
 	sint8 s8DataR; sint16 s16DataR; sint32 s32DataR;
 	uint8 u8Data; uint16 u16Data; uint32 u32Data;
@@ -97,7 +113,6 @@ Bool TABLE_vCalculate(TABLEAPI_ttTableIDX tTableIDX)
 	{
 		case TYPE_enUInt8:
 		case TYPE_enUInt16:
-		case TYPE_enUInt32:
 		case TYPE_enInt8:
 		case TYPE_enInt16:
 		{
@@ -169,7 +184,41 @@ Bool TABLE_vCalculate(TABLEAPI_ttTableIDX tTableIDX)
 			*(sint32*)TABLE_astTableCB[tTableIDX].pvOutputData = (sint32)u32Data;
 			break;
 		}		
+		case TYPE_enUInt32:
+		{
+			pu32Data = (uint32*)TABLE_astTableCB[tTableIDX].pvTableData;
+			pu32Data += stSpreadResult.u16SpreadIndex;
 			
+			u32DataL = *pu32Data;
+			u32DataR = *(pu32Data + 1);
+			
+			while (0x4000 <= u32DataL)
+			{
+				u32ShiftL++;
+				u32DataL /= 2;
+			}
+			
+			while (0x4000 <= u32DataR)
+			{
+				u32ShiftR++;
+				u32DataR /= 2;
+			}
+
+			u32ShiftL = (u32ShiftL > u32ShiftR) ? u32ShiftL : u32ShiftR;
+			u32Factor = MATH_u32IDXToMask(u32ShiftL);
+			
+			u32DataL = (*pu32Data) / u32Factor;
+			u32DataR = (*(pu32Data + 1)) / u32Factor;
+			
+			u32Data = (u32DataR * stSpreadResult.u16SpreadOffset) +
+			(u32DataL * (0xffff - stSpreadResult.u16SpreadOffset));
+			
+			u32Data /= 0xffff;			//matthew check this look for a better way to hold precision
+			u32Data *= u32Factor;
+			
+			*(uint32*)TABLE_astTableCB[tTableIDX].pvOutputData = u32Data;
+			break;
+		}			
 	}			
 	
 	OS_stSVCDataStruct.pvData = NULL;
@@ -184,8 +233,6 @@ Bool TABLE_vCalculate(TABLEAPI_ttTableIDX tTableIDX)
 	(void)s16Data;
 	(void)pu16Data;
 	(void)ps8Data;
-	(void)pu32Data;
-	(void)u32DataR;
 	(void)s8Data;
 	(void)s32Data;
 	(void)pu8Data;

@@ -46,11 +46,8 @@
 #define UDSAL_DDDI_CID_END		0x9FFF
 
 #if BUILD_KERNEL_APP
-	#define UDSAL_nDDDICacheCount	1
-	#define UDSAL_nDDDICacheSize	0x80	
-#elif BUILD_KERNEL
-	#define UDSAL_nDDDICacheCount 4
-	#define UDSAL_nDDDICacheSize	0x150
+	#define UDSAL_nDDDICacheCount	4
+	#define UDSAL_nDDDICacheSize	0x100	
 #elif BUILD_SBL
 	#define UDSAL_nDDDICacheCount 1
 	#define UDSAL_nDDDICacheSize	0x150

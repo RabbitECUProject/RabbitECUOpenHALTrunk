@@ -23,6 +23,7 @@
 #include "PERCAN.h"
 #include "SYSAPI.h"
 #include "UARTHA.h"
+#include "uotghs_device.h"
 
 typedef void (*IRQRXCallBack)(IOAPI_tenEHIOResource, void*);
 typedef void (*IRQTXCallBack)(IOAPI_tenEHIOResource, void*);

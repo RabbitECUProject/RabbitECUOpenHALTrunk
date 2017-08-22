@@ -45,6 +45,7 @@ typedef enum
 	PROTAPI_enLLCAN11,
 	PROTAPI_enLLCAN29,
 	PROTAPI_enLL802_3,
+	PROTAPI_enUSB2,
 	PROTAPI_enLLNone
 } PROTAPI_tenLLProtocol;
 /*CR1_109*/

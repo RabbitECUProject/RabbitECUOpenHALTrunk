@@ -302,6 +302,7 @@ uint32 TEPMHA_u32GetTimerChannelsPerInterruptGroup(void);
 uint32 TEPMHA_u32GetTimerStartChannelInterruptGroup(IOAPI_tenEHIOResource);
 uint32 TEPMHA_u32GetTimerHardwareSubChannel(uint32);
 TEPMHA_tenModule TEPMHA_enTimerEnumFromResource(IOAPI_tenEHIOResource);
+TEPMHA_tenModule TEPMHA_enTimerEnumFromModule(tstTimerModule*);
 IOAPI_tenEHIOResource TEPMHA_enGetTimerResourceFromVIOAndIndex(IOAPI_tenEHIOResource, uint32);
 
 #endif //TEPMHA_H

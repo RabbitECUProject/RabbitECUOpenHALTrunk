@@ -13,6 +13,7 @@
 #include <string.h>
 #include "FEE.h"
 #include "FEEHA.h"
+#include "FLASHHA.h"
 
 tstFTFEConfig FEE_stFlashSSDConfig;
 
@@ -47,6 +48,7 @@ const REGSET_tstReg8Val FEEHA_rastFTFEReg8Val[] = FEEHA_nReg8Set;
 
 static Bool FEEHA_boPartitionDFlash(void);
 static void FEEHA_vInitFlashConfig(void);
+
 
 void FEEHA_vStartSBL(void)
 {
@@ -84,21 +86,21 @@ Bool FEEHA_boCheckPartition(void)
 }
 
 Bool FEEHA_boNVMWorkingCopy(Bool boNVMToWorking, Bool boCheckCRC16MakeCRC16)
-{
-	tstFTFEModule* pstFTFE;		
+{		
 	Bool boCopyOK = false;
 	puint16 pu16CRC16Computed;
 	puint16 pu16CRC16Stored;
+
+#ifdef BUILD_MK60
+	tstFTFEModule* pstFTFE;
+	boCopyOK = FEEHA_boCheckPartition();
+	u32RetCode = FTFx_OK;
+    pstFTFE = FTFE;
 	uint32 u32NVMWordCount;
 	uint32 u32NVMWordIDX;
 	uint32 u32SourceWord;
 	uint32 u32DestinationWord;
-	uint32 u32RetCode;	
-
-#ifdef BUILD_MK60
-	boCopyOK = FEEHA_boCheckPartition();
-	u32RetCode = FTFx_OK;
-    pstFTFE = FTFE;
+	uint32 u32RetCode;
 
 	if ((TRUE == boCopyOK) && 
 			(0 < FEE_stWorkingPage.s16WorkingDataCount) &&
@@ -180,6 +182,44 @@ Bool FEEHA_boNVMWorkingCopy(Bool boNVMToWorking, Bool boCheckCRC16MakeCRC16)
 		}			
 	}
 #endif //BUILD_MK60
+
+#ifdef BUILD_SAM3X8E
+	if (TRUE == boNVMToWorking)
+	/* Copy NVM page to working page */
+	{
+		if (TRUE == boCheckCRC16MakeCRC16)
+		{
+			pu16CRC16Computed = (puint16)(CRC16_pu16CalcCRC(0xffff, (puint8)FEEHA_EEPROM_START,
+			FEE_stWorkingPage.s16WorkingDataCount - 2));
+			
+			pu16CRC16Stored = (puint16)((uint32)FEEHA_EEPROM_START +
+			(uint32)FEE_stWorkingPage.s16WorkingDataCount - 2);
+				
+			if ((NULL != FEE_stWorkingPage.pu8WorkingData) && (*pu16CRC16Stored == *pu16CRC16Computed))
+			{
+				memcpy(FEE_stWorkingPage.pu8WorkingData, 0x000c0000, FEE_stWorkingPage.s16WorkingDataCount);
+				boCopyOK = true;
+			}
+		}
+	}
+	else
+	/* Copy working page to NVM page */
+	{
+		if (NULL != FEE_stWorkingPage.pu8WorkingData)
+		{
+			pu16CRC16Computed = (puint16)(CRC16_pu16CalcCRC(0xffff, FEE_stWorkingPage.pu8WorkingData,
+			FEE_stWorkingPage.s16WorkingDataCount - 2));
+			
+			pu16CRC16Stored = (puint16)((uint32)FEE_stWorkingPage.pu8WorkingData +
+			(uint32)FEE_stWorkingPage.s16WorkingDataCount - 2);
+
+			/* Copy the computed CRC into the working page */
+			*pu16CRC16Stored = *pu16CRC16Computed;
+
+			flash_write(0x00c0000, FEE_stWorkingPage.pu8WorkingData, FEE_stWorkingPage.s16WorkingDataCount , 1u);
+		}
+	}
+#endif //BUILD_SAM3X8E
 
 	return boCopyOK;
 }
@@ -446,6 +486,14 @@ Bool FEEHA_boEraseForDownload(puint8 pu8TargetAddress, uint32 u32EraseCount)
 		}	
 	}
 #endif //BUILD_MK60
+
+#ifdef BUILD_SAM3X8E
+
+
+#endif //BUILD_SAM3X8E
+
+
+
 	
 	return boEraseErr;
 }
@@ -631,13 +679,13 @@ Bool FEEHA_boStart(uint32* const u32Stat)
 {
     Bool boStartOK = false;
 
+#ifdef BUILD_MK60
 	u8WriteCount = 0;
 	unsecure_key = 0xFFFFFFFE;
 
 	REGSET_vInitReg8(&FEEHA_rastFTFEReg8Val[0]);		
 	FEEHA_vInitFlashConfig();
 
-#ifdef BUILD_MK60
 	returnCode = pFlashInit(&FEE_stFlashSSDConfig);
 	
 	if (FTFx_OK == returnCode)
@@ -647,6 +695,19 @@ Bool FEEHA_boStart(uint32* const u32Stat)
 		boStartOK = true;
 	}
 #endif  //BUILD_MK60
+
+#ifdef BUILD_SAM3X8E
+    uint32 u32Err;
+
+    u32Err = flash_init(128u, 10u);
+
+	if (FLASH_RC_OK == u32Err)
+	{
+		FEE_stWriteControlBlock.boProgramming = false;
+		FEE_stWriteControlBlock.boProgErr = false;
+		boStartOK = true;
+	}
+#endif
 
     return boStartOK;
 }

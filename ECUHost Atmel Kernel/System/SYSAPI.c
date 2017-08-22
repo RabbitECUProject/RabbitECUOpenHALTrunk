@@ -29,6 +29,8 @@
 #include "kernelio.h"
 #include "IOAPI.h"
 #include "KERNELDIAG.h"
+#include "MAPS.h"
+#include "MAPSAPI.h"
 #include "MSG.h"
 #include "os.h"
 #include "PROTAPI.h"
@@ -49,7 +51,8 @@ void SYS_vAPISVC(void* svc_args)
 	static puint16 pu16Temp;
 	static CTRLAPI_ttPIDIDX PIDIDX;
 	static SPREADAPI_ttSpreadIDX tSpreadIDX;	
-	static TABLEAPI_ttTableIDX tTableIDX;		
+	static TABLEAPI_ttTableIDX tTableIDX;	
+	static MAPSAPI_ttMapIDX tMapIDX;		
 	static Bool boResult;
 
 	
@@ -103,7 +106,8 @@ void SYS_vAPISVC(void* svc_args)
 			else if ((IOAPI_enIICBus == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2)
 								|| (IOAPI_enUARTBus == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2) 
 								|| (IOAPI_enSPIBus == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2) 
-								|| (IOAPI_enCANBus == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2)		
+								|| (IOAPI_enCANBus == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2)	
+								|| (IOAPI_enUSBChannel == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2)										
 								|| (IOAPI_enENETChannel == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2))
 			{
 				OS_stSVCDataStruct.enSVCResult = IO_enInitCommsResource(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, (IOAPI_tstPortConfigCB*)OS_stSVCDataStruct.pvArg3);			
@@ -159,6 +163,14 @@ void SYS_vAPISVC(void* svc_args)
 			OS_stSVCDataStruct.enSVCResult = (-1 < tSpreadIDX) ? SYSAPI_enOK : SYSAPI_enResourceUnavailable;
 			break;
 		}	
+
+		case SYSAPI_enInitialiseMapResource:
+		{
+			tMapIDX = MAP_tRequestKernelMap((MAPSAPI_tstMapCB*)OS_stSVCDataStruct.pvArg1);
+			OS_stSVCDataStruct.tClientHandle = (uint32)tMapIDX;
+			OS_stSVCDataStruct.enSVCResult = (-1 < tSpreadIDX) ? SYSAPI_enOK : SYSAPI_enResourceUnavailable;
+			break;
+		}
 		
 		case SYSAPI_enAssertDIOResource:
 		{
@@ -231,6 +243,13 @@ void SYS_vAPISVC(void* svc_args)
 			OS_stSVCDataStruct.enSVCResult = (TRUE == boResult) ? SYSAPI_enOK : SYSAPI_enBadArgument;
 			break;
 		}		
+
+		case SYSAPI_enCalculateMap:
+		{
+			boResult = MAP_vCalculate(*(MAPSAPI_ttMapIDX*)OS_stSVCDataStruct.pvArg1);
+			OS_stSVCDataStruct.enSVCResult = (TRUE == boResult) ? SYSAPI_enOK : SYSAPI_enBadArgument;
+			break;
+		}
 		
 		case SYSAPI_enSetDiagCallback:
 		{
@@ -272,7 +291,7 @@ void SYS_vAPISVC(void* svc_args)
 		
 		case SYSAPI_enSetupWorkingPage:
 		{		
-			boResult = FEE_boSetWorkingData((puint8*)OS_stSVCDataStruct.pvArg1, *(uint16*)OS_stSVCDataStruct.pvArg2);	
+			boResult = FEE_boSetWorkingData((puint8*)*(uint32*)OS_stSVCDataStruct.pvArg1, *(uint16*)OS_stSVCDataStruct.pvArg2);	
 			OS_stSVCDataStruct.enSVCResult = (TRUE == boResult) ? SYSAPI_enOK : SYSAPI_enBadArgument;
 			break;
 		}
@@ -290,10 +309,25 @@ void SYS_vAPISVC(void* svc_args)
 			break;
 		}
 
+		case SYSAPI_enSetupSyncPointsPattern:
+		{
+			boResult = CEM_boPopulateSyncPointsArray((puint16)OS_stSVCDataStruct.pvArg1);
+			OS_stSVCDataStruct.enSVCResult = (TRUE == boResult) ? SYSAPI_enOK : SYSAPI_enBadArgument;			
+			break;
+		}
+
 		case SYSAPI_enResetWatchdog:
 		{
 		    boResult = WDT_boReset(0);
 			OS_stSVCDataStruct.enSVCResult = (TRUE == boResult) ? SYSAPI_enOK : SYSAPI_enBadArgument;
+			break;
+		}
+
+		case SYSAPI_enGetSpreadResult:
+		{
+			SPREADAPI_tstSpreadResult* pstSpreadResult = SPREAD_pstGetSpread(*(TABLEAPI_ttTableIDX*)OS_stSVCDataStruct.pvArg1);
+			OS_stSVCDataStruct.enSVCResult = SYSAPI_enOK;
+			OS_stSVCDataStruct.pvArg1 = (void*)pstSpreadResult;
 			break;
 		}
 	}

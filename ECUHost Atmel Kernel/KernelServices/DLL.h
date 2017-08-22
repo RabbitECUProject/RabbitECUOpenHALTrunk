@@ -33,49 +33,52 @@
 #define DLL_nSPITXWorkBuffMaxBytes		16u
 #define DLL_nUARTTXWorkBuffMaxBytes		24u
 #define DLL_nCANTXWorkBuffMaxBytes		256u
+#define DLL_nUSBTXWorkBuffMaxBytes      256u
 #define DLL_nENETTXWorkBuffMaxBytes		1024u
 
 #define DLL_nIICTXWorkBuffCount				2u
 #define DLL_nSPITXWorkBuffCount				2u
 #define DLL_nUARTTXWorkBuffCount			2u
 #define DLL_nCANTXWorkBuffCount				2u
+#define DLL_nUSBTXWorkBuffCount             1u
 #define DLL_nENETTXWorkBuffCount			1u
 #define DLL_nClientTXBufferCount	    (DLL_nIICTXWorkBuffCount +		\
 																			DLL_nSPITXWorkBuffCount +			\
 																			DLL_nUARTTXWorkBuffCount +		\
 																			DLL_nCANTXWorkBuffCount +			\
+																			DLL_nUSBTXWorkBuffCount +			\
 																			DLL_nENETTXWorkBuffCount)
 
 #define DLL_nIICVirtualChannelCount		(EH_LAST_IIC - EH_FIRST_IIC + 1)
 #define DLL_nSPIVirtualChannelCount		(EH_LAST_SPI - EH_FIRST_SPI + 1)
 #define DLL_nUARTVirtualChannelCount	(EH_LAST_UART - EH_FIRST_UART + 1)
 #define DLL_nCANVirtualChannelCount		(EH_LAST_CAN - EH_FIRST_CAN + 1)
+#define DLL_nUSBVirtualChannelCount		(EH_LAST_USB - EH_FIRST_USB + 1)
 #define DLL_nENETVirtualChannelCount	(EH_ENET_LAST_CH - EH_ENET_FIRST_CH + 1)
+
+#define DLL_xVirtualChannelIndex(x)     (x - EH_FIRST_IIC)
 
 #define DLL_nIICTXQueueByteCount			(DLL_nIICTXWorkBuffMaxBytes * 2u) + 1u
 #define DLL_nSPITXQueueByteCount			(DLL_nSPITXWorkBuffMaxBytes * 2u) + 1u
 #define DLL_nUARTTXQueueByteCount			(DLL_nUARTTXWorkBuffMaxBytes * 2u) + 1u
 #define DLL_nCANTXQueueByteCount			(DLL_nCANTXWorkBuffMaxBytes * 2u) + 1u
+#define DLL_nUSBTXQueueByteCount			(DLL_nUSBTXWorkBuffMaxBytes * 2u) + 1u
 #define DLL_nENETTXQueueByteCount			(DLL_nENETTXWorkBuffMaxBytes * 2u) + 1u
 
+/* WARNING - Tailored on virtual channel enum! */
 #define DLL_nMaxTXFrameBytes	\
-{															\
+{														\
 	16,													\
 	16,													\
 	16,													\
 	16,													\
-	24,													\
-	24,													\
-	24,													\
-	24,													\
 	24,													\
 	24,													\
 	12,													\
 	12,													\
+	256,                                                \
 	1024,												\
-	1024,												\
-	1024,												\
-	1024												\
+	1024												\	
 }
 
 #if BUILD_PBL
@@ -116,17 +119,6 @@ typedef struct
 	uint8 biSpare : 5;
 } DLL_tstRXDLLData;
 
-// typedef struct
-// {
-// 	uint8 u8Data[TX_BUFF_SIZE];
-// 	uint8 u8DataCount;
-// 	uint8 u8TXByteIDX;
-// 	uint8 biFramed : 1;
-// 	uint8 biWithCRC : 1;
-// 	uint8 biTXEmpty : 1;
-// 	uint8 biSpare : 5;	
-// } DLL_tstTXDLLData;
-
 typedef struct
 {
 	puint8 pu8TXData;
@@ -152,8 +144,6 @@ typedef struct
 	uint8 u8RXReceivedCount;
 } DLL_tstRXSmallBuffer;
 
-
-//void DLL_vIPBufferRXCB(ENE_tstETHUnionFrame*);
 void DLL_vFrameRXCB(IOAPI_tenEHIOResource, puint8);
 void DLL_vStart(puint32 const);
 void DLL_vRun(puint32 const);
@@ -165,6 +155,7 @@ Bool DLL_boCheckCRC(DLL_tstRXDLLData* pRXFrame);
 DLL_tDLLVirtualChannel DLL_tGetVirtualChannel(IOAPI_tenEHIOResource);
 Bool DLL_boInitDLLChannel(IOAPI_tenEHIOResource, IOAPI_tstPortConfigCB*);
 IOAPI_tenPortMode DLL_enGetChannelMode(IOAPI_tenEHIOResource);
+DLL_tstRXDLLData* DLL_pstGetRXBuffer(IOAPI_tenEHIOResource);
 
 #endif //DLL_H
 

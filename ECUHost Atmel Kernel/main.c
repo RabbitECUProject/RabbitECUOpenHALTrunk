@@ -11,7 +11,6 @@ extern int EFIMain(void);
 extern void SystemInit(void);
 
 int main(void)
-
 {
     /* Initialize the SAM system */
     SystemInit();

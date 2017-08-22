@@ -10,6 +10,7 @@
 /* REVISION HISTORY:   28-03-2016 | 1.0 | Initial revision                    */
 /*                                                                            */
 /******************************************************************************/
+#define CRC16HA_C
 #include "sys.h"
 #include "CPUAbstract.h"
 #include "declarations.h"
@@ -20,6 +21,9 @@
 #include "types.h"
 
 uint16 CRC16_u16CRC;
+
+static uint16 CRC16HA_u16CalcTableCRC(uint16, puint8, uint16);
+static puint16 CRC16HA_pu16CalcTableCRC(uint16, puint8, uint16);
 
 void CRC16HA_vStart(uint32* const u32Stat)
 {
@@ -38,7 +42,7 @@ void CRC16HA_vTerminate(uint32* const u32Stat)
 	
 }
 
-uint16 CRC16HA_u16CalcCRC(uint16 u16CRC, uint8* u8Data, uint16 u16Len)
+uint16 CRC16HA_u16CalcCRC(uint16 u16CRC, uint8* pu8Data, uint16 u16Len)
 {
 #ifdef BUILD_MK60
 	uint16 u16IDX;
@@ -51,17 +55,20 @@ uint16 CRC16HA_u16CalcCRC(uint16 u16CRC, uint8* u8Data, uint16 u16Len)
 	
 	for (u16IDX = 0; u16IDX < u16Len; u16IDX++)
 	{
-		pstCRC0 -> ACCESS8BIT.CRCLU = u8Data[u16IDX];
+		pstCRC0 -> ACCESS8BIT.CRCLU = pu8Data[u16IDX];
 	}	
 	
 	return (uint16)pstCRC0 -> ACCESS16BIT.CRCL;
 #endif
+
+
 #ifdef BUILD_SAM3X8E
-	return 0;
+return CRC16HA_u16CalcTableCRC(u16CRC, pu8Data, u16Len);
 #endif
+
 }	
 
-puint16 CRC16HA_pu16CalcCRC(uint16 u16CRC, uint8* u8Data, uint16 u16Len)
+puint16 CRC16HA_pu16CalcCRC(uint16 u16CRC, uint8* pu8Data, uint16 u16Len)
 {
 #ifdef BUILD_MK60
 	uint16 u16IDX;
@@ -74,16 +81,35 @@ puint16 CRC16HA_pu16CalcCRC(uint16 u16CRC, uint8* u8Data, uint16 u16Len)
 	
 	for (u16IDX = 0; u16IDX < u16Len; u16IDX++)
 	{
-		pstCRC0 -> ACCESS8BIT.CRCLU = u8Data[u16IDX];
+		pstCRC0 -> ACCESS8BIT.CRCLU = pu8Data[u16IDX];
 	}	
 	
 	CRC16_u16CRC = (uint16)pstCRC0 -> ACCESS16BIT.CRCL;
 	return (puint16)&CRC16_u16CRC;
 #endif
+
 #ifdef BUILD_SAM3X8E
-	return NULL;
+    return CRC16HA_pu16CalcTableCRC(u16CRC, pu8Data, u16Len);
 #endif
 }	
+
+static uint16 CRC16HA_u16CalcTableCRC(uint16 crc_seed, puint8 pu8Data, uint16 len)
+{
+	uint16 crc = crc_seed;
+	while (len--){
+		crc = (crc << 8) ^ CRC16HA_au16CRCTable[((crc >> 8) ^ *pu8Data++)];
+	}
+	return (crc);
+}
+
+static puint16 CRC16HA_pu16CalcTableCRC(uint16 crc_seed, puint8 pu8Data, uint16 len)
+{
+	CRC16_u16CRC = crc_seed;
+	while (len--){
+		CRC16_u16CRC = (CRC16_u16CRC << 8) ^ CRC16HA_au16CRCTable[((CRC16_u16CRC >> 8) ^ *pu8Data++)];
+	}
+	return (puint16)&CRC16_u16CRC;
+}
 
 
 

@@ -29,9 +29,7 @@ MSG_tstMBX* UDSAL_pstMBXWriteTransfer;
 UDSAL_tstDLControlBlock UDSAL_stDLControlBlock;
 CQUEUE_tstQueue UDSAL_astDDDICacheQueue[UDSAL_nDDDICacheCount];
 uint16 UDSAL_au16DDDICacheSIDs[UDSAL_nDDDICacheCount];
-#if BUILD_KERNEL
-	uint8 UDSAL_au8DDDICache[UDSAL_nDDDICacheCount][UDSAL_nDDDICacheSize];
-#endif
+uint8 UDSAL_au8DDDICache[UDSAL_nDDDICacheCount][UDSAL_nDDDICacheSize];
 Bool UDSAL_boRDBICaching;
 
 
@@ -179,9 +177,12 @@ static uint8 UDSAL_u8RDBI(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8T
 							pu8DDDIData += 2;
 						}					
 											
-						if ((NULL != pu8RDBIAddress) && (*pu8DDDIData < u32BufferBytesFree))
+						if (*pu8DDDIData < u32BufferBytesFree)
 						{
-							memcpy(pu8TXBuffer, pu8RDBIAddress, *pu8DDDIData);	
+						    if (NULL != pu8RDBIAddress)
+						    {
+							    memcpy(pu8TXBuffer, pu8RDBIAddress, *pu8DDDIData);	
+							}
 							u32TransferByteCount += (uint32)*pu8DDDIData;
 							u32BufferBytesFree -= (uint32)*pu8DDDIData;
 							pu8TXBuffer += (uint8)*pu8DDDIData;						
@@ -506,7 +507,8 @@ static uint8 UDSAL_u8DDDI(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8T
 	puint8 pu8Data;
 	uint16 u16DDDISID;
 	uint8 u8ResultByteCount = 0;
-	sint16 i16RXDataCount = (uint16)u32RXDataCount - 5;
+	//sint16 i16RXDataCount = (uint16)u32RXDataCount - 5;
+	sint16 i16RXDataCount = (uint16)u32RXDataCount;
 	uint32 u32Temp;
 	
 	pu8RXBuffer += 3;	
@@ -534,13 +536,23 @@ static uint8 UDSAL_u8DDDI(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8T
 				{			
 					if (0 != *(pu8RXBuffer + 4))
 					{
-						memcpy(pu8Data, pu8RXBuffer, DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f);
+						if ((RAM_START_ADDR < (*(uint32*)pu8RXBuffer)) && (RAM_END_ADDR > (*(uint32*)pu8RXBuffer)))
+						{
+						    memcpy(pu8Data, pu8RXBuffer, DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f);
+						}
+						else
+						{
+						    memset(pu8Data, 0, DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f);
+						}
+
+
 						u32Temp = DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f;
 						u32Temp += (uint32)pu8RXBuffer;
 						u8ResultByteCount	+= *((puint8)u32Temp);					
 						pu8Data += (DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f);
 						pu8RXBuffer += (DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f);
 						memcpy(pu8Data, pu8RXBuffer, DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength >> 4);
+
 						pu8Data += (DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength >> 4);
 						pu8RXBuffer += (DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength >> 4);
 						i16RXDataCount -= ((DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f) + 
@@ -765,12 +777,8 @@ static void UDSAL_vConfigureDDDICache(uint16 u16CacheDDDISID, uint8 u8ByteCount)
 		if (0 == UDSAL_au16DDDICacheSIDs[u32DDDICacheIDX])
 		{		
 			UDSAL_astDDDICacheQueue[u32DDDICacheIDX].u32Size = UDSAL_nDDDICacheSize / u8ByteCount;		
-#if BUILD_KERNEL
 			UDSAL_astDDDICacheQueue[u32DDDICacheIDX].pvData = 
-				(void*)&UDSAL_au8DDDICache[u32DDDICacheIDX][0];			
-#elif BUILD_KERNEL_APP			
-			UDSAL_astDDDICacheQueue[u32DDDICacheIDX].pvData = (void*)0x2000ff00;	
-#endif			
+				(void*)&UDSAL_au8DDDICache[u32DDDICacheIDX][0];					
 			UDSAL_au16DDDICacheSIDs[u32DDDICacheIDX] = u16CacheDDDISID;
 			break;
 		}

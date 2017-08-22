@@ -70,7 +70,7 @@ static void OSHA_vLoadProcessStackASM(struct tq_struct* pstDispatcherTask)
 	__asm("ISB");
 	__asm("BX		LR");
 }
-#endif //BUILD_MK60
+#endif //BUILD_SAM3X8E
 
 
 

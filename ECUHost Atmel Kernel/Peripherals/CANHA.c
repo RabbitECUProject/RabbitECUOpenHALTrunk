@@ -487,6 +487,7 @@ static Bool CANHA_boWriteMB(tstCANModule* pstCAN, PROTAPI_tstCANMsg* pstCANMSG)
 	mailbox.ul_mb_idx = u8MBIDX;
 	mailbox.ul_id = (pstCANMSG->u32ID) << 0x12;//matthew macro?
 	mailbox.uc_length = pstCANMSG->u8DLC;
+	mailbox.uc_id_ver = 0;
 
 	u32TempSource = pstCANMSG->u32DWH;
 	u32TempDest = HTONL(u32TempSource);

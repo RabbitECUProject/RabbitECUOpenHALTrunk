@@ -159,7 +159,8 @@ void TEPMHA_vInitTEPMChannel(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_tstTE
 			case TEPMAPI_enCapFalling: u32ControlWord = 0; break;
 			case TEPMAPI_enCapAny://matthew problem here
 			{
-				u32ControlWord = TC_CMR_LDRA_RISING | TC_CMR_LDRB_FALLING | TC_CMR_TCCLKS_TIMER_CLOCK4;
+				//u32ControlWord = TC_CMR_LDRA_RISING | TC_CMR_LDRB_FALLING | TC_CMR_TCCLKS_TIMER_CLOCK4;
+			    u32ControlWord = TC_CMR_LDRA_EDGE | TC_CMR_LDRB_EDGE | TC_CMR_TCCLKS_TIMER_CLOCK4;
 				tc_init(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel / 2, u32ControlWord);
 				tc_start(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel / 2);
 				tc_enable_interrupt(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel / 2, TC_SR_LDRAS | TC_SR_LDRBS);
@@ -331,20 +332,41 @@ void TEPMHA_vForceQueueTerminate(void* pvModule, uint32 u32ChannelIDX, uint32 u3
 
 	if (0 == u32SubChannelIDX)
 	{
-	    u32Stat = tc_get_status(pstTimerModule, u32ChannelIDX / 2);
+	    //u32Stat = tc_get_status(pstTimerModule, u32ChannelIDX / 2);
+	    //tEventTimeRemains = tc_read_ra(pstTimerModule, u32ChannelIDX / 2) -
+		                    //tc_read_cv(pstTimerModule, u32ChannelIDX / 2);
+//
+	    //if (0 < tEventTimeRemains)
+	    //{	
+		    //tEventTimeScheduled = tc_read_ra(pstTimerModule, u32ChannelIDX / 2) + 2;
+//
+		    ///* Force it now! */
+		    //while (tc_read_ra(pstTimerModule, u32ChannelIDX / 2) != tEventTimeScheduled)
+		    //{
+			    //tc_write_ra(pstTimerModule, u32ChannelIDX / 2, tEventTimeScheduled);
+//
+		    //}
+	    //}
+	    u32Stat = 0;
 	    tEventTimeRemains = tc_read_ra(pstTimerModule, u32ChannelIDX / 2) -
-		                    tc_read_cv(pstTimerModule, u32ChannelIDX / 2);
+	    tc_read_cv(pstTimerModule, u32ChannelIDX / 2);
 
-	    if (0 < tEventTimeRemains)
-	    {	
-		    tEventTimeScheduled = tc_read_ra(pstTimerModule, u32ChannelIDX / 2) + 2;
+	    /* If is not too close then reschedule very close */
+	    if (((UINT32_MAX / 2) > tEventTimeRemains) &&
+	    (tEventTimeRemains > 5))
+	    {
+		    tEventTimeScheduled = tc_read_cv(pstTimerModule, u32ChannelIDX / 2) + 5;
+		    tc_write_ra(pstTimerModule, u32ChannelIDX / 2, tEventTimeScheduled);
+	    }
 
-		    /* Force it now! */
-		    while (tc_read_ra(pstTimerModule, u32ChannelIDX / 2) != tEventTimeScheduled)
-		    {
-			    tc_write_ra(pstTimerModule, u32ChannelIDX / 2, tEventTimeScheduled);
+	    while (0 == (u32Stat & TC_SR_CPAS))
+	    {
+		    u32Stat = tc_get_status(pstTimerModule, u32ChannelIDX / 2);
 
-		    }
+		    tEventTimeRemains = tc_read_ra(pstTimerModule, u32ChannelIDX / 2) -
+		    tc_read_cv(pstTimerModule, u32ChannelIDX / 2);
+
+		    if ((UINT32_MAX / 2) < tEventTimeRemains) break;
 	    }
 	}
 	else
@@ -353,16 +375,22 @@ void TEPMHA_vForceQueueTerminate(void* pvModule, uint32 u32ChannelIDX, uint32 u3
 	    tEventTimeRemains = tc_read_rb(pstTimerModule, u32ChannelIDX / 2) -
 		                    tc_read_cv(pstTimerModule, u32ChannelIDX / 2);
 
+	    /* If is not too close then reschedule very close */
 		if (((UINT32_MAX / 2) > tEventTimeRemains) && 
-		     (tEventTimeRemains > 2))
+		     (tEventTimeRemains > 5))
 	    {	
-		    tEventTimeScheduled = tc_read_cv(pstTimerModule, u32ChannelIDX / 2) + 2;
+		    tEventTimeScheduled = tc_read_cv(pstTimerModule, u32ChannelIDX / 2) + 5;
 			tc_write_rb(pstTimerModule, u32ChannelIDX / 2, tEventTimeScheduled);
 	    }
 
 		while (0 == (u32Stat & TC_SR_CPBS))
 		{
 			u32Stat = tc_get_status(pstTimerModule, u32ChannelIDX / 2);
+
+			tEventTimeRemains = tc_read_rb(pstTimerModule, u32ChannelIDX / 2) -
+			tc_read_cv(pstTimerModule, u32ChannelIDX / 2);
+
+			if ((UINT32_MAX / 2) < tEventTimeRemains) break;
 		}
 	}
 #endif //BUILD_SAM3X8E
@@ -789,13 +817,13 @@ IOAPI_tenTriState TEPMHA_enGetTimerDigitalState(IOAPI_tenEHIOResource enEHIOReso
 		    tstTimerModule* pstModule = (tstTimerModule*)pvModule;
 			if (0 == TEPMHA_rastTEPMChannel[u32ChannelIDX].u32SubChannel)
 			{
-				enTriState = 0 == (pstModule->TC_CHANNEL[TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel / 2].TC_SR & TC_SR_MTIOA) ?
-					IOAPI_enHigh : IOAPI_enLow;//matthew
+				enTriState = 0 != (pstModule->TC_CHANNEL[TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel / 2].TC_SR & TC_SR_MTIOA) ?
+					IOAPI_enHigh : IOAPI_enLow;
 			}
 			else
 			{
-				enTriState = 0 == (pstModule->TC_CHANNEL[TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel / 2].TC_SR & TC_SR_MTIOB) ?
-				IOAPI_enHigh : IOAPI_enLow;//matthew
+				enTriState = 0 != (pstModule->TC_CHANNEL[TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel / 2].TC_SR & TC_SR_MTIOB) ?
+				    IOAPI_enHigh : IOAPI_enLow;
 			}
 		}
 	}
@@ -983,6 +1011,28 @@ uint32 TEPMHA_u32GetTimerHardwareSubChannel(uint32 u32TableIndex)
 #endif //BUILD_SAM3X8E
 
     return u32ChannelSubIDX;
+}
+
+TEPMHA_tenModule TEPMHA_enTimerEnumFromModule(tstTimerModule* pstTimerModule)
+{
+#ifdef BUILD_SAM3X8E
+	TEPMHA_tenModule enTimerModule = TEPMHA_enTC0;
+
+    if (TC0 == pstTimerModule)
+	{
+		enTimerModule = TEPMHA_enTC0;
+	}
+    else if (TC1 == pstTimerModule)
+    {
+		enTimerModule = TEPMHA_enTC1;
+	}
+    else if (TC2 == pstTimerModule)
+    {
+		enTimerModule = TEPMHA_enTC2;
+	}
+#endif //BUILD_SAM3X8E
+
+	return enTimerModule;
 }
 
 TEPMHA_tenModule TEPMHA_enTimerEnumFromResource(IOAPI_tenEHIOResource enEHIOResource)

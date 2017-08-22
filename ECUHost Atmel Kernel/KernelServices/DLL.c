@@ -38,6 +38,7 @@ uint8	DLL_au8ByteIICByteQueue[DLL_nIICVirtualChannelCount][DLL_nIICTXQueueByteCo
 uint8	DLL_au8ByteSPIByteQueue[DLL_nSPIVirtualChannelCount][DLL_nSPITXQueueByteCount];
 uint8	DLL_au8ByteUARTByteQueue[DLL_nUARTVirtualChannelCount][DLL_nUARTTXQueueByteCount];
 uint8	DLL_au8ByteCANByteQueue[DLL_nCANVirtualChannelCount][DLL_nCANTXQueueByteCount];
+uint8	DLL_au8ByteUSBByteQueue[DLL_nUSBVirtualChannelCount][DLL_nUSBTXQueueByteCount];
 uint8	DLL_au8ByteENETByteQueue[DLL_nENETVirtualChannelCount][DLL_nENETTXQueueByteCount];
 
 /* Temp TX buff to build response and to dequeue byte-queue to for TX */
@@ -45,6 +46,7 @@ uint8 DLL_au8TXIICBuffBuild[DLL_nIICTXWorkBuffCount][DLL_nIICTXWorkBuffMaxBytes]
 uint8 DLL_au8TXSPIBuffBuild[DLL_nSPITXWorkBuffCount][DLL_nSPITXWorkBuffMaxBytes];
 uint8 DLL_au8TXUARTBuffBuild[DLL_nUARTTXWorkBuffCount][DLL_nUARTTXWorkBuffMaxBytes];
 uint8 DLL_au8TXCANBuffBuild[DLL_nCANTXWorkBuffCount][DLL_nCANTXWorkBuffMaxBytes];
+uint8 DLL_au8TXUSBBuffBuild[DLL_nUSBTXWorkBuffCount][DLL_nUSBTXWorkBuffMaxBytes];
 uint8 DLL_au8TXENETBuffBuild[DLL_nENETTXWorkBuffCount][DLL_nENETTXWorkBuffMaxBytes];
 
 /* Bytequeue struct array */
@@ -52,6 +54,7 @@ CBYTEQUEUE_tstQueue DLL_astTXDLLByteQueue[DLL_nIICVirtualChannelCount +
 																					DLL_nSPIVirtualChannelCount +
 																					DLL_nUARTVirtualChannelCount +
 																					DLL_nCANVirtualChannelCount +
+																					DLL_nUSBVirtualChannelCount +
 																					DLL_nENETVirtualChannelCount];
 
 /* Build buffer client array */
@@ -59,6 +62,7 @@ IOAPI_tenEHIOResource DLL_aenDLLTXBufferClient[	DLL_nIICTXWorkBuffCount +
 																								DLL_nSPITXWorkBuffCount +
 																								DLL_nUARTTXWorkBuffCount +
 																								DLL_nCANTXWorkBuffCount +
+																								DLL_nUSBTXWorkBuffCount +
 																								DLL_nENETTXWorkBuffCount];
 																					
 /* Transmit control structure array */
@@ -66,6 +70,7 @@ DLL_tstTXCB DLL_astTXCB[									DLL_nIICTXWorkBuffCount +
 																					DLL_nSPITXWorkBuffCount +
 																					DLL_nUARTTXWorkBuffCount +
 																					DLL_nCANTXWorkBuffCount +
+																					DLL_nUSBTXWorkBuffCount +
 																					DLL_nENETTXWorkBuffCount];
 																					
 
@@ -80,6 +85,11 @@ static Bool DLLBYTEQUEUE_vQueueBytes(CBYTEQUEUE_tstQueue*, puint8, uint32);
 static void DLLBYTEQUEUE_vDequeueBytes(CBYTEQUEUE_tstQueue*, puint8, puint32);
 static puint8 DLL_pu8GetTXClientBuffer(IOAPI_tenEHIOResource, puint32 pu32TXBufferCap);	
 static void DLL_vReleaseTXClientBuffer(puint8);
+
+DLL_tstRXDLLData* DLL_pstGetRXBuffer(IOAPI_tenEHIOResource enEHIOResource)
+{
+    return &DLL_stRXDLLData[enEHIOResource - EH_VIO_IIC1];
+}
 
 //void DLL_vIPBufferRXCB(ENE_tstETHUnionFrame* pstETHUnionFrame)
 //{	
@@ -199,7 +209,7 @@ void DLL_vIPBufferTX(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8TXData, uin
 void DLL_vFrameRXCB(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8RXData)
 {
 	puint8 pu8TXData;
-	puint8 pu8TXBuffer;
+	puint8 pu8TXBuffer = NULL;
 	uint32 u32TXByteCount = 0;
 	uint32 u32TXByteCountOld;
 	uint32 u32TXBufferCap;
@@ -298,6 +308,27 @@ void DLL_vFrameRXCB(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8RXData)
 								}								
 							}
 						}
+
+						case PROTAPI_enUSB2:
+						{		
+							while (0 < DLL_stRXDLLData[DLLVirtualChannelIDX].u8DataCount)
+							{		
+								u32TXByteCountOld = u32TXByteCount;	
+								UDSNL_vReceiveFrame(enEHIOResource, pu8RXData, pu8TXData, &u32TXByteCount, u32TXBufferCap);
+								DLL_stRXDLLData[DLLVirtualChannelIDX].u8DataCount = 7 < DLL_stRXDLLData[DLLVirtualChannelIDX].u8DataCount ? 
+									DLL_stRXDLLData[DLLVirtualChannelIDX].u8DataCount - 8 : 0;
+								pu8RXData = 0 < DLL_stRXDLLData[DLLVirtualChannelIDX].u8DataCount ? pu8RXData + 8 : NULL;
+								pu8TXData += (u32TXByteCount - u32TXByteCountOld);
+								DLL_stRXDLLData[DLLVirtualChannelIDX].u8DataCount = 0 == *pu8RXData ?
+									0 : DLL_stRXDLLData[DLLVirtualChannelIDX].u8DataCount;
+							}
+					
+							break;
+						}
+						default:
+						{
+							break;
+						}
 					}						
 					break;
 				}
@@ -391,6 +422,13 @@ void DLL_vStart(uint32* const u32Stat)
 				DLL_nCANTXQueueByteCount, (puint8)&DLL_au8ByteCANByteQueue[u32IDX][0]);
 	}
 
+	/* Initialise USB byte queue structs */
+	for (u32IDX = 0; u32IDX < DLL_nUSBVirtualChannelCount; u32IDX++)
+	{
+		DLLBYTEQUEUE_vInit(&DLL_astTXDLLByteQueue[u32QueueIDX++],
+		DLL_nUSBTXQueueByteCount, (puint8)&DLL_au8ByteUSBByteQueue[u32IDX][0]);
+	}
+
 	/* Initialise ENET byte queue structs */
 	for (u32IDX = 0; u32IDX < DLL_nENETVirtualChannelCount; u32IDX++)
 	{
@@ -409,6 +447,7 @@ void DLL_vStart(uint32* const u32Stat)
 															DLL_nSPITXWorkBuffCount +
 															DLL_nUARTTXWorkBuffCount +
 															DLL_nCANTXWorkBuffCount +
+															DLL_nUSBTXWorkBuffCount +
 															DLL_nENETTXWorkBuffCount); u32IDX++)
 	{	
 		DLL_astTXCB[u32IDX].pu8TXData = NULL;
@@ -523,6 +562,13 @@ Bool DLL_boInitDLLChannel(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tstPortCon
 			tClientHandle  = (SYSAPI_ttClientHandle)RESM_RequestEHIOResource(pstCommsConfig->stPinConfig.uPinInfo.stCANPinInfo.enTXPin, tClientHandleReq);
 			tClientHandle &= (SYSAPI_ttClientHandle)RESM_RequestEHIOResource(pstCommsConfig->stPinConfig.uPinInfo.stCANPinInfo.enRXPin, tClientHandleReq);
 		}	
+
+	    else if ((EH_FIRST_USB <= pstCommsConfig->enVIOResource) &&
+	    (EH_LAST_USB >= pstCommsConfig->enVIOResource))
+		{
+			tClientHandleReq = DLL_xGetClientHandle();
+			tClientHandle = tClientHandleReq;				
+		}
 					
 		else
 		{
@@ -724,6 +770,24 @@ static Bool DLL_boSendFrame(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8TXDa
 		CAN_vInitTransfer(&stTransferCB);		
 		boSyncSent = true;
 	}
+
+	else if ((EH_FIRST_USB <= enEHIOResource) &&
+	(EH_LAST_USB >= enEHIOResource))
+	{
+		switch (DLL_astPortConfigCB[DLLVirtualChannelIDX].enLLProtocol)
+		{				
+			case PROTAPI_enUSB2:
+			{			
+				USB_vSend(enEHIOResource, pu8TXData, u32TXByteCount);
+				boSyncSent = true;
+				break;
+			}
+			default:
+			{
+				break;
+			}
+		}
+	}	
 		
 	else
 	{
@@ -890,7 +954,7 @@ static puint8 DLL_pu8GetTXClientBuffer(IOAPI_tenEHIOResource enEHIOResource, pui
 	uint8 u8BufferIDXStart;
 	uint8 u8BufferIDXEnd;
 	uint8 u8BufferIDX;
-	puint8 pu8Buffer;
+	puint8 pu8Buffer = NULL;
 	uint32 u32BufferBytes;
 	Bool boVacantBuff = false;
 	
@@ -939,8 +1003,8 @@ static puint8 DLL_pu8GetTXClientBuffer(IOAPI_tenEHIOResource enEHIOResource, pui
 		u32BufferBytes = DLL_nCANTXWorkBuffMaxBytes;
 	}
 
-	else if ((EH_ENET_FIRST_CH <= enEHIOResource) &&
-	(EH_ENET_LAST_CH >= enEHIOResource))
+	else if ((EH_FIRST_USB <= enEHIOResource) &&
+	(EH_LAST_USB >= enEHIOResource))
 	{
 		u8BufferIDXStart = DLL_nIICTXWorkBuffCount +
 		DLL_nSPITXWorkBuffCount +
@@ -950,6 +1014,24 @@ static puint8 DLL_pu8GetTXClientBuffer(IOAPI_tenEHIOResource enEHIOResource, pui
 		DLL_nSPITXWorkBuffCount +
 		DLL_nUARTTXWorkBuffCount +
 		DLL_nCANTXWorkBuffCount +
+		DLL_nUSBTXWorkBuffCount;
+		pu8Buffer = &DLL_au8TXUSBBuffBuild[0][0];
+		u32BufferBytes = DLL_nUSBTXWorkBuffMaxBytes;
+	}
+
+	else if ((EH_ENET_FIRST_CH <= enEHIOResource) &&
+	(EH_ENET_LAST_CH >= enEHIOResource))
+	{
+		u8BufferIDXStart = DLL_nIICTXWorkBuffCount +
+		DLL_nSPITXWorkBuffCount +
+		DLL_nUARTTXWorkBuffCount +
+		DLL_nCANTXWorkBuffCount +
+		DLL_nUSBTXWorkBuffCount;
+		u8BufferIDXEnd = DLL_nIICTXWorkBuffCount +
+		DLL_nSPITXWorkBuffCount +
+		DLL_nUARTTXWorkBuffCount +
+		DLL_nCANTXWorkBuffCount +
+		DLL_nUSBTXWorkBuffCount +
 		DLL_nENETTXWorkBuffCount;
 		pu8Buffer = &DLL_au8TXENETBuffBuild[0][0];
 		u32BufferBytes = DLL_nENETTXWorkBuffMaxBytes;
@@ -1093,7 +1175,7 @@ static void DLL_vReleaseTXClientBuffer(puint8 pu8TXBuffer)
 	}
 	if (true == boBufferReleased) return;
 	
-	/* Try release a UART client working buffer */		
+	/* Try release a CAN client working buffer */		
 	u8BufferIDXStart = DLL_nIICTXWorkBuffCount + 
 										 DLL_nSPITXWorkBuffCount +
 										 DLL_nUARTTXWorkBuffCount;
@@ -1114,15 +1196,40 @@ static void DLL_vReleaseTXClientBuffer(puint8 pu8TXBuffer)
 	}
 	if (true == boBufferReleased) return;
 
+	/* Try release a USB client working buffer */
+	u8BufferIDXStart = DLL_nIICTXWorkBuffCount +
+	DLL_nSPITXWorkBuffCount +
+	DLL_nUARTTXWorkBuffCount +
+	DLL_nCANTXWorkBuffCount;
+	u8BufferIDXEnd = DLL_nIICTXWorkBuffCount +
+	DLL_nSPITXWorkBuffCount +
+	DLL_nUARTTXWorkBuffCount +
+	DLL_nCANTXWorkBuffCount +
+	DLL_nUSBTXWorkBuffCount;
+	pu8Buffer = &DLL_au8TXUSBBuffBuild[0][0];
+	
+	for (u8BufferIDX = u8BufferIDXStart; u8BufferIDX < u8BufferIDXEnd; u8BufferIDX++)
+	{
+		if ((pu8Buffer <= pu8TXBuffer) && ((pu8Buffer + u32BufferBytes) > pu8TXBuffer))
+		{
+			DLL_aenDLLTXBufferClient[u8BufferIDX] = EH_IO_Invalid;
+			boBufferReleased = true;
+		}
+		pu8Buffer += u32BufferBytes;
+	}
+	if (true == boBufferReleased) return;
+
 	/* Try release a ENET client working buffer */	
 	u8BufferIDXStart = DLL_nIICTXWorkBuffCount + 
 										 DLL_nSPITXWorkBuffCount +
 										 DLL_nUARTTXWorkBuffCount +
-										 DLL_nCANTXWorkBuffCount;
+										 DLL_nCANTXWorkBuffCount +
+										 DLL_nUSBTXWorkBuffCount;
 	u8BufferIDXEnd = DLL_nIICTXWorkBuffCount + 
 									 DLL_nSPITXWorkBuffCount + 
 									 DLL_nUARTTXWorkBuffCount +
 									 DLL_nCANTXWorkBuffCount +
+									 DLL_nUSBTXWorkBuffCount +
 									 DLL_nENETTXWorkBuffCount;
 	pu8Buffer = &DLL_au8TXENETBuffBuild[0][0];
 	u32BufferBytes = DLL_nENETTXWorkBuffMaxBytes;		

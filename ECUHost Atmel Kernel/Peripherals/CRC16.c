@@ -29,14 +29,14 @@ void CRC16_vTerminate(uint32* const u32Stat)
 	
 }
 
-uint16 CRC16_u16CalcCRC(uint16 u16CRC, uint8* u8Data, uint16 u16Len)
+uint16 CRC16_u16CalcCRC(uint16 u16CRC, uint8* pu8Data, uint16 u16Len)
 {
-	return CRC16HA_u16CalcCRC(u16CRC, u8Data, u16Len);
+	return CRC16HA_u16CalcCRC(u16CRC, pu8Data, u16Len);
 }	
 
-puint16 CRC16_pu16CalcCRC(uint16 u16CRC, uint8* u8Data, uint16 u16Len)
+puint16 CRC16_pu16CalcCRC(uint16 u16CRC, uint8* pu8Data, uint16 u16Len)
 {
-	return CRC16HA_pu16CalcCRC(u16CRC, u8Data, u16Len);
+	return CRC16HA_pu16CalcCRC(u16CRC, pu8Data, u16Len);
 }	
 
 

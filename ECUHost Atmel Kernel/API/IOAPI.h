@@ -237,6 +237,7 @@ typedef enum
 	EH_VIO_UART2,
 	EH_VIO_CAN1,
 	EH_VIO_CAN2,
+	EH_VIO_USB,
     EH_VIO_ENET_CH1,
     EH_VIO_ENET_CH2,
 	EH_VIO_ADC0,
@@ -257,6 +258,8 @@ typedef enum
 #define EH_LAST_SPI         EH_VIO_SPI2
 #define EH_FIRST_CAN        EH_VIO_CAN1
 #define EH_LAST_CAN         EH_VIO_CAN2
+#define EH_FIRST_USB        EH_VIO_USB
+#define EH_LAST_USB         EH_VIO_USB
 #define EH_FIRST_VIO_COMMS  EH_VIO_IIC1
 #define EH_LAST_VIO_COMMS   EH_VIO_ENET_CH2
 
@@ -277,6 +280,7 @@ typedef enum
 	IOAPI_enUARTBus,
 	IOAPI_enCANBus,
 	IOAPI_enENETChannel,
+	IOAPI_enUSBChannel,
 	IOAPI_enTEPM
 } IOAPI_tenEHIOType;
 

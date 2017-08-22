@@ -422,3 +422,8 @@ SPREADAPI_tstSpreadResult SPREAD_stGetSpread(SPREADAPI_ttSpreadIDX tSpreadIDX)
 {
 	return SPREAD_astSpreadResult[tSpreadIDX];
 }
+
+SPREADAPI_tstSpreadResult* SPREAD_pstGetSpread(SPREADAPI_ttSpreadIDX tSpreadIDX)
+{
+	return &SPREAD_astSpreadResult[tSpreadIDX];
+}

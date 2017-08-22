@@ -268,7 +268,7 @@ void TEPM_u32GetFreeVal(IOAPI_tenEHIOResource enEHIOResource, puint32 pu32Data)
     TEPMHA_vGetFreeVal(pvModule, pu32Data);
 }
 
-void TEPM_vInterruptHandler(IOAPI_tenEHIOResource enEHIOResource)
+void TEPM_vInterruptHandler(IOAPI_tenEHIOResource enEHVIOResource)
 {
 	uint32 u32ChannelIDX;
 	uint32 u32TableIDX;
@@ -277,13 +277,14 @@ void TEPM_vInterruptHandler(IOAPI_tenEHIOResource enEHIOResource)
     static uint32 u32Sequence;
 	uint32 u32StartChannelIDX;
 	uint32 u32EndChannelIDX;
+    IOAPI_tenEHIOResource enEHIOResource;
 
 	u32Sequence++;
 
 	/* Note here the resource passed in is the timer module resource not the timer channel */
-	void* pvModule = TEPMHA_pvGetTimerModuleFromVIO(enEHIOResource);
+	void* pvModule = TEPMHA_pvGetTimerModuleFromVIO(enEHVIOResource);
 
-	u32StartChannelIDX = TEPMHA_u32GetTimerStartChannelInterruptGroup(enEHIOResource);
+	u32StartChannelIDX = TEPMHA_u32GetTimerStartChannelInterruptGroup(enEHVIOResource);
 	u32EndChannelIDX = u32StartChannelIDX + TEPMHA_u32GetTimerChannelsPerInterruptGroup();
 	
 	/* Loop through the channels contained within this interrupt group */
@@ -293,7 +294,7 @@ void TEPM_vInterruptHandler(IOAPI_tenEHIOResource enEHIOResource)
 		{
 		    if (true == TEMPHA_boInterruptEnabled(pvModule, u32ChannelIDX))
 			{							
-				enEHIOResource = TEPMHA_enGetTimerResourceFromVIOAndIndex(enEHIOResource, u32ChannelIDX);
+				enEHIOResource = TEPMHA_enGetTimerResourceFromVIOAndIndex(enEHVIOResource, u32ChannelIDX);
 				u32TableIDX = TEPMHA_u32GetFTMTableIndex(enEHIOResource);													
 				
 				if (TRUE == TEPM_aboTEPMChannelModeOutput[u32TableIDX])
@@ -314,7 +315,7 @@ void TEPM_vInterruptHandler(IOAPI_tenEHIOResource enEHIOResource)
             }
 			
 			TEMPHA_vResetTimerFlag(pvModule, u32ChannelIDX);
-			break;
+			//break;
 		}
 	}
 }
@@ -473,6 +474,7 @@ static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelID
 	TEPMAPI_ttEventTime tEventTimeScheduled;
 	TEPMAPI_ttEventTime tEventTimeRemains;	
 	uint32 u32Temp;
+	uint32 u32ModulePhaseCorrect = 0;
 	uint32 u32SubChannelIDX;
 	volatile Bool boSynchroniseAbort = FALSE;
 	
@@ -517,27 +519,36 @@ static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelID
 			switch (pstTimedEvent->enMethod)
 			{
 				case TEPMAPI_enGlobalLinkedFraction:
-				{					
-					u32Temp = CEM_u32GlobalCycleTime / 2;
-					u32Temp *= *(pstTimedEvent->ptEventTime);
-					u32Temp = MIN(0x7fc00000, u32Temp);	
-					u32Temp /= 0x8000;					
-					tEventTimeScheduled = CEM_tGlobalCycleOrigin + u32Temp;
-					tEventTimeRemains = tEventTimeScheduled - TEPMHA_u32GetFreeVal(pvModule, u32ChannelIDX);
+				{				
+				    u32ModulePhaseCorrect = (uint32)CEM_ttGetModulePhase(TEPMHA_enTimerEnumFromModule(pvModule));					
+					u32Temp = CEM_u32GlobalCycleTime / 8;//matthew changed for SAM3X8E CAVEAT GRANULARITY MK60!!!!
+
+					if (CEM_u32GlobalCycleFraction < *(pstTimedEvent->ptEventTime))
+					{						
+						u32Temp *= (*(pstTimedEvent->ptEventTime) - CEM_u32GlobalCycleFraction);
+						u32Temp = MIN(0x7fc00000, u32Temp);	
+						u32Temp /= 0x2000;					
+						tEventTimeScheduled = CEM_tEventTimeLast + u32ModulePhaseCorrect + u32Temp;
+						tEventTimeRemains = tEventTimeScheduled - TEPMHA_u32GetFreeVal(pvModule, u32ChannelIDX);
 					
-					if (FALSE == boSynchroniseUpdate)
-					{
-						if ((TEPM_nSoonCounts > tEventTimeRemains) || (-TEPM_nSoonCounts < tEventTimeRemains))
+						if (FALSE == boSynchroniseUpdate)
 						{
-							tEventTimeScheduled = TEPMHA_u32GetFreeVal(pvModule, u32ChannelIDX) + TEPM_nSoonCounts;
+							if ((TEPM_nSoonCounts > tEventTimeRemains) || (-TEPM_nSoonCounts < tEventTimeRemains))
+							{
+								tEventTimeScheduled = TEPMHA_u32GetFreeVal(pvModule, u32ChannelIDX) + TEPM_nSoonCounts;
+							}
+						}
+						else
+						{
+							if ((TEPM_nSoonCounts > tEventTimeRemains) || ((UINT32_MAX / 2) < tEventTimeRemains))
+							{
+								boSynchroniseAbort = TRUE;
+							}												
 						}
 					}
 					else
 					{
-						if ((TEPM_nSoonCounts > tEventTimeRemains) || ((UINT32_MAX / 2) < tEventTimeRemains))
-						{
-							boSynchroniseAbort = TRUE;
-						}												
+                        boSynchroniseAbort = TRUE;
 					}
 
 					break;
