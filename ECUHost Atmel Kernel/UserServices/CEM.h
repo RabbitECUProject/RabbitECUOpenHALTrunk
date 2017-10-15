@@ -43,6 +43,8 @@ EXTERN uint32 CEM_u32GlobalCycleTime;
 EXTERN TEPMAPI_ttEventTime CEM_tGlobalCycleOrigin;
 EXTERN uint32 CEM_u32GlobalCycleOriginCount;
 EXTERN TEPMAPI_ttEventTime CEM_tEventTimeLast;
+EXTERN uint32 CEM_u32CrankErrorCounts;
+//ASAM mode=readvalue name="Crank Error Counts" type=uint32 offset=0 min=0 max=65535 m=1 b=0 units="counts" format=5.3 help="Crank Error Counts"
 
 void CEM_vStart(uint32* const);
 void CEM_vRun(uint32* const);
@@ -51,6 +53,7 @@ Bool CEM_boPopulateCrankEdgeArrays(puint16 const, const Bool, IOAPI_tenEdgePolar
 Bool CEM_boPopulateSyncPointsArray(puint16 const);
 void CEM_vPrimaryEventCB(IOAPI_tenEHIOResource, TEPMAPI_ttEventTime);
 void CEM_vPhaseEventCB(IOAPI_tenEHIOResource, TEPMAPI_ttEventTime);
+void CEM_vFreqEventCB(IOAPI_tenEHIOResource, TEPMAPI_ttEventTime);
 TEPMAPI_ttEventTime CEM_ttGetModulePhase(TEPMHA_tenModule);
 
 #endif //CEM_H

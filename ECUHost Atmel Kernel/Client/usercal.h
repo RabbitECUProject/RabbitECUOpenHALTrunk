@@ -97,42 +97,42 @@
 	10u,									\
 	1u,										\
 	1u,										\
-	400u,									\
-	2500u,	 								\
-	{500u,	 								\
-	750u,	 								\
-	1000u,	 								\
-	1250u,	 								\
-	1500u,	 								\
-	1750u,	 								\
-	2000u,	 								\
-	2250u,	 								\
-	2500u,	 								\
-	2750u,	 								\
-	3000u,	 								\
-	3250u,	 								\
-	3500u,	 								\
-	3750u,	 								\
+	800u,									\
 	4000u,	 								\
-	4250u,	 								\
-	4500u},  								\
-    {0x2A4C20,								\
-    0x35D53F,								\
-    0x4722F0,								\
-    0x63F9C0,								\
-    0x82BCC0,								\
-    0xAA2698,								\
-    0xD84B18,								\
-    0x10D2A40,								\
-    0x1544D30,								\
-    0x1A50D0F,								\
-    0x2062488,								\
-    0x2797FC8,								\
-    0x308BBC0,								\
-    0x3AD1DC8,								\
-    0x4679BF8,								\
-    0x53C0EB0,								\
-    0x6437460},								\
+	{500u,	 								\
+	1000u,	 								\
+	1500u,	 								\
+	2000u,	 								\
+	2500u,	 								\
+	3000u,	 								\
+	3500u,	 								\
+	4000u,	 								\
+	4500u,	 								\
+	5000u,	 								\
+	5500u,	 								\
+	6000u,	 								\
+	7000u,	 								\
+	8000u,	 								\
+	9000u,	 								\
+	10000u,	 								\
+	11000u},  								\
+    {0,  									\
+	900000,  								\
+	1800000,  								\
+	3000000,  								\
+	4600000,  								\
+	7500000,  								\
+	11300000,  								\
+	17000000,  								\
+	25000000,  								\
+	35000000,  								\
+	45000000,  								\
+	54000000,  								\
+	93000000,  								\
+	150000000,  							\
+	250000000,  							\
+	350000000,  							\
+	450000000},								\
 	{7500u,									\
   8000u,									\
 	8500u,									\
@@ -150,57 +150,57 @@
 	14500u,									\
 	15000u,									\
 	15500u},								\
-	{1400u,									\
-    1300u,										\
-	1200u,										\
-	1100u,										\
-	1000u,										\
-	900u,										\
-	800u,										\
-	700u,										\
+	{2000u,									\
+    1720u,										\
+	1620u,										\
+	1520u,										\
+	1420u,										\
+	1320u,										\
+	1220u,										\
+	1120u,										\
+	1020u,										\
+	920u,										\
+	820u,										\
+	720u,										\
 	600u,										\
-	500u,										\
-	480u,										\
-	460u,										\
+	470u,										\
+	450u,										\
 	440u,										\
-	430u,										\
-	420u,										\
-	410u,										\
-	400u},									\
-	{204u,									\
-	300u,										\
-	392u,										\
-	607u,										\
-	803u,										\
-	1016u,									\
-	1412u,									\
-	1780u,									\
-	2120u,									\
-	2445u,									\
-	2965u,									\
-	3592u,									\
-	4103u,									\
-	4705u,									\
-	4831u,									\
-  4907u,									\
-	4976u},									\
-	{200000,								\
-	170000,									\
-	140000,									\
-	132000,									\
-	122000,									\
-	110000,									\
-	100000,									\
-	87000,									\
-	79000,									\
-	71000,									\
-	60000,									\
+	430u},									\
+	{500u,									\
+	750u,										\
+	1000u,										\
+	1250u,										\
+	1500u,										\
+	1750u,									\
+	2000u,									\
+	2250u,									\
+	2500u,									\
+	2750u,									\
+	3000u,									\
+	3250u,									\
+	3500u,									\
+	3750u,									\
+	4000u,									\
+  4250u,									\
+	4500u},									\
+	{60000,									\
+	52000,									\
 	43000,									\
-	33000,									\
-	5000,										\
-	-6000,									\
-  -18000,									\
-	-40000},								\
+	35000,									\
+	27000,									\
+	20000,									\
+	15000,									\
+	10000,									\
+	5000,									\
+	0,									\
+	-5000,									\
+	-10000,									\
+	-15000,										\
+	-20000,									\
+	-25000,									\
+	-30000,									\
+	-35000},								\
 	{-40000,								\
   -30000,									\
 	-20000,									\
@@ -224,12 +224,12 @@
 	1600u,									\
 	1500u,									\
 	1400u,									\
-	1300u,									\
-	1200u,									\
+	1250u,									\
 	1150u,									\
 	1100u,									\
-	1050u,									\
-	1000u,									\
+	1070u,									\
+	1030u,									\
+	1010u,									\
 	1000u,									\
 	1000u,									\
 	1000u,									\
@@ -473,23 +473,23 @@
 	290u,									\
 	300u,									\
 	400u},								    \
-	{5000u,									\
-    5000u,									\
-	6000u,									\
-	6500u,									\
-	7000u,									\
-	7500u,									\
-	8000u,									\
-	8500u,									\
-	9000u,									\
-	9500u,									\
-	10000u,									\
-	10000u,									\
-	10000u,									\
-	10000u,									\
-	10000u,									\
-	10000u,									\
-	10000u},									\
+	{3000u,									\
+    3200u,									\
+	3400u,									\
+	3600u,									\
+	3800u,									\
+	4000u,									\
+	4200u,									\
+	4400u,									\
+	4600u,									\
+	4800u,									\
+	5000u,									\
+	5000u,									\
+	5000u,									\
+	5000u,									\
+	5000u,									\
+	5000u,									\
+	5000u},									\
 	{7500u,									\
 		8000u,									\
 		8500u,									\
@@ -865,8 +865,8 @@
 	0,\
 	12,											\
 	2000,										\
-	4, \
-	2530,  \
+	8, \
+	4900,  \
 {0,\
 500,\
 1000,\
@@ -889,19 +889,67 @@
 	0x865A,\
 	0xDFEC,\
 	0x15F90},\
-{{0x16E360,	0x19F0A0,	0x19F0A0,	0x19F0A0,	0x19F0A0,	0x19F0A0,	0x19F0A0,	0x19F0A0,	0x19F0A0,	0x19F0A0,	0x19F0A0},\
-{0x2191C0,	0x2932E0,	0x3567E0,	0x4C4B40,	0x5B8D80,	0x6ACFC0,	0x6ACFC0,	0x6ACFC0,	0x6ACFC0,	0x6ACFC0,	0x6ACFC0},\
-{0x2191C0,	0x200B20,	0x3037C0,	0x3B8260,	0x6E2B20,	0xA1BE40,	0xAC6CA0,	0xD29240,	0xE4E1C0,	0xE4E1C0,	0xE4E1C0},\
-{0x200B20,	0x231860,	0x2EB120,	0x4853A0,	0x755710,	0x989680,	0xDD40A0,	0x116C730,	0x15752A0,	0x15EF3C0,	0x15EF3C0},\
-{0x1E8480,	0x231860,	0x367950,	0x49B330,	0x753000,	0xA037A0,	0xCAF120,	0x13376F0,	0x19BFCC0,	0x1C9C380,	0x1D905C0},\
-{0x1E8480,	0x231860,	0x325AA0,	0x4C4B40,	0x7A1200,	0x890620,	0xCAF120,	0x1658370,	0x1F0AC6F,	0x2255100,	0x2625A00},\
-{0x1E8480,	0x231860,	0x325AA0,	0x4C4B40,	0x7A1200,	0xBEBC20,	0x10B0760,	0x158B230,	0x1F78A40,	0x29020C0,	0x2FAF080},\
-{0x493E0,	0x231860,	0x325AA0,	0x4C4B40,	0x7A1200,	0xBEBC20,	0x112A880,	0x15EF3C0,	0x1E84800,	0x2BDE780,	0x38444C0},\
-{0x493E0,	0x231860,	0x325AA0,	0x4C4B40,	0x7A1200,	0xBEBC20,	0x11A49A0,	0x16E3600,	0x1F78A40,	0x2FAF080,	0x3FE56C0},\
-{0x493E0,	0x231860,	0x325AA0,	0x4C4B40,	0x7A1200,	0xBEBC20,	0x11A49A0,	0x16E3600,	0x1F78A40,	0x3473BC0,	0x47868C0},\
-{0x493E0,	0x231860,	0x325AA0,	0x4C4B40,	0x7A1200,	0xBEBC20,	0x11A49A0,	0x16E3600,	0x206CC80,	0x3938700,	0x4F27AC0}},\
-0xff,\
+{{0x3C14DC,	0x4417A3,	0x4417A3,	0x4417A3,	0x4417A3,	0x4417A3,	0x4417A3,	0x4417A3,	0x4417A3,	0x4417A3,	0x4417A3},\
+{0x5B8D80,	0x7704C0,	0x8C30AC,	0xC84588,	0xF05370,	0x1186158,	0x1186158,	0x1186158,	0x1186158,	0x1186158,	0x1186158},\
+{0x6ACFC0,	0x8F6EC0,	0xBBAEE0,	0xFD4BC0,	0x1312D00,	0x16E3600,	0x1AB3F00,	0x1F78A40,	0x2349340,	0x243D580,	0x2625A00},\
+{0x6ACFC0,	0x989680,	0xB28720,	0xDBBA00,	0x112A880,	0x14FB180,	0x1BD8E80,	0x2255100,	0x2BDE780,	0x3567E00,	0x3993FD8},\
+{0x7270E0,	0x989680,	0xCAF120,	0xE975A0,	0x11D56E0,	0x1681B80,	0x1D905C0,	0x2CD29C0,	0x3938700,	0x4B1A130,	0x4D9AF18},\
+{0x7270E0,	0x989680,	0xCAF120,	0xF73140,	0x1406F40,	0x19BFCC0,	0x243D580,	0x3938700,	0x4B1A130,	0x59A5380,	0x68E7780},\
+{0x7270E0,	0x989680,	0xCAF120,	0xF73140,	0x132B3A0,	0x1BA8140,	0x2AEA540,	0x3C14DC0,	0x529CAE8,	0x6BA55F8,	0x7D2B750},\
+{0x7270E0,	0x989680,	0xCAF120,	0xF73140,	0x132B3A0,	0x1F4ADD4,	0x2AEA540,	0x3EF1480,	0x55D4A80,	0x6F94740,	0x8F0D180},\
+{0x7270E0,	0x989680,	0xCAF120,	0xF73140,	0x132B3A0,	0x1F4ADD4,	0x2AEA540,	0x40D9900,	0x59A5380,	0x754D4C0,	0xA21FE80},\
+{0x7270E0,	0x989680,	0xCAF120,	0xF73140,	0x132B3A0,	0x1F4ADD4,	0x2AEA540,	0x42C1D80,	0x5D75C80,	0x8583B00,	0xBEBC200},\
+{0x7270E0,	0x989680,	0xCAF120,	0xF73140,	0x132B3A0,	0x1F4ADD4,	0x2AEA540,	0x42C1D80,	0x623A7C0,	0x9896800,	0xDB58580}},\
+0x1f,\
 0x01,\
+	{-40000,								\
+		-30000,									\
+		-20000,									\
+		-10000,									\
+		0,											\
+		10000,									\
+		20000,									\
+		30000,									\
+		40000,									\
+		50000,									\
+		60000},									\
+	{250000u,									\
+		220000u,									\
+		180000u,									\
+		100000u,									\
+		80000u,									\
+		60000u,									\
+		60000u,									\
+		50000u,									\
+		40000u,									\
+		30000u,									\
+		20000u},\
+	    {0,								\
+		200,									\
+		400,									\
+		600,									\
+		800,											\
+		1000,									\
+		1200,									\
+		1400,									\
+		1600,									\
+		1800,									\
+		2000}, \
+		{950u,									\
+		950u,									\
+		950u,									\
+		950u,									\
+		1000u,									\
+		1100u,									\
+		1240u,									\
+		1400u,									\
+		1600u,									\
+		1800u,									\
+		2000u},\
+		850,	\
+		1150,	\
+		20,\
+		8,\
 0x1234									\
 }			
 
@@ -1001,6 +1049,14 @@ typedef __packed struct
 	uint32 aUserBackupAirflowMap[11][11];
 	uint8 u8ManifoldTimeConstantTrim;
 	uint8 u8EnableBackupAirflowTransients;
+	sint32 aUserPrimerSpread[11];
+	uint32 aUserPrimerTable[11];
+    uint32 aUserInjShortOpeningSpread[11];
+    uint32 aUserInjShortOpeningTable[11];
+	uint32 u32STTNegLimit;
+	uint32 u32STTPosLimit;
+	uint32 u32CLStep;
+	uint32 u32CLInc;
 	uint16 u16CRC16;
 } USERCAL_tstCalibration;
 
@@ -1096,8 +1152,14 @@ EXTERN USERCAL_tstCalibration USERCAL_stRAMCAL;
 //ASAM mode=writevalue name="Manifold Time Constant Cal" type=uint8 offset=4868 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="Manifold Time Constant Cal"
 //ASAM mode=writevalue name="Airflow Transient Enable" type=uint8 offset=4869 min=0 max=1 m=1 b=0 units="bool" format=1.0 help="Airflow Transients Enable"
 
-//ASAM mode=writevalue name="CAL CRC HB" type=uint8 offset=4868 min=0 max=255 m=1 b=0 units="counts" format=3.0 help="CAL CRC HB"
-//ASAM mode=writevalue name="CAL CRC LB" type=uint8 offset=4869 min=0 max=255 m=1 b=0 units="counts" format=3.0 help="CAL CRC LB"
+//ASAM mode=writeaxis_pts name="Injector Start Primer Table_XAXIS" type=sint32 offset=4872 min=0 max=2 m=0.001 b=0 units="ms" format=4.3 help="Injector Short Opening X Axis" xcount=11 xindexvar="Fuel Injector Predicted ms"
+//ASAM mode=writecurve name="Injector Start Primer Table" type=uint32 offset=4916 min=0 max=2 m=1 b=0 units="ms" format=4.3 help="Injector Short Opening Curve" xcount=11 xindexvar="Fuel Injector Predicted ms"
+
+//ASAM mode=writeaxis_pts name="Injector Short Opening Table_XAXIS" type=uint32 offset=4960 min=0 max=2 m=0.001 b=0 units="ms" format=4.3 help="Injector Short Opening X Axis" xcount=11 xindexvar="Fuel Injector Predicted ms"
+//ASAM mode=writecurve name="Injector Short Opening Table" type=uint32 offset=5004 min=0 max=2 m=0.001 b=0 units="ms" format=4.3 help="Injector Short Opening Curve" xcount=11 xindexvar="Fuel Injector Predicted ms"
+
+//ASAM mode=writevalue name="CAL CRC HB" type=uint8 offset=5048 min=0 max=255 m=1 b=0 units="counts" format=3.0 help="CAL CRC HB"
+//ASAM mode=writevalue name="CAL CRC LB" type=uint8 offset=5049 min=0 max=255 m=1 b=0 units="counts" format=3.0 help="CAL CRC LB"
 /* 	NOTE MUST ALWAYS INCLUDE AND ASAM TAG FOR FIRST AND LAST VAR IN CAL STRUCT */
 
 /* GLOBAL FUNCTION DECLARATIONS ***********************************************/

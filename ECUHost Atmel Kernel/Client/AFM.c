@@ -40,11 +40,11 @@ EXTERN GPM6_ttUg AFM_tManChargeMassOldUg;
 * Return Value     : NIL
 *******************************************************************************/
 static void AFM_vADCCallBack(IOAPI_tenEHIOResource enEHIOResource, uint32 u32ADCResult);
-SPREADAPI_ttSpreadIDX AFM_tSpreadAfmTFIDX;
+//SPREADAPI_ttSpreadIDX AFM_tSpreadAfmTFIDX;
 SPREADAPI_ttSpreadIDX AFM_tSpreadBackupAirflowxIDX;
 SPREADAPI_ttSpreadIDX AFM_tSpreadBackupAirflowyIDX;
 MAPSAPI_ttMapIDX AFM_tMapBackupAirflowIDX;
-TABLEAPI_ttTableIDX AFM_tTableAfmTFIDX;
+//TABLEAPI_ttTableIDX AFM_tTableAfmTFIDX;
 
 /* GLOBAL FUNCTION DEFINITIONS ************************************************/
 void AFM_vStart(puint32 const pu32Arg)
@@ -58,12 +58,14 @@ void AFM_vStart(puint32 const pu32Arg)
 	enEHIOType = IOAPI_enADSE;
 	stADCCB.enSamplesAv = ADCAPI_en32Samples;
 	stADCCB.pfResultCB = &AFM_vADCCallBack;
-	stADCCB.enTrigger = ADCAPI_enTrigger4;				
+	stADCCB.enTrigger = ADCAPI_enTrigger4;
+	
+	AFM_tSensorHertz = 0;				
 		
 	USER_vSVC(SYSAPI_enRequestIOResource, (void*)&enEHIOResource,	(void*)NULL, (void*)NULL);
 
 	/* Request and initialise required Kernel managed spread for AfmTF */
-	AFM_tSpreadAfmTFIDX = SETUP_tSetupSpread((void*)&AFM_tSensorVolts, (void*)&USERCAL_stRAMCAL.aUserCURVEAfmTFSpread, TYPE_enUInt32, 17, SPREADAPI_enSpread4ms, NULL);
+	//AFM_tSpreadAfmTFIDX = SETUP_tSetupSpread((void*)&AFM_nXAxisRef, (void*)&USERCAL_stRAMCAL.aUserCURVEAfmTFSpread, TYPE_enUInt32, 17, SPREADAPI_enSpread4ms, NULL);
 
 	/* Request and initialise required Kernel managed spread for backup airflow x */
 	AFM_tSpreadBackupAirflowxIDX = SETUP_tSetupSpread((void*)&CAM_u32RPMRaw, (void*)&USERCAL_stRAMCAL.aUserBackupAirflowxSpread, TYPE_enUInt32, 17, SPREADAPI_enSpread4ms, NULL);
@@ -115,17 +117,6 @@ void AFM_vRun(puint32 const pu32Arg)
 		
 		AFM_tSensorVolts = u32Temp;
 
-		if (0 == CAM_u32RPMRaw)
-		{
-			/* Calculate the current spread for AfmTF */
-			USER_vSVC(SYSAPI_enCalculateSpread, (void*)&AFM_tSpreadAfmTFIDX,
-				NULL, NULL);		
-	
-			/* Lookup the current AfmTF value for AfmTF */
-			USER_vSVC(SYSAPI_enCalculateTable, (void*)&AFM_tTableAfmTFIDX,
-			    NULL, NULL);
-		}
-
         (void)BOOSTED_boIndexAndCalculateMap(AFM_tSpreadBackupAirflowxIDX, AFM_tSpreadBackupAirflowyIDX, AFM_tMapBackupAirflowIDX);
 
 		u8ManifoldTimeConstantFilter = USERMATH_u8GetFilterFromTimeConstant(0x01, TPS_u32ManifoldVolumeTau );
@@ -174,5 +165,7 @@ static void AFM_vADCCallBack(IOAPI_tenEHIOResource enEHIOResource, uint32 u32ADC
 	AFM_u32ADCRaw = u32ADCResult;
 	AFM_boNewSample = TRUE;
 }
+
+
 
 #endif //BUILD_USER

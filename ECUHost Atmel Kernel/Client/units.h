@@ -48,6 +48,7 @@ typedef uint32 GPM6_ttMg;
 typedef uint32 GPM6_ttCc;
 typedef uint32 GPM6_ttMcc;
 typedef uint32 GPM6_ttUcc;
+typedef uint32 GPM6_ttHertz;
 /*CR1_124*/
 
 #define GPM6_ttLambdaMAXVAL 		USHRT_MAX

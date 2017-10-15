@@ -111,9 +111,9 @@ typedef enum
 	{EH_IO_TMR10, TEPMHA_enTC2,           TEPMHA_enCapCom,  4u, 0u, 1u, TC8_IRQn},               \
 	{EH_IO_TMR11, TEPMHA_enTC2,           TEPMHA_enCapCom,  4u, 1u, 1u, TC8_IRQn},               \
 	{EH_IO_TMR12, TEPMHA_enTC0,           TEPMHA_enCapCom,  0u, 1u, 1u, TC0_IRQn},               \
-	{EH_IO_ADD4,  TEPMHA_enTC1,           TEPMHA_enCapCom,  0u, 0u, 1u, TC4_IRQn},               \
-	{EH_IO_ADD6,  TEPMHA_enTC1,           TEPMHA_enCapCom,  2u, 0u, 1u, TC5_IRQn},               \
-	{EH_IO_ADD7,  TEPMHA_enTC1,           TEPMHA_enCapCom,  2u, 1u, 1u, TC5_IRQn},               \
+	{EH_IO_ADD5,  TEPMHA_enTC0,           TEPMHA_enCapCom,  4u, 1u, 0u, TC2_IRQn},               \
+	{EH_IO_ADD7,  TEPMHA_enTC0,           TEPMHA_enCapCom,  2u, 1u, 0u, TC1_IRQn},               \
+	{EH_IO_ADD8,  TEPMHA_enTC0,           TEPMHA_enCapCom,  2u, 0u, 0u, TC1_IRQn},               \
 }
 #endif //BUILD_SAM3X8E
 

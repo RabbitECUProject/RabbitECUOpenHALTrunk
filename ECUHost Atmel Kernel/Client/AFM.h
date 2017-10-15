@@ -23,6 +23,7 @@
 /* GLOBAL MACRO DEFINITIONS ***************************************************/
 #define AFM_nVoltsFilteredInitVal	(uint32)(0u)
 #define AFM_nADFiltVal						(0x10)
+
 	
 #ifdef EXTERN
 	#undef EXTERN
@@ -38,6 +39,8 @@
 EXTERN uint32 AFM_u32ADCRaw;
 //ASAM mode=readvalue name="AFM Sensor ADC" type=uint32 offset=0 min=0 max=4095 m=1 b=0 units="dl" format=5.3 help="AFM Sensor ADC Counts"
 EXTERN uint32 AFM_u32ADCFiltered;
+EXTERN GPM6_ttHertz AFM_tSensorHertz;/*CR1_88*/
+//ASAM mode=readvalue name="AFM Sensor Frequency" type=uint32 offset=0 min=0 max=65535 m=1 b=0 units="Hz" format=5.3 help="AFM Sensor Flow"
 EXTERN GPM6_ttVolts AFM_tSensorVolts;/*CR1_88*/
 //ASAM mode=readvalue name="AFM Sensor Voltage" type=uint32 offset=0 min=0 max=5 m=0.001 b=0 units="V" format=5.3 help="AFM Sensor Flow"
 EXTERN GPM6_ttUg AFM_tAirFlowUg;

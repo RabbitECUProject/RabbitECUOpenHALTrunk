@@ -197,7 +197,7 @@ void EST_vRun(puint32 const pu32Arg)
 	USER_vSVC(SYSAPI_enCalculateTable, (void*)&EST_tTableDwellIDX,
 	NULL, NULL);			
 	
-	EST_tIgnitionAdvanceMtheta = 100 * EST_u16Timing + 24000;
+	EST_tIgnitionAdvanceMtheta = 100 * EST_u16Timing + 20000;
 
 	u32DwellUsMax = (60000000 / CAM_u32RPMRaw) - EST_nDwellOffMinUs;
 	u32DwellUs = MIN(u32DwellUsMax, (uint32)EST_u16Dwell);

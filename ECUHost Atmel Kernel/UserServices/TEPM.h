@@ -17,7 +17,7 @@
 #include "TEPMHA.h"
 #include "SYSAPI.h"
 
-#define TEPM_nSoonCounts  0x10
+#define TEPM_nSoonCounts  50
 #define TEPM_nFarCounts   0xe0000000
 
 

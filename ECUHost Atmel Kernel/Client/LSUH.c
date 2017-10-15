@@ -146,29 +146,29 @@ void LSUH_vStart(uint32 * const pu32Arg)
 	//}		
 	
 	/* Request and initialise AD converter resources */
-	for (u32ADConfigIDX = 0; u32ADConfigIDX < LSUH_nADConfigCount; u32ADConfigIDX++)
-	{
-		enEHIOResource = LSUH_rastADConfig[u32ADConfigIDX].enEHIOResource;
-		enEHIOType = LSUH_rastADConfig[u32ADConfigIDX].enEHIOType;
-		stADCCB.enSamplesAv = LSUH_rastADConfig[u32ADConfigIDX].enSamplesAv;
-		stADCCB.pfResultCB = LSUH_rastADConfig[u32ADConfigIDX].pfResultCB;
-		stADCCB.enTrigger = LSUH_rastADConfig[u32ADConfigIDX].enTrigger;				
+	//for (u32ADConfigIDX = 0; u32ADConfigIDX < LSUH_nADConfigCount; u32ADConfigIDX++)
+	//{
+	//	enEHIOResource = LSUH_rastADConfig[u32ADConfigIDX].enEHIOResource;
+	//	enEHIOType = LSUH_rastADConfig[u32ADConfigIDX].enEHIOType;
+	//	stADCCB.enSamplesAv = LSUH_rastADConfig[u32ADConfigIDX].enSamplesAv;
+	//	stADCCB.pfResultCB = LSUH_rastADConfig[u32ADConfigIDX].pfResultCB;
+	//	stADCCB.enTrigger = LSUH_rastADConfig[u32ADConfigIDX].enTrigger;				
 			
-		USER_vSVC(SYSAPI_enRequestIOResource, (void*)&enEHIOResource,	(void*)NULL, (void*)NULL);
+	//	USER_vSVC(SYSAPI_enRequestIOResource, (void*)&enEHIOResource,	(void*)NULL, (void*)NULL);
 
-		if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)
-		{											
-			USER_vSVC(SYSAPI_enInitialiseIOResource, (void*)&enEHIOResource,
-					(void*)&enEHIOType,	(void*)&stADCCB);	
+	//	if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)
+	//	{											
+	//		USER_vSVC(SYSAPI_enInitialiseIOResource, (void*)&enEHIOResource,
+	//				(void*)&enEHIOType,	(void*)&stADCCB);	
 
-			if (SYSAPI_enOK != pstSVCDataStruct->enSVCResult) boInitFailed = TRUE;			
-		}		
-		else
-		{	
-			boInitFailed = TRUE;
-			break;
-		}
-	}
+	//		if (SYSAPI_enOK != pstSVCDataStruct->enSVCResult) boInitFailed = TRUE;			
+	//	}		
+	//	else
+	//	{	
+	//		boInitFailed = TRUE;
+	//		break;
+	//	}
+	//}
 	
 	/* Initialise pump current enable control lines */
 	if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)	

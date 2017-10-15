@@ -20,7 +20,8 @@
 #include "USER.h"
 
 /* GLOBAL MACRO DEFINITIONS ***************************************************/
-#define CTS_nADFiltVal (0x80)
+#define CTS_nADFiltVal (0x10)
+#define BUILD_CTS_PULLUP_SENSE
 
 #ifdef EXTERN
 	#undef EXTERN
@@ -42,6 +43,8 @@ EXTERN GPM6_ttTempC CTS_tTempCFiltered;
 //ASAM mode=readvalue name="Coolant Temperature" type=uint32 offset=0 min=0 max=200 m=0.001 b=0 units="degrees C" format=4.1 help="Coolant Temperature"
 EXTERN GPM6_ttTempC CTS_tAirTempCFiltered;
 //ASAM mode=readvalue name="Air Temperature" type=uint32 offset=0 min=0 max=200 m=0.001 b=0 units="degrees C" format=4.1 help="Air Temperature"
+EXTERN uint32 CTS_u32Primer;
+//ASAM mode=readvalue name="Primer" type=uint32 offset=0 min=0 max=200 m=0.001 b=0 units="us" format=4.1 help="Start Primer"
 EXTERN uint32 CTS_u32FuelMultiplier;
 EXTERN sint32 CTS_i32StartEnrichmentScaled;
 EXTERN sint32 CTS_i32PostStartEnrichmentScaled;

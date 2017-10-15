@@ -15,6 +15,7 @@
 #define FUEL_H
 
 #include <string.h>
+#include "CLO2.h"
 #include "IOAPI.h"
 #include "SPREADSAPI.h"
 #include "TABLESAPI.h"
@@ -24,10 +25,12 @@
 /* GLOBAL MACRO DEFINITIONS ***************************************************/
 #define FUEL_xUsToSlowTicks(x)          (((SENSORS_nSlowFTMFreq / 100u) * (x))	/ 10000u)		
 #define FUEL_nEngineCap                 (1400)
-#define FUEL_nInjRespCalcRate           (16)
+#define FUEL_nInjRespCalcRate           (4)
 #define FUEL_nInj1Output                EH_IO_TMR9
 #define FUEL_nInj2Output                EH_IO_TMR10
 #define FUEL_nInj3Output                EH_IO_TMR11
+#define FUEL_nShortPulseRangeUs         2000
+#define FUEL_nXAFMAxisRef				AFM_tSensorHertz
 
 #ifdef EXTERN
 	#undef EXTERN
@@ -48,7 +51,11 @@ EXTERN GPM6_ttMcc						FUEL_tPredictedAirFlowMcc;
 EXTERN GPM6_ttUg						FUEL_tPredictedAirFlowUg;
 EXTERN GPM6_ttG							FUEL_tPredictedFuelFlowUg;
 EXTERN GPM6_ttG							FUEL_tPredictedFuelFlowPerInjectionNg;
-EXTERN GPM6_ttPulseUs 			FUEL_tTimePredictedUs;	
+//ASAM mode=readvalue name="Fuel Injector Predicted ms" type=uint32 offset=0 min=0 max=40 m=0.001 b=0 units="ms" format=5.3 help="Fuel Injector Predicted ms"	
+EXTERN volatile GPM6_ttPulseUs                  FUEL_tTimePredictedUs;	
+EXTERN volatile GPM6_ttPulseUs                 FUEL_tTimePredictedShortOpeningUs;
+EXTERN Bool                             FUEL_boFuelPrimed;
+EXTERN Bool                             FUEL_u32PrimeCBCount;
 
 /* GLOBAL FUNCTION DECLARATIONS ***********************************************/
 void FUEL_vStart(uint32 * const pu32Arg);

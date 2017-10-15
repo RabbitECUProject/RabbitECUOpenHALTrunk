@@ -30,7 +30,7 @@
 
 
 /* GLOBAL FUNCTION DEFINITIONS ************************************************/
-bool SETUP_boSetupADSE(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tenEHIOType enEHIOType, ADCAPI_tenSamplesAv enSamplesAv, ADCAPI_tpfResultCB pfResultCB, ADCAPI_tenTrigger enTrigger, puint32 pu32Arg)
+Bool SETUP_boSetupADSE(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tenEHIOType enEHIOType, ADCAPI_tenSamplesAv enSamplesAv, ADCAPI_tpfResultCB pfResultCB, ADCAPI_tenTrigger enTrigger, puint32 pu32Arg)
 {
 	ADCAPI_tstADCCB stADCCB;
 
@@ -115,7 +115,7 @@ SPREADAPI_ttSpreadIDX SETUP_tSetupSpread(void* pvSourceData, void* pvSpreadData,
 	tSpreadIDX = (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)	?
 				(SPREADAPI_ttSpreadIDX)pstSVCDataStruct->tClientHandle : -1;		
 
-	return tSpreadIDX	;
+	return tSpreadIDX;
 }
 
 void SETUP_vSetupDigitalIO(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tenEHIOType enEHIOType, IOAPI_tenDriveStrength enDriveStrength, puint32 pu32Arg)
@@ -152,6 +152,18 @@ SETUP_vSetDigitalIOLow(IOAPI_tenEHIOResource enEHIOResource)
 
 	USER_vSVC(SYSAPI_enAssertDIOResource, (void*)&enEHIOResource,
 	(void*)&enTriState,	(void*)NULL);
+}
+
+Bool SETUP_vGetDigitalIO(IOAPI_tenEHIOResource enEHIOResource)
+{
+	Bool boResult;
+
+	USER_vSVC(SYSAPI_enGetDIOResource, (void*)&enEHIOResource,
+	(void*)NULL,	(void*)NULL);
+
+	boResult = *(Bool*)pstSVCDataStruct->pvArg1;
+
+	return boResult;
 }
 
 #endif //BUILD_USER

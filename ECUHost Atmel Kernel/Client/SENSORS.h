@@ -34,8 +34,9 @@
 
 #define TPS_nADInput						EH_IO_ADD9
 #define AFM_nADInput                        EH_IO_ADD10
+#define MAP_nADInput                        EH_IO_ADD10
 #define CTS_nADInput                        EH_IO_ADD6
-#define ATS_nADInput                        EH_IO_ADD8
+#define ATS_nADInput                        EH_IO_ADD5
 #define VRA_nPullupEnablePin                EH_IO_IO28
 #define VRB_nPullupEnablePin                EH_IO_IO45
 #define VRA_nVREnablePin                    EH_IO_IO47
@@ -43,6 +44,9 @@
 #define VR_nHystHighPin                     EH_IO_IO34
 #define VR_nHystLowPin                      EH_IO_IO35
 #define CRANK_nInput                        EH_IO_TMR1
+#define AFM_FREQ_nInput                     EH_IO_ADD8
+#define CTS_nSwitchPin                      EH_IO_IO50
+#define CLO2_nOxBank2Pin                    EH_IO_IO48
 
 #ifdef EXTERN
 	#undef EXTERN
@@ -54,14 +58,14 @@
 #endif
 
 /* GLOBAL VARIABLE DECLARATIONS ***********************************************/
-
+EXTERN Bool SENSORS_boCTSACBiasHigh;
 
 /* GLOBAL FUNCTION DECLARATIONS ***********************************************/
 void SENSORS_vStart(uint32 * const pu32Arg);
 void SENSORS_vRun(uint32* const pu32Arg);
 void SENSORS_vTerminate(uint32* const pu32Arg);
 void SENSORS_vCallBack(puint32 const pu32Arg);
-bool SENSORS_boSetupADSE(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tenEHIOType enEHIOType, ADCAPI_tenSamplesAv enSamplesAv, ADCAPI_tpfResultCB pfResultCB, ADCAPI_tenTrigger enTrigger, puint32 pu32Arg);
+Bool SENSORS_boSetupADSE(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tenEHIOType enEHIOType, ADCAPI_tenSamplesAv enSamplesAv, ADCAPI_tpfResultCB pfResultCB, ADCAPI_tenTrigger enTrigger, puint32 pu32Arg);
 
 #endif // CTS_H
 

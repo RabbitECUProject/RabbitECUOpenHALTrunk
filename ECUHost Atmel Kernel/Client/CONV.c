@@ -33,7 +33,7 @@ GPM6_ttVolts CONV_tADCToVolts(IOAPI_tenEHIOResource enEHIOResource, uint32 u32AD
 	{	
 	    case EH_IO_ADD11:
 		{
-		    tVolts = (USERCAL_stRAMCAL.userCalADRefH * u32ADCResult) / 256;
+		    tVolts = USERCAL_stRAMCAL.userCalADRefH * u32ADCResult;
 		    tVolts = (144 * tVolts) / (4095 * 22);
 			break;
 		}

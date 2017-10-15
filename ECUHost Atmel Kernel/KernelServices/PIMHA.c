@@ -70,11 +70,11 @@ void PIMHA_vStart(uint32* const u32Stat)
 
 void PIMHA_vInitPortBit(PIMAPI_tenPort enPort, IOAPI_tenEHIOType enIOType, uint32 u32PortBit)
 {
-	if (0 == (PIMHA_rau32PIMClockMasks[enPort] & PIM_u32PortClockRequested))
+	//if (0 == (PIMHA_rau32PIMClockMasks[enPort] & PIM_u32PortClockRequested))
 	/* Request the port clock if not yet requested */
-	{
-		PIMHA_xRequestPortClock(PIM_rau32PIMClockMasks[enPort]);
-	}
+	//{
+	//	PIMHA_xRequestPortClock(PIM_rau32PIMClockMasks[enPort]);
+	//}
 	
 	PIMHA_vSetPortMux(enPort, enIOType, u32PortBit, 1);
 }
@@ -153,14 +153,13 @@ Bool PIMHA_boGetPortBitState(PIMAPI_tenPort enPort, uint32 u32PortBit)
 	boBitHigh = 0 < (pstGPIO->PDIR & u32PortBit);
 #endif //BUILD_MK60	
 
+
 #ifdef BUILD_SAM3X8E
+	tstGPIOModule* pstGPIO = (tstGPIOModule*)PIMHA_rapstPIMGPIOTypeMap[enPort];
+	boBitHigh = (0 < (pstGPIO->PIO_PDSR & u32PortBit)) ? TRUE : FALSE;
+#endif //BUILD_SAM3X8E
 
 
-
-
-
-
-#endif
 
 	return boBitHigh;	
 }

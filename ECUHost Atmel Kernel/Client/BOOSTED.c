@@ -54,6 +54,26 @@ Bool BOOSTED_boIndexAndCalculateMap(SPREADAPI_ttSpreadIDX tSpreadxIDX, SPREADAPI
 	return boRetVal;
 }
 
+Bool BOOSTED_boIndexAndCalculateTable(SPREADAPI_ttSpreadIDX tSpreadIDX, TABLEAPI_ttTableIDX tTableIDX)
+{
+	Bool boRetVal = false;
+
+	if (-1 != tSpreadIDX)
+	{
+		/* Calculate the current spread for Table IDX */
+		USER_vSVC(SYSAPI_enCalculateSpread, (void*)&tSpreadIDX,
+		NULL, NULL);		
+
+		/* Lookup the current value for Table */
+		USER_vSVC(SYSAPI_enCalculateTable, (void*)&tTableIDX,
+		NULL, NULL);
+
+		boRetVal = true;
+	}
+
+	return boRetVal;
+}
+
 SPREADAPI_tstSpreadResult* BOOSTED_pstGetSpread(SPREADAPI_ttSpreadIDX tSpreadxIDX)
 {
     SPREADAPI_ttSpreadIDX stSpreadxIDX = tSpreadxIDX;

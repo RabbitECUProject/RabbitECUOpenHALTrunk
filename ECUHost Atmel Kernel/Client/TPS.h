@@ -22,7 +22,7 @@
 /* GLOBAL MACRO DEFINITIONS ***************************************************/
 #define TPS_nADFiltVal	(0x80)
 #define TPS_nAngleRange	(90000u)
-#define TPS_nDerivCalcRate (4u)
+#define TPS_nDerivCalcRate (20u)
 #define TPS_nRunRate    (1000u)
 #define TPS_nThrottleMovingCounterDurationMs (500u)
 
@@ -81,6 +81,7 @@ EXTERN uint32 TPS_u32ADCFiltered;
 EXTERN GPM6_ttVolts TPS_tSensorVolts;/*CR1_88*/
 //ASAM mode=readvalue name="TPS Sensor Voltage" type=uint32 offset=0 min=0 max=5 m=0.001 b=0 units="V" format=5.3 help="TPS Sensor Voltage"
 EXTERN GPM6_ttTheta TPS_tThetaRaw;
+EXTERN GPM6_ttTheta TPS_tThetaPreFiltered;
 EXTERN GPM6_ttTheta TPS_tThetaFiltered;
 //ASAM mode=readvalue name="Throttle Angle" type=uint32 offset=0 min=0 max=90 m=0.001 b=0 units="degrees" format=3.1 help="Throttle Angle"
 EXTERN GPM6_ttTheta TPS_tThetaDerivative;

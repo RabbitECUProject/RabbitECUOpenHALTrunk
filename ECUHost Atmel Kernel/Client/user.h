@@ -26,8 +26,6 @@
 #include "EST.h"
 #include "FILM.h"
 #include "FUEL.h"
-#include "LSU4X.h"
-#include "LSUH.h"
 #include "MAP.h"
 #include "IAC.h"
 #include "RELAYS.h"
@@ -43,11 +41,9 @@
 /* GLOBAL MACRO DEFINITIONS ***************************************************/
 #define USER_nUserModuleFunctions																																														\
 {																																																														\
-	{NULL, NULL, NULL, NULL, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},																											\
+	{NULL, NULL, NULL, NULL, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},																			\
 	{&MAP_vStart,	&MAP_vRun, &MAP_vTerminate, &MAP_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},											\
 	{&AFM_vStart,	&AFM_vRun, &AFM_vTerminate, &AFM_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},											\
-	{&LSU4X_vStart,	&LSU4X_vRun, &LSU4X_vTerminate, &LSU4X_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},							\
-	{&LSUH_vStart,	&LSUH_vRun, &LSUH_vTerminate, &LSUH_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},								\
 	{&TPS_vStart,	&TPS_vRun, &TPS_vTerminate, &TPS_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},											\
 	{&BVM_vStart,	&BVM_vRun, &BVM_vTerminate, &BVM_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},											\
 	{&CAM_vStart,	&CAM_vRun, &CAM_vTerminate, &CAM_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask10ms},										\
@@ -95,8 +91,6 @@ typedef enum
 	USER_enUSER,
 	USER_enMAP,	
 	USER_enAFM,
-	USER_enLSU4X,
-	USER_enLSUH,
 	USER_enTPS,	
 	USER_enBVM,
 	USER_enCAM,

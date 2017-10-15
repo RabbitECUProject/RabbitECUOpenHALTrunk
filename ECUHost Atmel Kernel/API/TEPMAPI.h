@@ -55,7 +55,9 @@ typedef enum
 	TEPMAPI_enMaxDelta,
 	TEPMAPI_enMinDelta,
 	TEPMAPI_enLinkPrimaryProgram,
-	TEPMAPI_enLinkPhaseProgram	
+	TEPMAPI_enLinkPhaseProgram,
+	TEPMAPI_enLinkFreqInput,
+	TEPMAPI_enLinkDutyInput
 } TEPMAPI_tenMethod;/*CR1_122*/	
 
 typedef enum
@@ -105,6 +107,15 @@ typedef struct
 	TEPMAPI_tenPreScalar enPreScalar;	
 	Bool boInterruptEnable;
 } TEPMAPI_tstTEPMChannelCB;
+
+typedef struct
+{
+	uint32 u32HighTime;
+	uint32 u32LowTime;
+	uint32 u32RisingTime;
+	uint32 u32FallingTime;
+	uint32 u32Delay;
+} TEPMAPI_tstTimerMeasurements;
 
 
 #endif //TEPMAPI_H

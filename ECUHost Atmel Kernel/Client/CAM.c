@@ -20,6 +20,7 @@
 
 #if BUILD_USER
 
+#include "FUEL.h"
 #include "CAM.h"
 #include "CTS.h"
 
@@ -45,6 +46,8 @@ void CAM_vRun(puint32 const pu32Arg)
 	else
 	{
 		CAM_u32RPMRaw = 0;
+		FUEL_boFuelPrimed = FALSE;
+		FUEL_u32PrimeCBCount = 0;
 	}
 }
 
@@ -64,6 +67,16 @@ void CAM_vEngineSpeedCB(TEPMAPI_ttEventTime tEventTime)
 	uint32 u32Temp;
 	
 	CAM_u32RPMRaw = CAM_xTicksToRPM(tEventTime);	
+
+	if (50 > (ABS(CAM_u32RPMRaw - CAM_u32RPMFiltered)))
+	{
+		CAM_u32RPMFiltered = (CAM_u32RPMRaw + 3 * CAM_u32RPMFiltered) / 4;
+	}
+	else
+	{
+		CAM_u32RPMFiltered = CAM_u32RPMRaw;
+	}
+
 	FUEL_vCalculateFuellingValues();
 	CAM_u32RPMTimeout = 0;
 	

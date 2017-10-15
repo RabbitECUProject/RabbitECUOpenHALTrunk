@@ -97,6 +97,8 @@ void TPS_vRun(puint32 const pu32Arg)
 	uint32 u32TempLimit;
 	static GPM6_ttTheta TPS_tThetaRawOld;
 	static uint32 u32Count;
+	static sint32 s32SecondDerivativeLimitNeg = 0;
+	static sint32 s32SecondDerivativeLimitPos = 0;
 
 	if (TRUE == TPS_boNewSample)
 	{
@@ -124,7 +126,46 @@ void TPS_vRun(puint32 const pu32Arg)
 		TPS_tThetaRaw = u32Temp;
 		
 		/* User can add filtering */
-		TPS_tThetaFiltered = USERMATH_u32SinglePoleLowPassFilter32(TPS_tThetaRaw, 0x10, &TPS_tThetaFiltered);
+		TPS_tThetaPreFiltered = USERMATH_u32SinglePoleLowPassFilter32(TPS_tThetaRaw, 0x80, &TPS_tThetaPreFiltered);
+
+		if (TPS_tThetaPreFiltered > TPS_tThetaFiltered)
+		{
+		/* New sample higher than pre-filter */
+			if (s32SecondDerivativeLimitPos < (sint32)(TPS_tThetaPreFiltered - TPS_tThetaFiltered))
+			{
+				s32SecondDerivativeLimitPos += 20;
+				TPS_tThetaFiltered += s32SecondDerivativeLimitPos;
+			}
+			else
+			{
+				TPS_tThetaFiltered = TPS_tThetaPreFiltered;
+			}
+
+			s32SecondDerivativeLimitNeg = 0 > s32SecondDerivativeLimitNeg ? s32SecondDerivativeLimitNeg + 20 : 0;
+		}
+		else if (TPS_tThetaPreFiltered < TPS_tThetaFiltered)
+		/* New sample lower than pre-filter */
+		{
+			if (s32SecondDerivativeLimitNeg > (sint32)(TPS_tThetaPreFiltered - TPS_tThetaFiltered))
+			{
+				s32SecondDerivativeLimitNeg -= 20;
+				TPS_tThetaFiltered += s32SecondDerivativeLimitNeg;
+			}
+			else
+			{
+				TPS_tThetaFiltered = TPS_tThetaPreFiltered;
+			}
+
+			s32SecondDerivativeLimitPos = 0 < s32SecondDerivativeLimitPos ? s32SecondDerivativeLimitPos - 20 : 0;
+		}
+		else
+		{
+			s32SecondDerivativeLimitPos = 0 < s32SecondDerivativeLimitPos ? s32SecondDerivativeLimitPos - 20 : 0;
+			s32SecondDerivativeLimitNeg = 0 > s32SecondDerivativeLimitNeg ? s32SecondDerivativeLimitNeg + 20 : 0;
+		}
+
+		TPS_tThetaFiltered = (uint32)0x7fffffff < TPS_tThetaFiltered ? 0 : TPS_tThetaFiltered;
+
 
 	    /* Calculate the current spread for area volume ratio */
 	    USER_vSVC(SYSAPI_enCalculateSpread, (void*)&TPS_tSpreadAreaVolRatioIDX,
@@ -141,26 +182,30 @@ void TPS_vRun(puint32 const pu32Arg)
 		/* Calculate throttle derivative */
 		if (0 == (u32Count++ % TPS_nDerivCalcRate))
 		{
-		    if (0 <= (TPS_tThetaRaw - TPS_tThetaRawOld))
+		    if (0 <= (TPS_tThetaFiltered - TPS_tThetaRawOld))
 			{
-		        u32Temp = (TPS_nRunRate / TPS_nDerivCalcRate) * (TPS_tThetaRaw - TPS_tThetaRawOld) + 0x80000000;
+				TPS_tThetaDerivative = (TPS_nRunRate / TPS_nDerivCalcRate) * (TPS_tThetaFiltered - TPS_tThetaRawOld) + 0x80000000;
 			}
 		    else
 			{
-		        u32Temp = 0x80000000 - (TPS_nRunRate / TPS_nDerivCalcRate) * (TPS_tThetaRawOld - TPS_tThetaRaw);
+		        TPS_tThetaDerivative = 0x80000000 - (TPS_nRunRate / TPS_nDerivCalcRate) * (TPS_tThetaRawOld - TPS_tThetaFiltered);
 			}
 
-		    TPS_tThetaDerivative = USERMATH_u32SinglePoleLowPassFilter32(u32Temp, 0x40, &TPS_tThetaDerivative);
-			TPS_tThetaRawOld = TPS_tThetaRaw;
+			TPS_tThetaRawOld = TPS_tThetaFiltered;
 
-			if ((0x80040000 < TPS_tThetaDerivative) || (0x7ffc0000 > TPS_tThetaDerivative))
+			if ((0x80042000 < TPS_tThetaDerivative) || (0x7ffbe000 > TPS_tThetaDerivative))
 			{
-			   TPS_u32ThrottleMovingCounter = (TPS_nRunRate * TPS_nThrottleMovingCounterDurationMs) / (1000 * TPS_nDerivCalcRate);
+				TPS_u32ThrottleMovingCounter = (TPS_nRunRate * TPS_nThrottleMovingCounterDurationMs) / (1000 * TPS_nDerivCalcRate);
 			}
 			else
 			{
 			    TPS_u32ThrottleMovingCounter = 0 < TPS_u32ThrottleMovingCounter ? TPS_u32ThrottleMovingCounter - 1 : 0;
 			}
+		}
+
+		if ((400 < s32SecondDerivativeLimitPos) || (-400 > s32SecondDerivativeLimitNeg))
+		{
+			TPS_u32ThrottleMovingCounter = (TPS_nRunRate * TPS_nThrottleMovingCounterDurationMs) / (1000 * TPS_nDerivCalcRate);
 		}
 	}
 }

@@ -31,6 +31,7 @@
 
 /* GLOBAL FUNCTION DECLARATIONS ***********************************************/
 Bool BOOSTED_boIndexAndCalculateMap(SPREADAPI_ttSpreadIDX, SPREADAPI_ttSpreadIDX, MAPSAPI_ttMapIDX);
+Bool BOOSTED_boIndexAndCalculateTable(SPREADAPI_ttSpreadIDX, TABLEAPI_ttTableIDX);	
 SPREADAPI_tstSpreadResult* BOOSTED_pstGetSpread(SPREADAPI_ttSpreadIDX);
 
 #endif // BOOSTED_H

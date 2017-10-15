@@ -13,6 +13,7 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+#include "build.h"
 #include <stdint.h> //avoid redefinition of standard types error!
 
 #ifdef BUILD_PACKED

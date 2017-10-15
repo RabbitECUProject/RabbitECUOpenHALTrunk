@@ -627,10 +627,22 @@ uint32 TEPMHA_u32GetFTMTableIndex(IOAPI_tenEHIOResource enEHIOResource)
 #endif //BUILD_MK60
 
 #ifdef BUILD_SAM3X8E
-if ((EH_IO_TMR12 >= enEHIOResource) && (EH_IO_TMR1 <= enEHIOResource))
-{
-	u32ChannelIDX = enEHIOResource - EH_IO_TMR1;
-}
+	if ((EH_IO_TMR12 >= enEHIOResource) && (EH_IO_TMR1 <= enEHIOResource))
+	{
+		u32ChannelIDX = enEHIOResource - EH_IO_TMR1;
+	}
+	else if (EH_IO_ADD4 == enEHIOResource)
+	{
+		u32ChannelIDX = 12;
+	}
+	else if (EH_IO_ADD6 == enEHIOResource)
+	{
+		u32ChannelIDX = 13;
+	}
+	else if (EH_IO_ADD8 == enEHIOResource)
+	{
+		u32ChannelIDX = 14;
+	}
 #endif //BUILD_SAM3X8E
 	
 	return u32ChannelIDX;
@@ -810,7 +822,10 @@ IOAPI_tenTriState TEPMHA_enGetTimerDigitalState(IOAPI_tenEHIOResource enEHIOReso
 #endif
 
 #ifdef BUILD_SAM3X8E
-    if ((EH_IO_TMR1 <= enEHIOResource) && (EH_IO_TMR12 >= enEHIOResource))
+    if (((EH_IO_TMR1 <= enEHIOResource) && (EH_IO_TMR12 >= enEHIOResource)) ||
+		(EH_IO_ADD8 == enEHIOResource) ||
+		(EH_IO_ADD7 == enEHIOResource) ||
+		(EH_IO_ADD5 == enEHIOResource))
 	{
 	    if (TRUE == TEPMHA_boModuleIsTimer(pvModule))
 		{

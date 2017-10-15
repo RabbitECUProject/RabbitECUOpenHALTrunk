@@ -190,6 +190,19 @@ void IO_vAssertDIOResource(IOAPI_tenEHIOResource enIOResource, IOAPI_tenTriState
 	}		
 }
 
+Bool IO_boGetDIOResource(IOAPI_tenEHIOResource enIOResource)
+{
+	Bool boPinState;
+
+	if (0u != IO_rastEHPadResource[enIOResource].u32PortBit)
+	/* Assert DIO only if port bit non zero signifies DIO supported */
+	{
+		boPinState = PIM_boGetPortBitState(IO_rastEHPadResource[enIOResource].enPort, IO_rastEHPadResource[enIOResource].u32PortBit);
+	}
+
+	return boPinState;
+}
+
 IOAPI_tenTriState IO_enGetDIOResourceState(IOAPI_tenEHIOResource enIOResource)
 {
 	IOAPI_tenTriState enTriState = IOAPI_enError;

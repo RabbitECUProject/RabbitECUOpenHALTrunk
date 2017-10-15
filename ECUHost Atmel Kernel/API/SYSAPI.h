@@ -116,8 +116,11 @@ typedef enum
 	SYSAPI_enCalculateMap = 0x1072,
 	/* USER_vSVC(SYSAPI_enCalculateMap, MAPSAPI_ttMapIDX*, NULL, NULL) */
 
-	SYSAPI_enGetSpreadResult = 0x1073
+	SYSAPI_enGetSpreadResult = 0x1073,
 	/* USER_vSVC(SYSAPI_enGetSpreadResult, TABLEAPI_ttTableIDX*, NULL, NULL) */	
+
+	SYSAPI_enGetDIOResource = 0x1074
+	/* USER_vSVC(SYSAPI_enGetDIOResource, IOAPI_tenEHIOResource*, NULL, NULL) */
 } SYSAPI_tenSVCID;
 
 typedef enum

@@ -28,7 +28,7 @@
 
 
 /* GLOBAL MACRO DEFINITIONS ***************************************************/
-#define BVM_nVoltsFilteredInitVal	(uint32)(0x100 * 1000 * 12)
+#define BVM_nVoltsFilteredInitVal	(uint32)(1000 * 12)
 /*CR1_87*/
 
 #define BVM_nADInput   EH_IO_ADD11

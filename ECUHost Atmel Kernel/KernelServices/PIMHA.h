@@ -120,7 +120,7 @@ PIM_u32PortClockRequested |= x
 #endif //BUILD_MK60	
 
 #ifdef BUILD_SAM3X8E
-#define PIMHA_xRequestPortClock(x)
+#define PIMHA_xRequestPortClock(x) SIMHA_boEnablePeripheralClock(x)
 #endif //BUILD_SAM3X8E
 
 

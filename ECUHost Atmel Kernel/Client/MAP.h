@@ -21,8 +21,8 @@
 /* GLOBAL MACRO DEFINITIONS ***************************************************/
 #define MAP_nVoltsFilteredInitVal	(uint32)(101300u)
 #define MAP_nADFiltVal						(0x10)
-#define MAP_nSensorGain						(19820u)
-#define MAP_nSensorOffset					(6164u)
+#define MAP_nSensorGain						(30000u)
+#define MAP_nSensorOffset					(-20000u)
 #define MAP_nAirDensMgpL					(1190u)
 #define MAP_nRunFreq                        (200)	
 

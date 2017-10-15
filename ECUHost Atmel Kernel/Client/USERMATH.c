@@ -24,6 +24,7 @@
 #include "USERMATH.H"
 
 uint8 USERMATH_au8TimeConstantData[] = USERMATH_nTimeConstantData;
+uint32 USERMATH_rau32SquareRoot[] = USERMATH_nSQRT_DATA;
 
 /* GLOBAL FUNCTION DEFINITIONS ************************************************/
 uint8 USERMATH_u8GetFilterFromTimeConstant(uint32 u32CalcPeriodMs, uint32 u32TimeConstantMs)
@@ -187,6 +188,19 @@ sint32 USERMATH_s32DiscardAndAverage32(psint32 ps32Samples, uint32 u32SampleCoun
 	s32Average = s32Sum / (sint32)(u32SampleCount - u32DiscardCount);
 	
 	return s32Average;
+}
+
+
+uint32 USERMATH_u32GetSquareRoot(uint32 u32Fraction)
+{
+	uint32 u32Sqrt = 0;
+
+	if (1000 > u32Fraction)
+	{
+		u32Sqrt = USERMATH_rau32SquareRoot[u32Fraction];
+	}
+
+	return u32Sqrt;
 }
 
 #endif //BUILD_USER

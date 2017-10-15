@@ -202,6 +202,11 @@ void TEPM_vConfigureUserTEPMInput(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_
 			TEPM_atpfEventKernelCB[u32TableIDX] = &CEM_vPhaseEventCB;	
 			break;			
 		}	
+		case TEPMAPI_enLinkFreqInput:
+		{
+			TEPM_atpfEventKernelCB[u32TableIDX] = & CEM_vFreqEventCB;	
+			break;	
+		}
 	}		
 		
 	TEPM_atpfEventUserCB[u32TableIDX] = pstTimedEvent->pfEventCB;	
@@ -533,7 +538,7 @@ static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelID
 					
 						if (FALSE == boSynchroniseUpdate)
 						{
-							if ((TEPM_nSoonCounts > tEventTimeRemains) || (-TEPM_nSoonCounts < tEventTimeRemains))
+							if ((TEPM_nSoonCounts > tEventTimeRemains) || ((UINT32_MAX / 2) < tEventTimeRemains))
 							{
 								tEventTimeScheduled = TEPMHA_u32GetFreeVal(pvModule, u32ChannelIDX) + TEPM_nSoonCounts;
 							}
@@ -647,6 +652,11 @@ static uint32 TEPM_u32GetTimerHardwareSubChannel(IOAPI_tenEHIOResource enEHIORes
 	u32ChannelIDX = TEPMHA_u32GetFTMTableIndex(enEHIOResource);
 
 	return TEPM_rastTEPMChannel[u32ChannelIDX].u32SubChannel;
+}
+
+uint32 TEPM_u32GetFTMTableIndex(IOAPI_tenEHIOResource enEHIOResource)
+{
+	return TEPMHA_u32GetFTMTableIndex(enEHIOResource);
 }
 
 

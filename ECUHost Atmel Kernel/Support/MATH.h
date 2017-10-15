@@ -2,7 +2,7 @@
 /*    Copyright (c) 2016 MD Automotive Controls. Original Work.               */
 /*    License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher   */
 /******************************************************************************/
-/* CONTEXT:KERNEL                                                                   */                      
+/* CONTEXT:KERNEL                                                             */                      
 /* PACKAGE TITLE:      MATH Header File                     									*/
 /* DESCRIPTION:        This code provides math support function declarations	*/
 /*										 																												*/	

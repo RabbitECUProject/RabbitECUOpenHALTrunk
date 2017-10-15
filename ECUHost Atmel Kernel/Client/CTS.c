@@ -29,10 +29,12 @@ SPREADAPI_ttSpreadIDX CTS_tSpreadSensorIDX;
 SPREADAPI_ttSpreadIDX CTS_tSpreadEnrichmentIDX;
 SPREADAPI_ttSpreadIDX CTS_tSpreadStartEnrichmentIDX;
 SPREADAPI_ttSpreadIDX CTS_tSpreadPostStartEnrichmentIDX;
+SPREADAPI_ttSpreadIDX CTS_tSpreadPrimerIDX;
 TABLEAPI_ttTableIDX CTS_tTableSensorIDX;
 TABLEAPI_ttTableIDX CTS_tTableEnrichmentIDX;
 TABLEAPI_ttTableIDX CTS_tTableStartEnrichmentIDX;
 TABLEAPI_ttTableIDX CTS_tTablePostStartEnrichmentIDX;
+TABLEAPI_ttTableIDX CTS_tTablePrimerIDX;
 
 sint32 CTS_i32Enrichment;
 sint32 CTS_i32StartEnrichment;
@@ -90,12 +92,25 @@ void CTS_vStart(puint32 const pu32Arg)
 
 	/* Request and initialise required Kernel managed table for coolant post starting enrichment */
 	CTS_tTablePostStartEnrichmentIDX = SETUP_tSetupTable((void*)&USERCAL_stRAMCAL.aUserCoolantPostStartEnrichmentTable, (void*)&CTS_i32PostStartEnrichment, TYPE_enInt32, 17, CTS_tSpreadPostStartEnrichmentIDX, NULL);		
+
+	/* Request and initialise required Kernel managed spread for primer */
+	CTS_tSpreadPrimerIDX = SETUP_tSetupSpread((void*)&CTS_tTempCFiltered, (void*)&USERCAL_stRAMCAL.aUserPrimerSpread, TYPE_enInt32, 11, SPREADAPI_enSpread4ms, NULL);
+
+	/* Request and initialise required Kernel managed table for primer */
+	CTS_tTablePrimerIDX = SETUP_tSetupTable((void*)&USERCAL_stRAMCAL.aUserPrimerTable, (void*)&CTS_u32Primer, TYPE_enUInt32, 11, CTS_tSpreadPrimerIDX, NULL);
 }
 
 void CTS_vRun(puint32 const pu32Arg)
 {
 	uint32 u32Temp;
 	sint32 s32Temp;
+#ifdef BUILD_CTS_PULLUP_SENSE
+	volatile static uint32 u32Delta;
+	static uint32 u32LowImpModeCount;
+	static uint32 u32HighImpModeCount;
+	static bool boHotMode;
+	static bool boColdMode;
+#endif
 	
 	if (TRUE == CTS_boNewSample)
 	{
@@ -106,7 +121,62 @@ void CTS_vRun(puint32 const pu32Arg)
 			&CTS_u32ADCFiltered);
 		CTS_boNewSample = FALSE;		
 		USER_xExitCritical();/*CR1_16*/		
-		
+
+
+#ifdef BUILD_CTS_PULLUP_SENSE
+		if ((FALSE == SENSORS_boCTSACBiasHigh) && ((0x100 * CTS_u32ADCRaw) > CTS_u32ADCFiltered))
+		{
+			u32Temp = 0x100 * CTS_u32ADCRaw - CTS_u32ADCFiltered;
+			u32Delta = (u32Temp + 3 * u32Delta)  / 4;
+		}
+		else if ((TRUE == SENSORS_boCTSACBiasHigh) && ((0x100 * CTS_u32ADCRaw) < CTS_u32ADCFiltered))
+		{
+			u32Temp = CTS_u32ADCFiltered - 0x100 * CTS_u32ADCRaw;
+			u32Delta = (u32Temp + 3 * u32Delta)  / 4;
+		}			
+
+		if (0 == CAM_u32RPMRaw)
+		{
+			if (10000 < u32Delta)
+			{
+				u32HighImpModeCount = 40 > u32HighImpModeCount ? u32HighImpModeCount + 1 : u32HighImpModeCount;
+				u32LowImpModeCount = 2 < u32LowImpModeCount ? u32LowImpModeCount - 2 : 0;
+			}
+
+			if (7000 > u32Delta)
+			{
+				u32LowImpModeCount = 40 > u32LowImpModeCount ? u32LowImpModeCount + 1 : u32LowImpModeCount;
+				u32HighImpModeCount = 2 < u32HighImpModeCount ? u32HighImpModeCount - 2 : 0;
+			}
+
+			boColdMode = 35 < u32HighImpModeCount;
+			boHotMode = 35 < u32LowImpModeCount;
+		}
+		else 
+		{
+			if (15000 < u32Delta)
+			{
+				u32HighImpModeCount = 1000 > u32HighImpModeCount ? u32HighImpModeCount + 1 : u32HighImpModeCount;
+				u32LowImpModeCount = 2 < u32LowImpModeCount ? u32LowImpModeCount - 2 : 0;
+			}
+
+			if (10000 > u32Delta)
+			{
+				u32LowImpModeCount = 1000 > u32LowImpModeCount ? u32LowImpModeCount + 1 : u32LowImpModeCount;
+				u32HighImpModeCount = 2 < u32HighImpModeCount ? u32HighImpModeCount - 2 : 0;
+			}
+
+			boColdMode = 500 < u32HighImpModeCount;
+			boHotMode = 500 < u32LowImpModeCount;
+		}
+
+
+		if (((FALSE == boHotMode) && (FALSE == boColdMode)) ||
+			((TRUE == boHotMode) && (TRUE == boColdMode)))
+		{
+			return;
+		}
+#endif		
 		u32Temp = CTS_u32ADCFiltered * SENSORS_nADRefVolts;
 		u32Temp /= SENSORS_nADScaleMax;
 		u32Temp /= SENSORS_nVDivRatio;		
@@ -126,9 +196,33 @@ void CTS_vRun(puint32 const pu32Arg)
 		
 		/* Lookup the current spread for coolant enrichment */
 		USER_vSVC(SYSAPI_enCalculateTable, (void*)&CTS_tTableEnrichmentIDX,
-			NULL, NULL);			
+			NULL, NULL);		
+				
+		
+		(void)BOOSTED_boIndexAndCalculateTable(CTS_tSpreadPrimerIDX, CTS_tTablePrimerIDX);			
 			
-		CTS_tTempCFiltered = CTS_tTempCRaw;					
+		if (0 == CAM_u32RPMRaw)
+		{
+			CTS_tTempCFiltered = CTS_tTempCRaw;	
+		}
+		else
+		{
+			if (CTS_tTempCRaw < CTS_tTempCFiltered)
+			{
+				CTS_tTempCFiltered -= 3;
+			}
+			else if (CTS_tTempCRaw > CTS_tTempCFiltered)
+			{
+				CTS_tTempCFiltered += 3;
+			}
+		}
+		
+#ifdef BUILD_CTS_PULLUP_SENSE	
+		if (TRUE == boHotMode)
+		{
+			CTS_tTempCFiltered = 60000;
+		}
+#endif						
 		
 		/* Decrease the enrichment linearly at higher rpm */
 		if (1500 < CAM_u32RPMRaw)

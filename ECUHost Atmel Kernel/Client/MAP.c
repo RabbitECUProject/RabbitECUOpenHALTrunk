@@ -49,6 +49,29 @@ void MAP_vStart(puint32 const pu32Arg)
 	IOAPI_tenEHIOType enEHIOType;
 	ADCAPI_tstADCCB stADCCB;
 	
+	enEHIOResource = MAP_nADInput;
+	enEHIOType = IOAPI_enADSE;
+	stADCCB.enSamplesAv = ADCAPI_en32Samples;
+	stADCCB.pfResultCB = &MAP_vADCCallBack;
+	stADCCB.enTrigger = ADCAPI_enTrigger4;
+
+	USER_vSVC(SYSAPI_enRequestIOResource, (void*)&enEHIOResource,	(void*)NULL, (void*)NULL);
+
+	if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)
+	{											
+		USER_vSVC(SYSAPI_enInitialiseIOResource, (void*)&enEHIOResource,
+				(void*)&enEHIOType,	(void*)&stADCCB);	
+
+		if (SYSAPI_enOK != pstSVCDataStruct->enSVCResult) 
+		{
+			*pu32Arg |= (uint32)SYSAPI_enResourceRequestFailed;/*CR1_13*/
+		}			
+	}		
+	else
+	{	
+		*pu32Arg |= (uint32)SYSAPI_enResourceInitFailed;/*CR1_13*/
+	}
+	
 	MAP_tKiloPaFiltered = MAP_nVoltsFilteredInitVal;
 	MAP_tKiloPaRaw = 0;
 	
@@ -62,18 +85,25 @@ void MAP_vRun(puint32 const pu32Arg)
 	static uint32 u32Count;
 	sint32 s32DeltaMAP;
 	sint32 s32DeltaManifoldMass;
+	uint32 u32Temp;
 
-	MAP_tKiloPaRaw = 0;
+	USERMATH_u16SinglePoleLowPassFilter16(MAP_u32ADCRaw, 0x40, &MAP_u32ADCFiltered);
 
-	MAP_tKiloPaFiltered = USERMATH_u32SinglePoleLowPassFilter32(MAP_tKiloPaRaw, 0x10, &MAP_tKiloPaFiltered);
+	u32Temp = MAP_u32ADCFiltered * SENSORS_nADRefVolts;
+	u32Temp /= SENSORS_nADScaleMax;
+	u32Temp /= SENSORS_nVDivRatio;
+		
+	MAP_tSensorVolts = u32Temp;		
+
+	MAP_tKiloPaFiltered = (uint32)((MAP_nSensorGain * MAP_tSensorVolts) / 1000 + (sint32)MAP_nSensorOffset);
 
 	if (0 == (u32Count % 5))
 	{
 		s32DeltaMAP = MAP_tKiloPaFiltered - MAP_tKiloPaOld;
 		s32DeltaManifoldMass = (USERCAL_stRAMCAL.u16ManifoldVolumeCC * MAP_nAirDensMgpL) / 1000; 
 		s32DeltaManifoldMass *= s32DeltaMAP;
-	   MAP_s32ManDeltaChargeMassPerSUg = (MAP_nRunFreq * -s32DeltaManifoldMass) / 10000;	
-       MAP_tKiloPaOld = MAP_tKiloPaFiltered;
+        MAP_s32ManDeltaChargeMassPerSUg = (MAP_nRunFreq * -s32DeltaManifoldMass) / 10000;	
+        MAP_tKiloPaOld = MAP_tKiloPaFiltered;
 	}
 }
 
@@ -91,7 +121,8 @@ void MAP_vCallBack(puint32 const pu32Arg)
 
 static void MAP_vADCCallBack(IOAPI_tenEHIOResource enEHIOResource, uint32 u32ADCResult)
 {
-
+	MAP_u32ADCRaw = u32ADCResult;
+	MAP_boNewSample = TRUE;
 }
 
 #endif //BUILD_USER

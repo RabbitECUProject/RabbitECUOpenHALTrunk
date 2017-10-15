@@ -88,7 +88,7 @@ void SYS_vAPISVC(void* svc_args)
 		
 		case SYSAPI_enInitialiseIOResource:
 		{				
-			if ((IOAPI_enDIOOutput == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2) || (IOAPI_enDIOOutput == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2))
+			if ((IOAPI_enDIOOutput == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2) || (IOAPI_enDIOInput == *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2))
 			{
 				IO_vInitDIOResource(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, *(IOAPI_tenEHIOType*)OS_stSVCDataStruct.pvArg2, *(IOAPI_tenDriveStrength*)OS_stSVCDataStruct.pvArg3);
 			}
@@ -175,6 +175,13 @@ void SYS_vAPISVC(void* svc_args)
 		case SYSAPI_enAssertDIOResource:
 		{
 			IO_vAssertDIOResource(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, *(IOAPI_tenTriState*)OS_stSVCDataStruct.pvArg2);			
+			break;
+		}
+
+		case SYSAPI_enGetDIOResource:
+		{
+			boResult = IO_boGetDIOResource(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1);
+			OS_stSVCDataStruct.pvArg1 = (void*)&boResult;
 			break;
 		}
 		

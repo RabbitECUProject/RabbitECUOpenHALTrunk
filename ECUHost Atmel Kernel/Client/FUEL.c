@@ -29,14 +29,18 @@ SPREADAPI_ttSpreadIDX FUEL_tSpreadTAFRxIDX;
 SPREADAPI_ttSpreadIDX FUEL_tSpreadTAFRyIDX;
 SPREADAPI_ttSpreadIDX FUEL_tSpreadCrankingAirflowIDX;
 SPREADAPI_ttSpreadIDX FUEL_tSpreadInjResponseIDX;
+SPREADAPI_ttSpreadIDX FUEL_tSpreadInjShortOpeningIDX;
 TABLEAPI_ttTableIDX FUEL_tTableCrankingAirflowIDX;
 TABLEAPI_ttTableIDX FUEL_tTableAfmTFIDX;
 TABLEAPI_ttTableIDX FUEL_tTableInjResponseIDX;
+TABLEAPI_ttTableIDX FUEL_tTableInjShortOpeningIDX;
 MAPSAPI_ttMapIDX FUEL_tMapTAFRIDX;
 uint16 FUEL_u16TAFR;
 uint16 FUEL_u16InjResponse;
 uint16 FUEL_u16CrankingAirflow;
+uint32 FUEL_u32SensorStateBank2;
 Bool FUEL_boCalculatePending;
+
 
 /* LOCAL FUNCTION PROTOTYPES (STATIC) *****************************************/
 static void FUEL_vTEPMCallBack(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttEventTime tEventTime);
@@ -50,12 +54,15 @@ void FUEL_vStart(puint32 const pu32Arg)
 	IOAPI_tenEHIOType enEHIOType;	
 	TEPMAPI_tstTEPMChannelCB stTEPMChannelCB;	
 	TEPMAPI_tstTEPMResourceCB stTEPMResourceCB;
+	IOAPI_tenDriveStrength enDriveStrength;
 		
 	/* Both peak and hold have a switch on and switch off event per cycle */
 	TEPMAPI_ttEventCount tEventCount = 2;
 		
 	/* Set injection time to Xms */
 	FUEL_tTimeHoldUs = 1000;
+
+	FUEL_u32PrimeCBCount = 0;
 	
 	FUEL_tTimeHold = FUEL_xUsToSlowTicks(FUEL_tTimeHoldUs);
 	
@@ -86,6 +93,7 @@ void FUEL_vStart(puint32 const pu32Arg)
 	FUEL_astTimedHoldKernelEvents[1].enAction = TEPMAPI_enSetLow;
 	FUEL_astTimedHoldKernelEvents[1].enMethod = TEPMAPI_enHardLinkedTimeStep;
 	FUEL_astTimedHoldKernelEvents[1].ptEventTime = &FUEL_tTimeHold;	
+	FUEL_astTimedHoldKernelEvents[1].pfEventCB = FUEL_vTEPMCallBack;
 	
 	USER_vSVC(SYSAPI_enConfigureKernelTEPMOutput, (void*)&enEHIOResource, 
 		(void*)&FUEL_astTimedHoldKernelEvents[0], (void*)&tEventCount);		
@@ -124,10 +132,11 @@ void FUEL_vStart(puint32 const pu32Arg)
 	}					
 	
 	USER_vSVC(SYSAPI_enConfigureKernelTEPMOutput, (void*)&enEHIOResource, 
-		(void*)&FUEL_astTimedHoldKernelEvents[0], (void*)&tEventCount);				
+		(void*)&FUEL_astTimedHoldKernelEvents[0], (void*)&tEventCount);		
+					
 	
 	/* Request and initialise required Kernel managed spread for AfmTF */
-	FUEL_tSpreadAfmTFIDX = SETUP_tSetupSpread((void*)&AFM_tSensorVolts, (void*)&USERCAL_stRAMCAL.aUserCURVEAfmTFSpread, TYPE_enUInt32, 17, SPREADAPI_enSpread4ms, NULL);
+	FUEL_tSpreadAfmTFIDX = SETUP_tSetupSpread((void*)&FUEL_nXAFMAxisRef, (void*)&USERCAL_stRAMCAL.aUserCURVEAfmTFSpread, TYPE_enUInt32, 17, SPREADAPI_enSpread4ms, NULL);
 
 	/* Request and initialise required Kernel managed table for AfmTF */
 	FUEL_tTableAfmTFIDX = SETUP_tSetupTable((void*)&USERCAL_stRAMCAL.aUserCURVEAfmTFTable, (void*)&AFM_tAirFlowUg, TYPE_enUInt32, 17, FUEL_tSpreadAfmTFIDX, NULL);	
@@ -153,13 +162,22 @@ void FUEL_vStart(puint32 const pu32Arg)
 	/* Request and initialise required Kernel managed table for cranking airflow */
 	FUEL_tTableCrankingAirflowIDX = SETUP_tSetupTable((void*)&USERCAL_stRAMCAL.aUserCrankingAirflowTable, (void*)&FUEL_u16CrankingAirflow, TYPE_enUInt16, 17, FUEL_tSpreadCrankingAirflowIDX, NULL);
 	
+	/* Request and initialise required Kernel managed spread for injector short opening */
+	FUEL_tSpreadInjShortOpeningIDX = SETUP_tSetupSpread((void*)&FUEL_tTimePredictedUs, (void*)&USERCAL_stRAMCAL.aUserInjShortOpeningSpread, TYPE_enUInt32, 11, SPREADAPI_enSpread4ms, NULL);
 
+	/* Request and initialise required Kernel managed table for injector short opening */
+	FUEL_tTableInjShortOpeningIDX = SETUP_tSetupTable((void*)&USERCAL_stRAMCAL.aUserInjShortOpeningTable, (void*)&FUEL_tTimePredictedShortOpeningUs, TYPE_enUInt32, 11, FUEL_tSpreadInjShortOpeningIDX, NULL);
+
+	CLO2_vInit();
 }
 
 void FUEL_vRun(puint32 const pu32Arg)
 {
 	static uint32 u32Count;
 	uint16 u16WDTVal;
+	bool boSensorState;
+
+	CLO2_vFilterSensors();
 	
 	if (0 == u32Count % FUEL_nInjRespCalcRate)
 	{
@@ -185,6 +203,9 @@ void FUEL_vRun(puint32 const pu32Arg)
 			
 	    /* Reset the WDT */
 		USER_vSVC(SYSAPI_enResetWatchdog, &u16WDTVal, NULL, NULL);
+
+	    /* Reset the WDT */
+		USER_vSVC(SYSAPI_enResetWatchdog, &u16WDTVal, NULL, NULL);
 	}
 	
 	if (TRUE == FUEL_boCalculatePending)
@@ -200,79 +221,108 @@ void FUEL_vCalculateFuellingValues()
 
 static void FUEL_vCyclicCalculate(void)
 {
-	uint32 u32Temp;	
-	sint32 s32Temp;
-	
-	/* Calculate the current spread for AfmTF */
-	USER_vSVC(SYSAPI_enCalculateSpread, (void*)&FUEL_tSpreadAfmTFIDX,
-			NULL, NULL);		
-	
-	/* Lookup the current AfmTF value for AfmTF */
-	USER_vSVC(SYSAPI_enCalculateTable, (void*)&FUEL_tTableAfmTFIDX,
-		NULL, NULL);					
-				
-	if (400 < CAM_u32RPMRaw)
+	static uint32 u32FuelPressure = 250000;
+
+	if ((FALSE == FUEL_boFuelPrimed) && (400 > CAM_u32RPMRaw))
 	{
-		if (TRUE == USERCAL_stRAMCAL.u8EnableBackupAirflowTransients)
+		FUEL_tTimePredictedUs = CTS_u32Primer / 2;
+	}
+	else
+	{
+		uint32 u32Temp;
+		sint32 s32Temp;
+
+		/* Calculate the current spread for AfmTF */
+		USER_vSVC(SYSAPI_enCalculateSpread, (void*)&FUEL_tSpreadAfmTFIDX,
+				NULL, NULL);		
+	
+		/* Lookup the current AfmTF value for AfmTF */
+		USER_vSVC(SYSAPI_enCalculateTable, (void*)&FUEL_tTableAfmTFIDX,
+			NULL, NULL);					
+				
+		if (400 < CAM_u32RPMRaw)
 		{
-			if (AFM_tAirFlowUg > AFM_tAirFlowBackupUg)
+			if (TRUE == USERCAL_stRAMCAL.u8EnableBackupAirflowTransients)
 			{
-				u32Temp = (AFM_tAirFlowBackupUg * 17) / 16;
-				FUEL_tPredictedAirFlowUg = u32Temp > AFM_tAirFlowUg ? AFM_tAirFlowUg : u32Temp;
+				if (AFM_tAirFlowUg > AFM_tAirFlowBackupUg)
+				{
+					u32Temp = (AFM_tAirFlowBackupUg * 9) / 8;
+					FUEL_tPredictedAirFlowUg = u32Temp > AFM_tAirFlowUg ? AFM_tAirFlowUg : u32Temp;
+				}
+				else
+				{
+					u32Temp = (AFM_tAirFlowBackupUg * 7) / 8;
+					FUEL_tPredictedAirFlowUg = u32Temp > AFM_tAirFlowUg ? u32Temp : AFM_tAirFlowUg;
+				}
 			}
 			else
 			{
-				u32Temp = (AFM_tAirFlowBackupUg * 15) / 16;
-				FUEL_tPredictedAirFlowUg = u32Temp > AFM_tAirFlowUg ? u32Temp : AFM_tAirFlowUg;
+				FUEL_tPredictedAirFlowUg = AFM_tAirFlowUg;
 			}
 		}
 		else
 		{
-			FUEL_tPredictedAirFlowUg = AFM_tAirFlowUg;
+			/* Calculate the current spread for cranking airflow */
+			USER_vSVC(SYSAPI_enCalculateSpread, (void*)&FUEL_tSpreadCrankingAirflowIDX,
+			NULL, NULL);
+		
+			/* Lookup the current value for cranking airflow */
+			USER_vSVC(SYSAPI_enCalculateTable, (void*)&FUEL_tTableCrankingAirflowIDX,
+			NULL, NULL);
+			FUEL_tPredictedAirFlowUg = 1000 * FUEL_u16CrankingAirflow;
 		}
-	}
-	else
-	{
-		/* Calculate the current spread for cranking airflow */
-		USER_vSVC(SYSAPI_enCalculateSpread, (void*)&FUEL_tSpreadCrankingAirflowIDX,
-		NULL, NULL);
-		
-		/* Lookup the current value for cranking airflow */
-		USER_vSVC(SYSAPI_enCalculateTable, (void*)&FUEL_tTableCrankingAirflowIDX,
-		NULL, NULL);
-		FUEL_tPredictedAirFlowUg = 1000 * FUEL_u16CrankingAirflow;
-	}
-	
 
-	/* Add manifold capacitance transitory airflow */
-	if (500000 < MAP_s32ManDeltaChargeMassPerSUg)
-	{
-		FUEL_tPredictedAirFlowUg += (uint32)MAP_s32ManDeltaChargeMassPerSUg;
-	}
-	else if ((-500000 > MAP_s32ManDeltaChargeMassPerSUg) && (FUEL_tPredictedAirFlowUg > -MAP_s32ManDeltaChargeMassPerSUg))
-	{
-		FUEL_tPredictedAirFlowUg += (uint32)MAP_s32ManDeltaChargeMassPerSUg;
-	}
-		
-	FUEL_tPredictedFuelFlowUg = (10u * FUEL_tPredictedAirFlowUg) / FUEL_u16TAFR;
-	
-	/* Add CTS correction */
-	FUEL_tPredictedFuelFlowUg = ((FUEL_tPredictedFuelFlowUg / 10) * CTS_u32FuelMultiplier) / 100;	
-	
-	s32Temp = (sint32)FUEL_tPredictedFuelFlowUg + FILM_s32FilmLoadUgDeltaApplied;
+		CLO2_vRun();
 
-	if (0 <= s32Temp)
-	{
-	    FUEL_tPredictedFuelFlowUg = (uint32)s32Temp;
-	}
-	else
-	{
-	    FUEL_tPredictedFuelFlowUg = 0;
-	}
+
+		/* Add manifold capacitance transitory airflow */
+		if (500000 < MAP_s32ManDeltaChargeMassPerSUg)
+		{
+			FUEL_tPredictedAirFlowUg += (uint32)MAP_s32ManDeltaChargeMassPerSUg;
+		}
+		else if ((-500000 > MAP_s32ManDeltaChargeMassPerSUg) && (FUEL_tPredictedAirFlowUg > -MAP_s32ManDeltaChargeMassPerSUg))
+		{
+			FUEL_tPredictedAirFlowUg += (uint32)MAP_s32ManDeltaChargeMassPerSUg;
+		}
 		
-	FUEL_tPredictedFuelFlowPerInjectionNg = 6000 * (100 * FUEL_tPredictedFuelFlowUg / CAM_u32RPMRaw);
-	u32Temp = (uint32)USERCAL_stRAMCAL.u8CylCount * (uint32)USERCAL_stRAMCAL.u16InjFlowRate;
-	FUEL_tTimePredictedUs = FUEL_tPredictedFuelFlowPerInjectionNg / u32Temp;
+		FUEL_tPredictedFuelFlowUg = (10u * FUEL_tPredictedAirFlowUg) / FUEL_u16TAFR;
+	
+		/* Add CTS correction */
+		FUEL_tPredictedFuelFlowUg = ((FUEL_tPredictedFuelFlowUg / 10) * CTS_u32FuelMultiplier) / 100;	
+	
+		s32Temp = (sint32)FUEL_tPredictedFuelFlowUg + FILM_s32FilmLoadUgDeltaApplied;
+
+		if (0 <= s32Temp)
+		{
+			FUEL_tPredictedFuelFlowUg = (uint32)s32Temp;
+		}
+		else
+		{
+			FUEL_tPredictedFuelFlowUg = 0;
+		}
+		
+		/* Add STT trim */
+		FUEL_tPredictedFuelFlowPerInjectionNg = 6 * (100 * FUEL_tPredictedFuelFlowUg / CAM_u32RPMFiltered);
+		FUEL_tPredictedFuelFlowPerInjectionNg *= CLO2_u32STT[1];
+
+		/* Add fuel pressure trim */
+		u32Temp = MAP_tKiloPaFiltered + u32FuelPressure;
+		u32Temp /= (101 + (u32FuelPressure / 1000));
+		u32Temp = 1000 > u32Temp ? u32Temp : 999;
+		u32Temp = USERMATH_u32GetSquareRoot(u32Temp);
+
+		FUEL_tPredictedFuelFlowPerInjectionNg /= 1000;
+		FUEL_tPredictedFuelFlowPerInjectionNg *= u32Temp;
+
+		u32Temp = (uint32)USERCAL_stRAMCAL.u8CylCount * (uint32)USERCAL_stRAMCAL.u16InjFlowRate;
+		FUEL_tTimePredictedUs = FUEL_tPredictedFuelFlowPerInjectionNg / u32Temp;
+		
+		if (FUEL_nShortPulseRangeUs > FUEL_tTimePredictedUs)
+		{
+		    (void)BOOSTED_boIndexAndCalculateTable(FUEL_tSpreadInjShortOpeningIDX, FUEL_tTableInjShortOpeningIDX);
+			FUEL_tTimePredictedUs = FUEL_tTimePredictedShortOpeningUs;
+		}	
+	}	
 	
 	FUEL_tTimeHoldUs = FUEL_tTimePredictedUs + (uint32)FUEL_u16InjResponse;
 	FUEL_tTimeHold = FUEL_xUsToSlowTicks(FUEL_tTimeHoldUs);
@@ -293,9 +343,12 @@ void FUEL_vCallBack(puint32 const pu32Arg)
 
 static void FUEL_vTEPMCallBack(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttEventTime tEventTime)
 {
-	
-	
-	
+	FUEL_u32PrimeCBCount++;
+
+	if (EH_IO_TMR9 == enEHIOResource)
+	{
+		FUEL_boFuelPrimed = 1 < FUEL_u32PrimeCBCount ? TRUE : FUEL_boFuelPrimed;
+	}	
 }
 
 #endif //BUILD_USER

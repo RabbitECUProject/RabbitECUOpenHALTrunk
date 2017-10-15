@@ -253,7 +253,7 @@ Bool SPREAD_vCalculate(SPREADAPI_ttSpreadIDX tSpreadIDX)
 						}
 						else if (u32Source >= *(pu32Spread + u16SpreadIDX))
 						{						
-							if (u32Source <= *(pu32Spread + u16SpreadIDX + 1))							
+							if (u32Source < *(pu32Spread + u16SpreadIDX + 1))	//matthew was <=						
 							{
 								SPREAD_astSpreadResult[tSpreadIDX].u16SpreadIndex = u16SpreadIDX;							
 								boResultFound = true;

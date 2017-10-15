@@ -772,6 +772,12 @@
     <Compile Include="Client\CAM.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="Client\CLO2.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Client\CLO2.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="Client\CONV.c">
       <SubType>compile</SubType>
     </Compile>
@@ -812,18 +818,6 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="Client\IAC.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Client\LSU4X.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Client\LSU4X.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Client\LSUH.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Client\LSUH.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="Client\MAP.c">

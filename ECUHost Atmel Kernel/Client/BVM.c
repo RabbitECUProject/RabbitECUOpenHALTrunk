@@ -28,6 +28,8 @@
 /* LOCAL VARIABLE DEFINITIONS (STATIC) ****************************************/
 uint32 BVM_u32ADCRaw;
 uint32 BVM_u32ADCFiltered;
+uint32 BVM_u32ADCPreFiltered;
+Bool BVM_boNewSample;
 
 
 /* LOCAL FUNCTION PROTOTYPES (STATIC) *****************************************/
@@ -82,16 +84,54 @@ void BVM_vStart(uint32 * const pu32Arg)
 
 void BVM_vRun(uint32* const pu32Arg)
 {
-	static uint32 u32RunCounter;
+	static sint32 s32SecondDerivativeLimitNeg = 0;
+	static sint32 s32SecondDerivativeLimitPos = 0;
 	
-	if (0 == (u32RunCounter++ % 0x10))
+	if (TRUE == BVM_boNewSample)
 	{	
-		USER_xEnterCritical();/*CR1_16*/
-		(void)USERMATH_u16SinglePoleLowPassFilter16((uint16)BVM_u32ADCRaw, 0x40,
-			&BVM_u32ADCFiltered);
-		USER_xExitCritical();/*CR1_16*/
+		/* User can add filtering */
+		BVM_u32ADCPreFiltered = USERMATH_u32SinglePoleLowPassFilter32(BVM_u32ADCRaw, 0x80, &BVM_u32ADCPreFiltered);
+
+		if (BVM_u32ADCPreFiltered > BVM_u32ADCFiltered)
+		{
+		/* New sample higher than pre-filter */
+			if (s32SecondDerivativeLimitPos < (sint32)(BVM_u32ADCPreFiltered - BVM_u32ADCFiltered))
+			{
+				s32SecondDerivativeLimitPos += 2;
+				BVM_u32ADCFiltered += s32SecondDerivativeLimitPos;
+			}
+			else
+			{
+				BVM_u32ADCFiltered = BVM_u32ADCPreFiltered;
+			}
+
+			s32SecondDerivativeLimitNeg = 0 > s32SecondDerivativeLimitNeg ? s32SecondDerivativeLimitNeg + 2 : 0;
+		}
+		else if (BVM_u32ADCPreFiltered < BVM_u32ADCFiltered)
+		/* New sample lower than pre-filter */
+		{
+			if (s32SecondDerivativeLimitNeg > (sint32)(BVM_u32ADCPreFiltered - BVM_u32ADCFiltered))
+			{
+				s32SecondDerivativeLimitNeg -= 2;
+				BVM_u32ADCFiltered += s32SecondDerivativeLimitNeg;
+			}
+			else
+			{
+				BVM_u32ADCPreFiltered = BVM_u32ADCPreFiltered;
+			}
+
+			s32SecondDerivativeLimitPos = 0 < s32SecondDerivativeLimitPos ? s32SecondDerivativeLimitPos - 2 : 0;
+		}
+		else
+		{
+			s32SecondDerivativeLimitPos = 0 < s32SecondDerivativeLimitPos ? s32SecondDerivativeLimitPos - 2 : 0;
+			s32SecondDerivativeLimitNeg = 0 > s32SecondDerivativeLimitNeg ? s32SecondDerivativeLimitNeg + 2 : 0;
+		}
+
+		BVM_u32ADCFiltered = (uint32)0x7fffffff < BVM_u32ADCFiltered ? 0 : BVM_u32ADCFiltered;
 	
 		BVM_tBattVolts = CONV_tADCToVolts(EH_IO_ADD11, BVM_u32ADCFiltered);	
+		BVM_boNewSample = FALSE;
 	}
 }
 
@@ -108,6 +148,7 @@ void BVM_vCallBack(uint32* const pu32Arg)
 static void BVM_vADCCallBack(IOAPI_tenEHIOResource enEHIOResource, uint32 u32ADCResult)
 {
 	BVM_u32ADCRaw = u32ADCResult;
+	BVM_boNewSample = TRUE;
 }
 
 #endif //BUILD_USER

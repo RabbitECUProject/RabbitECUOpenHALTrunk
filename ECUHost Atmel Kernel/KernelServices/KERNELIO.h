@@ -236,6 +236,7 @@ IOAPI_tenTriState IO_stGetDIOResourceState(IOAPI_tenEHIOResource);
 SYSAPI_tenSVCResult IO_enInitCommsResource(IOAPI_tenEHIOResource, IOAPI_tstPortConfigCB*);
 SYSAPI_tenSVCResult IO_enInitTEPMChannel(IOAPI_tenEHIOResource, TEPMAPI_tstTEPMChannelCB*);
 IOAPI_tenTriState IO_enGetDIOResourceState(IOAPI_tenEHIOResource);
+Bool IO_boGetDIOResource(IOAPI_tenEHIOResource enIOResource);
 
 #endif //KERNELIO_H
 
