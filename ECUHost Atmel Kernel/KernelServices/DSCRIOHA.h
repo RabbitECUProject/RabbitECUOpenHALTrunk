@@ -13,10 +13,10 @@
 #ifndef DSCRIOHA_H
 #define DSCRIOHA_H
 
-#if defined BUILD_MK60
+#if defined(BUILD_MK60)
 #include "mk60f12.h"
 typedef GPIO_Type tstGPIOModule;
-#elif defined BUILD_SAM3X8E
+#elif defined(BUILD_SAM3X8E)
 #include "sam3x8e.h"
 typedef Pio tstGPIOModule;
 #endif

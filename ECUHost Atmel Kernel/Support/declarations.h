@@ -21,21 +21,22 @@
 /*CR1_98*/
 
 #ifndef true
-#define true 1u
+#define true 1
 #endif
 /*CR1_99*/
 
 #ifndef false
-#define false 0u
+#define false 0
 #endif
 /*CR1_99*/
 
-#ifndef TRUE
-#define TRUE 1u
-#endif
 
 #ifndef FALSE
-#define FALSE 0u
+#define FALSE false
+#endif
+
+#ifndef TRUE
+#define TRUE true
 #endif
 
 #define nASCII_CR 0x0d

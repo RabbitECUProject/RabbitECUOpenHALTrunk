@@ -22,9 +22,10 @@
 #include "USER.h"
 
 /* GLOBAL MACRO DEFINITIONS ***************************************************/
-#define CAM_xTicksToRPM(x)      ((60u * SENSORS_nSlowFTMFreq) / ((8u * x)))
+#define CAM_xTicksToRPM(x)      ((60u * SENSORS_nSlowFTMFreq) / ((4u * x)))
 #define CAM_nPeriodMs           (10u)
 #define CAM_nPeriodRPMTimeout   (600u)
+#define CAM_nRPMTransitionCount (10)
 
 #ifdef EXTERN
 	#undef EXTERN
@@ -36,9 +37,12 @@
 #endif
 
 /* GLOBAL VARIABLE DECLARATIONS ***********************************************/
+EXTERN uint32 CAM_u32RPMRawOld;
 EXTERN uint32 CAM_u32RPMRaw;		
 //ASAM mode=readvalue name="Engine Speed Raw" type=uint32 offset=0 min=0 max=10000 m=1 b=0 units="RPM" format=4.0 help="Engine Speed" 
 EXTERN uint32 CAM_u32RPMFiltered;	
+//ASAM mode=readvalue name="RPM Transition Counter" type=uint32 offset=0 min=0 max=10000 m=1 b=0 units="RPM" format=4.0 help="RPM Transition Counter"
+EXTERN uint32 CAM_u32RPMTransitionCounter;
 
 /* GLOBAL FUNCTION DECLARATIONS ***********************************************/
 void CAM_vStart(uint32 * const pu32Arg);

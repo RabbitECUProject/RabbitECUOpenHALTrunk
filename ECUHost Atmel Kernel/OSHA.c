@@ -62,7 +62,7 @@ static void OSHA_vLoadProcessStackASM(struct tq_struct* pstDispatcherTask)
 static void OSHA_vLoadProcessStackASM(struct tq_struct* pstDispatcherTask)
 {
 	/* load PSP with dispatcher task stack pointer */
-	__asm("LDR		R1, [R0, #18]"); //18 is TASK_SP_OFFSET
+	__asm("LDR		R1, [R0, #18]"); //18 is TASK_SP_OFFSET CAVEAT relies on struct packing check offset!!!
 	__asm("MSR		PSP, R1");
 	__asm("MRS		R0, CONTROL");
 	__asm("ORR		R0, #2"); //2 is MASK_CONTROL_SPSEL_PSP

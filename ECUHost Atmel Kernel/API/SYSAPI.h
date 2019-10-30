@@ -119,8 +119,38 @@ typedef enum
 	SYSAPI_enGetSpreadResult = 0x1073,
 	/* USER_vSVC(SYSAPI_enGetSpreadResult, TABLEAPI_ttTableIDX*, NULL, NULL) */	
 
-	SYSAPI_enGetDIOResource = 0x1074
+	SYSAPI_enGetDIOResource = 0x1074,
 	/* USER_vSVC(SYSAPI_enGetDIOResource, IOAPI_tenEHIOResource*, NULL, NULL) */
+
+	SYSAPI_enGetRawCommsBuffer = 0x1075,
+	/* USER_vSVC(SYSAPI_enGetRawCommsBuffer, IOAPI_tenEHIOResource*, NULL, NULL) */
+
+	SYSAPI_enTEPMAsyncRequest = 0x1076,
+	/* USER_vSVC(SYSAPI_enTEPMAsyncRequest, NULL, NULL, NULL) */
+
+	SYSAPI_enSetupSimpleCamSync = 0x1077,
+	/* USER_vSVC(SYSAPI_enSetupSimpleCamSync, IOAPI_tenEHIOResource*, Bool, NULL) */
+
+	SYSAPI_enSetupWatchdog = 0x1078,
+	/* USER_vSVC(SYSAPI_enSetupWatchdog, uint32, uint32, NULL) */
+
+	SYSAPI_enGetMode1Buffer = 0x1079,
+	/* USER_vSVC(SYSAPI_enGetMode1Buffer, uint32, uint32, NULL) */
+
+	SYSAPI_enGetMode2Buffer = 0x107a,
+	/* USER_vSVC(SYSAPI_enGetMode2Buffer, uint32, uint32, NULL) */
+
+	SYSAPI_enGetMode3Buffer = 0x107b,
+	/* USER_vSVC(SYSAPI_enGetMode3Buffer, uint32, uint32, NULL) */
+
+	SYSAPI_enGetMode4Buffer = 0x107c,
+	/* USER_vSVC(SYSAPI_enGetMode4Buffer, uint32, uint32, NULL) */
+
+	SYSAPI_enGetMode6Buffer = 0x107d,
+	/* USER_vSVC(SYSAPI_enGetMode6Buffer, uint32, uint32, NULL) */
+
+	SYSAPI_enGetMode7Buffer = 0x107e
+	/* USER_vSVC(SYSAPI_enGetMode7Buffer, uint32, uint32, NULL) */
 } SYSAPI_tenSVCID;
 
 typedef enum

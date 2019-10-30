@@ -31,6 +31,9 @@
 #include "IOAPI.h"
 #include "SYSAPI.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-braces"
+
 /* Private data declarations
    -------------------------*/
 const TEPM_tstTEPMChannel TEPMHA_rastTEPMChannel[] = TEPMHA_nChannelInfo;
@@ -40,15 +43,10 @@ TEPMAPI_ttEventTime* TEPMHA_ptMasterClock;
 
 /* Private function declarations
    ----------------------------*/
-static void TEPMHA_vRunEventProgramUserQueue(tstTimerModule*, uint32, uint32);
-static void TEPMHA_vRunEventProgramKernelQueue(tstTimerModule*, uint32, uint32, Bool);
-static void TEPMHA_vInitInterrupts(IRQn_Type);	 
 static void* TEPMHA_pvGetModule(IOAPI_tenEHIOResource);	
-static uint32 TEPMHA_pstGetFTMChannel(IOAPI_tenEHIOResource);
 static void TEPMHA_vSyncModules(void);
 static Bool TEPMHA_boModuleIsTimer(void*);
 static Bool TEPMHA_boModuleIsPWM(void*);
-static IOAPI_tenEHIOResource TEPMHA_enGetParentResourceFromVIO(IOAPI_tenEHIOResource);
 static TEPMHA_tenModule TEPMHA_enGetEnumFromVIO(IOAPI_tenEHIOResource);
 
 /* Public function definitions
@@ -57,13 +55,12 @@ static TEPMHA_tenModule TEPMHA_enGetEnumFromVIO(IOAPI_tenEHIOResource);
 void TEPMHA_vInitTEPMChannel(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_tstTEPMChannelCB* pstTEPMChannelCB)
 {
 	tstTimerModule* pstTimerModule;
-	vpuint32 vpuFTMReg;
 	uint32 u32ChannelIDX;
-	uint32 u32ChannelSubIDX;
 	uint32 u32ControlWord = 0;
 	pwm_channel_t stPWMChannelCB;
 	
 #ifdef BUILD_MK60
+	vpuint32 vpuFTMReg;
 	pstTimerModule = TEPMHA_pvGetModule(enEHIOResource);
 	u32ChannelIDX = TEPM_u32GetTimerHardwareChannel(enEHIOResource);
 	vpuFTMReg = (vpuint32)((uint32)pstTimerModule + (uint32)offsetof(tstTimerModule, CONTROLS[u32ChannelIDX]));
@@ -155,7 +152,16 @@ void TEPMHA_vInitTEPMChannel(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_tstTE
 				break;
 			}
 			case TEPMAPI_enToggle: u32ControlWord = 0; break;
-			case TEPMAPI_enCapRising: u32ControlWord = 0; break;
+			case TEPMAPI_enCapRising:
+			{
+			    u32ControlWord = TC_CMR_LDRA_RISING | TC_CMR_LDRB_RISING | TC_CMR_TCCLKS_TIMER_CLOCK4;
+				tc_init(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel / 2, u32ControlWord);
+				tc_start(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel / 2);
+				tc_enable_interrupt(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel / 2, TC_SR_LDRAS | TC_SR_LDRBS);
+				IRQ_vEnableIRQ(TEPMHA_rastTEPMChannel[u32ChannelIDX].enIRQType, IRQ_enPRIO_3, TEPM_vInterruptHandler, NULL);
+				TEPMHA_ptMasterClock = (TEPMAPI_ttEventTime*)&(pstTimerModule->TC_CHANNEL[u32ChannelIDX].TC_CV);
+				break;
+			}
 			case TEPMAPI_enCapFalling: u32ControlWord = 0; break;
 			case TEPMAPI_enCapAny://matthew problem here
 			{
@@ -164,8 +170,8 @@ void TEPMHA_vInitTEPMChannel(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_tstTE
 				tc_init(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel / 2, u32ControlWord);
 				tc_start(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel / 2);
 				tc_enable_interrupt(pstTimerModule, TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel / 2, TC_SR_LDRAS | TC_SR_LDRBS);
-				IRQ_vEnableIRQ(TEPMHA_rastTEPMChannel[u32ChannelIDX].enIRQType, IRQ_enPRIO_15, TEPM_vInterruptHandler, NULL);
-				TEPMHA_ptMasterClock = &(pstTimerModule->TC_CHANNEL[u32ChannelIDX].TC_CV);
+				IRQ_vEnableIRQ(TEPMHA_rastTEPMChannel[u32ChannelIDX].enIRQType, IRQ_enPRIO_3, TEPM_vInterruptHandler, NULL);
+				TEPMHA_ptMasterClock = (TEPMAPI_ttEventTime*)&(pstTimerModule->TC_CHANNEL[u32ChannelIDX].TC_CV);
 				break;
 			}
 			default:
@@ -196,10 +202,10 @@ void TEPMHA_vInitTEPMChannel(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_tstTE
 SYSAPI_tenSVCResult TEPMHA_vInitTEPMResource(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_tstTEPMResourceCB* pstTEPMResourceCB)
 {
 	tstTimerModule* pstTimerModule = NULL;
-	REGSET_tstReg32Val astTEPMReg32Val[2];
 	pwm_clock_t stPWMClockConfig;
 	
 #ifdef BUILD_MK60
+	REGSET_tstReg32Val astTEPMReg32Val[2];
 	switch (enEHIOResource)
 	{
 		case EH_VIO_FTM0:
@@ -240,6 +246,7 @@ SYSAPI_tenSVCResult TEPMHA_vInitTEPMResource(IOAPI_tenEHIOResource enEHIOResourc
 
 #ifdef BUILD_SAM3X8E
 	tstPWMModule* pstPWMModule = NULL;
+
 
 	switch (enEHIOResource)
 	{
@@ -291,14 +298,14 @@ SYSAPI_tenSVCResult TEPMHA_vInitTEPMResource(IOAPI_tenEHIOResource enEHIOResourc
 
 void TEPMHA_vForceQueueTerminate(void* pvModule, uint32 u32ChannelIDX, uint32 u32SubChannelIDX)
 {
-	TEPMAPI_ttEventTime tEventTimeScheduled;
-	TEPMAPI_ttEventTime tEventTimeRemains;	
-	uint32 u32Temp;
+	volatile TEPMAPI_ttEventTime tEventTimeRemains;	
     tstTimerModule* pstTimerModule;
 		
 	CPU_xEnterCritical();
 
 #ifdef BUILD_MK60
+	uint32 u32Temp;
+	volatile TEPMAPI_ttEventTime tEventTimeScheduled;
     pstTimerModule = (tstTimerModule*)pvModule;
 	u32Temp = pstTimerModule->CONTROLS[u32ChannelIDX].CnSC & ~FTM_CnSC_CHIE_MASK;	
 	u32Temp &= ~FTM_CnSC_CHF_MASK;	
@@ -327,59 +334,78 @@ void TEPMHA_vForceQueueTerminate(void* pvModule, uint32 u32ChannelIDX, uint32 u3
 #endif //BUILD_MK60
 
 #ifdef BUILD_SAM3X8E
-	volatile u32Stat;
+	volatile uint32 u32Stat;
     pstTimerModule = (tstTimerModule*)pvModule;
+	sint32 s32ExitLoops = 100;
 
 	if (0 == u32SubChannelIDX)
 	{
-	    //u32Stat = tc_get_status(pstTimerModule, u32ChannelIDX / 2);
-	    //tEventTimeRemains = tc_read_ra(pstTimerModule, u32ChannelIDX / 2) -
-		                    //tc_read_cv(pstTimerModule, u32ChannelIDX / 2);
-//
-	    //if (0 < tEventTimeRemains)
-	    //{	
-		    //tEventTimeScheduled = tc_read_ra(pstTimerModule, u32ChannelIDX / 2) + 2;
-//
-		    ///* Force it now! */
-		    //while (tc_read_ra(pstTimerModule, u32ChannelIDX / 2) != tEventTimeScheduled)
-		    //{
-			    //tc_write_ra(pstTimerModule, u32ChannelIDX / 2, tEventTimeScheduled);
-//
-		    //}
-	    //}
-	    u32Stat = 0;
+		TEPMHA_vCapComAction(TEPMAPI_enSetLow, pvModule, u32ChannelIDX, u32SubChannelIDX, tc_read_cv(pstTimerModule, u32ChannelIDX / 2) + 10);
+		
+		tc_disable_interrupt(pstTimerModule, u32ChannelIDX / 2, TC_SR_CPAS);
+
+		u32Stat = 0;
+
 	    tEventTimeRemains = tc_read_ra(pstTimerModule, u32ChannelIDX / 2) -
-	    tc_read_cv(pstTimerModule, u32ChannelIDX / 2);
+		                    tc_read_cv(pstTimerModule, u32ChannelIDX / 2);
 
-	    /* If is not too close then reschedule very close */
-	    if (((UINT32_MAX / 2) > tEventTimeRemains) &&
-	    (tEventTimeRemains > 5))
-	    {
-		    tEventTimeScheduled = tc_read_cv(pstTimerModule, u32ChannelIDX / 2) + 5;
-		    tc_write_ra(pstTimerModule, u32ChannelIDX / 2, tEventTimeScheduled);
-	    }
+		while (0 != (0x80000000 &  tEventTimeRemains))
+		{
+			tEventTimeRemains = tc_read_ra(pstTimerModule, u32ChannelIDX / 2) -
+								tc_read_cv(pstTimerModule, u32ChannelIDX / 2);
+		}
 
-	    while (0 == (u32Stat & TC_SR_CPAS))
+	    while ((0 == (u32Stat & TC_SR_CPAS)) && (0 < s32ExitLoops)) 
 	    {
 		    u32Stat = tc_get_status(pstTimerModule, u32ChannelIDX / 2);
-
-		    tEventTimeRemains = tc_read_ra(pstTimerModule, u32ChannelIDX / 2) -
-		    tc_read_cv(pstTimerModule, u32ChannelIDX / 2);
-
-		    if ((UINT32_MAX / 2) < tEventTimeRemains) break;
+			s32ExitLoops--;
 	    }
 	}
 	else
 	{
+		TEPMHA_vCapComAction(TEPMAPI_enSetLow, pvModule, u32ChannelIDX, u32SubChannelIDX, tc_read_cv(pstTimerModule, u32ChannelIDX / 2) + 10);		
+		
+		tc_disable_interrupt(pstTimerModule, u32ChannelIDX / 2, TC_SR_CPBS);
+		
+		u32Stat = 0;
+	    tEventTimeRemains = tc_read_rb(pstTimerModule, u32ChannelIDX / 2) -
+		                    tc_read_cv(pstTimerModule, u32ChannelIDX / 2);
+		
+		while (0 == (0x80000000 &  tEventTimeRemains))
+		{
+			tEventTimeRemains = tc_read_rb(pstTimerModule, u32ChannelIDX / 2) -
+								tc_read_cv(pstTimerModule, u32ChannelIDX / 2);
+		}
+
+	    while ((0 == (u32Stat & TC_SR_CPBS)) && (0 < s32ExitLoops)) 
+	    {
+		    u32Stat = tc_get_status(pstTimerModule, u32ChannelIDX / 2);
+			s32ExitLoops--;
+	    }
+
+
+		/*
+	    u32ControlWord = pstTimerModule->TC_CHANNEL[u32ChannelIDX / 2].TC_CMR;
+		u32ControlWord &= ~TC_CMR_BCPB_TOGGLE;
+		u32ControlWord |= TC_CMR_BCPB_CLEAR;
+		pstTimerModule->TC_CHANNEL[u32ChannelIDX / 2].TC_CMR = u32ControlWord;
+
 	    u32Stat = 0;
 	    tEventTimeRemains = tc_read_rb(pstTimerModule, u32ChannelIDX / 2) -
 		                    tc_read_cv(pstTimerModule, u32ChannelIDX / 2);
 
-	    /* If is not too close then reschedule very close */
-		if (((UINT32_MAX / 2) > tEventTimeRemains) && 
-		     (tEventTimeRemains > 5))
+		* If already past then force again *
+		if ((UINT32_MAX / 2) < tEventTimeRemains)
 	    {	
-		    tEventTimeScheduled = tc_read_cv(pstTimerModule, u32ChannelIDX / 2) + 5;
+		    tEventTimeScheduled = tc_read_cv(pstTimerModule, u32ChannelIDX / 2) + 120;
+			tc_write_rb(pstTimerModule, u32ChannelIDX / 2, tEventTimeScheduled);
+	    }
+
+	    * If is not too close then reschedule very close *
+		if (((UINT32_MAX / 2) > tEventTimeRemains) && 
+		     (tEventTimeRemains > 50))
+	    {	
+		    tEventTimeScheduled = tc_read_cv(pstTimerModule, u32ChannelIDX / 2) + 120;
 			tc_write_rb(pstTimerModule, u32ChannelIDX / 2, tEventTimeScheduled);
 	    }
 
@@ -391,17 +417,46 @@ void TEPMHA_vForceQueueTerminate(void* pvModule, uint32 u32ChannelIDX, uint32 u3
 			tc_read_cv(pstTimerModule, u32ChannelIDX / 2);
 
 			if ((UINT32_MAX / 2) < tEventTimeRemains) break;
-		}
+		}*/
 	}
 #endif //BUILD_SAM3X8E
 	
 	CPU_xExitCritical();	
 }
 
+Bool TEPMHA_boCheckFalseAlarm(void* pvModule, uint32 u32ChannelIDX, uint32 u32SubChannelIDX)
+{
+    Bool boFalseAlarm = FALSE;
+	uint32 u32Delay;
+    tstTimerModule* pstTimerModule = (tstTimerModule*)pvModule;
+
+	if (0 == u32SubChannelIDX)
+	{
+		u32Delay = tc_read_ra(pstTimerModule, u32ChannelIDX / 2) -
+	    tc_read_cv(pstTimerModule, u32ChannelIDX / 2);
+
+		if ((UINT32_MAX / 2) > u32Delay)
+		{
+			boFalseAlarm = TRUE;
+		}
+	}
+	else
+	{
+		u32Delay = tc_read_rb(pstTimerModule, u32ChannelIDX / 2) -
+	    tc_read_cv(pstTimerModule, u32ChannelIDX / 2);
+
+		if ((UINT32_MAX / 2) > u32Delay)
+		{
+			boFalseAlarm = TRUE;
+		}
+	}
+
+	return boFalseAlarm;
+}
+
 
 void TEPMHA_vCapComAction(TEPMAPI_tenAction enAction, void* pvModule, uint32 u32ChannelIDX, uint32 u32SubChannelIDX, TEPMAPI_ttEventTime tEventTimeScheduled)
 {
-	uint32 u32Temp;
 	uint32 u32ControlWord;
 	tstTimerModule* pstTimerModule;
 	tstPWMModule* pstPWMModule;
@@ -430,39 +485,33 @@ void TEPMHA_vCapComAction(TEPMAPI_tenAction enAction, void* pvModule, uint32 u32
 
 				if (0 == u32SubChannelIDX)
 				{
-					u32ControlWord &= ~TC_CMR_ACPA_TOGGLE;
+					tc_write_ra(pstTimerModule, u32ChannelIDX / 2, tEventTimeScheduled);
+					u32ControlWord &= ~TC_CMR_ACPA_CLEAR;
 					u32ControlWord |= TC_CMR_ACPA_SET;
 					pstTimerModule->TC_CHANNEL[u32ChannelIDX / 2].TC_CMR = u32ControlWord;
 					tc_enable_interrupt(pstTimerModule, u32ChannelIDX / 2, TC_SR_CPAS);
-					tc_write_ra(pstTimerModule, u32ChannelIDX / 2, tEventTimeScheduled);
+					//tc_write_ra(pstTimerModule, u32ChannelIDX / 2, tEventTimeScheduled);
 				}
 				else if (1 == u32SubChannelIDX)
 				{
-					u32ControlWord &= ~TC_CMR_BCPB_TOGGLE;
+					tc_write_rb(pstTimerModule, u32ChannelIDX / 2, tEventTimeScheduled);
+					u32ControlWord &= ~TC_CMR_BCPB_CLEAR;
 					u32ControlWord |= TC_CMR_BCPB_SET;
 					pstTimerModule->TC_CHANNEL[u32ChannelIDX / 2].TC_CMR = u32ControlWord;
 					tc_enable_interrupt(pstTimerModule, u32ChannelIDX / 2, TC_SR_CPBS);
-					tc_write_rb(pstTimerModule, u32ChannelIDX / 2, tEventTimeScheduled);
+					//tc_write_rb(pstTimerModule, u32ChannelIDX / 2, tEventTimeScheduled);
 				}  
 			}          
 			else if (TRUE == TEPMHA_boModuleIsPWM(pvModule))
 			{
-			    TEPMAPI_ttEventTime tEventTime;
-				uint32 u32Temp;
 				pwm_channel_t stPWMChannel;
 
 			    pstPWMModule = (tstPWMModule*)pvModule;
-				
-				//u32Temp = pwm_channel_get_status(pstPWMModule);
-				
-				tEventTime = tEventTimeScheduled - *TEPMHA_ptMasterClock;
 
 				memset(&stPWMChannel, 0, sizeof(pwm_channel_t));
 				stPWMChannel.channel = u32ChannelIDX;
 
 			    pwm_channel_enable(pstPWMModule,  u32ChannelIDX);
-
-				//pstPWMModule->PWM_CH_NUM[u32ChannelIDX].PWM_CPRD = pstPWMModule->PWM_CH_NUM[u32ChannelIDX].PWM_CCNT + 2;
 
 				while (pstPWMModule->PWM_CH_NUM[u32ChannelIDX].PWM_CCNT > 5)
 				{
@@ -473,18 +522,6 @@ void TEPMHA_vCapComAction(TEPMAPI_tenAction enAction, void* pvModule, uint32 u32
 
 				pwm_channel_update_period(pstPWMModule, &stPWMChannel, 6000u);
 				pwm_channel_update_duty(pstPWMModule, &stPWMChannel, 4000u);
-				//pwm_channel_update_period(pstPWMModule, &stPWMChannel, 5000u);
-				//pwm_channel_update_duty(pstPWMModule, &stPWMChannel, 2000u);
-
-				//pstPWMModule->PWM_CH_NUM[u32ChannelIDX].PWM_CDTY = 5;
-				//pstPWMModule->PWM_CH_NUM[u32ChannelIDX].PWM_CPRD = 10;
-				//pstPWMModule->PWM_CH_NUM[u32ChannelIDX].PWM_CPRD = 5000;
-				//pstPWMModule->PWM_CH_NUM[u32ChannelIDX].PWM_CDTY = 1000;
-
-				//if (0 == ((1 << u32ChannelIDX) & u32Temp))
-				{
-
-				}
 			}
 #endif //BUILD_SAM3X8E
             break;
@@ -514,7 +551,7 @@ void TEPMHA_vCapComAction(TEPMAPI_tenAction enAction, void* pvModule, uint32 u32
 
 				if (0 == u32SubChannelIDX)
 				{
-					u32ControlWord &= ~TC_CMR_ACPA_TOGGLE;
+					u32ControlWord &= ~TC_CMR_ACPA_SET;
 					u32ControlWord |= TC_CMR_ACPA_CLEAR;
 					pstTimerModule->TC_CHANNEL[u32ChannelIDX / 2].TC_CMR = u32ControlWord;
 					tc_enable_interrupt(pstTimerModule, u32ChannelIDX / 2, TC_SR_CPAS);
@@ -522,7 +559,7 @@ void TEPMHA_vCapComAction(TEPMAPI_tenAction enAction, void* pvModule, uint32 u32
 				}
 				else if (1 == u32SubChannelIDX)
 				{
-					u32ControlWord &= ~TC_CMR_BCPB_TOGGLE;
+					u32ControlWord &= ~TC_CMR_BCPB_SET;
 					u32ControlWord |= TC_CMR_BCPB_CLEAR;
 					pstTimerModule->TC_CHANNEL[u32ChannelIDX / 2].TC_CMR = u32ControlWord;
 					tc_enable_interrupt(pstTimerModule, u32ChannelIDX / 2, TC_SR_CPBS);
@@ -631,17 +668,21 @@ uint32 TEPMHA_u32GetFTMTableIndex(IOAPI_tenEHIOResource enEHIOResource)
 	{
 		u32ChannelIDX = enEHIOResource - EH_IO_TMR1;
 	}
-	else if (EH_IO_ADD4 == enEHIOResource)
+	else if (EH_IO_ADD5 == enEHIOResource)
 	{
-		u32ChannelIDX = 12;
+	    u32ChannelIDX = 12;
 	}
-	else if (EH_IO_ADD6 == enEHIOResource)
+	else if (EH_IO_ADD7 == enEHIOResource)
 	{
 		u32ChannelIDX = 13;
 	}
 	else if (EH_IO_ADD8 == enEHIOResource)
 	{
 		u32ChannelIDX = 14;
+	}
+	else if (EH_IO_EXTINT == enEHIOResource)
+	{
+		u32ChannelIDX = 15;
 	}
 #endif //BUILD_SAM3X8E
 	
@@ -650,7 +691,7 @@ uint32 TEPMHA_u32GetFTMTableIndex(IOAPI_tenEHIOResource enEHIOResource)
 
 
 
-Bool TEPMHA_boFlagIsSet(void* pvModule, uint32 u32ChannelIDX, puint32 pu32Flags, uint32 u32Sequence)
+Bool TEPMHA_boFlagIsSet(void* pvModule, uint32 u32ChannelIDX, puint32 pu32Flags, uint32 u32Sequence, uint32 u32Prio)
 {
 	Bool boFlagIsSet = false;
 	tstTimerModule* pstTimerModule;
@@ -661,12 +702,11 @@ Bool TEPMHA_boFlagIsSet(void* pvModule, uint32 u32ChannelIDX, puint32 pu32Flags,
 #endif //BUILD_MK60
 
 #ifdef BUILD_SAM3X8E
-    static uint32 u32Seq;
+    static uint32 u32Seq[2];
     static uint32 u32FlagsCache[9];   /* Once the flags are read they are cleared so cache them */
 	uint32 u32CacheIndex = 0;
 	uint32 u32CMR;
 	Bool boWaveMode;
-	tstPWMModule* pstPWMModule;
 
 	if ((TC0 == (tstTimerModule*)pvModule) ||
 	    (TC1 == (tstTimerModule*)pvModule) ||
@@ -681,10 +721,10 @@ Bool TEPMHA_boFlagIsSet(void* pvModule, uint32 u32ChannelIDX, puint32 pu32Flags,
 			case (uint32)TC2: u32CacheIndex = 6 + (u32ChannelIDX / 2); break;
 		}
 
-		if (u32Seq != u32Sequence)
+		if (u32Seq[u32Prio] != u32Sequence)
 		{
 			u32FlagsCache[u32CacheIndex] = pstTimerModule->TC_CHANNEL[u32ChannelIDX / 2].TC_SR;
-			u32Seq = u32Sequence;
+			u32Seq[u32Prio] = u32Sequence;
 		}
 
 		u32CMR = pstTimerModule->TC_CHANNEL[u32ChannelIDX / 2].TC_CMR;
@@ -805,6 +845,7 @@ TEPMAPI_ttEventTime TEPMHA_tGetScheduledVal(void* pvModule, uint32 u32ChannelIDX
 	}
 #endif //BUILD_SAM3X8E
 
+
     return tEventTime;
 }
 
@@ -823,9 +864,10 @@ IOAPI_tenTriState TEPMHA_enGetTimerDigitalState(IOAPI_tenEHIOResource enEHIOReso
 
 #ifdef BUILD_SAM3X8E
     if (((EH_IO_TMR1 <= enEHIOResource) && (EH_IO_TMR12 >= enEHIOResource)) ||
-		(EH_IO_ADD8 == enEHIOResource) ||
-		(EH_IO_ADD7 == enEHIOResource) ||
-		(EH_IO_ADD5 == enEHIOResource))
+	(EH_IO_ADD5 == enEHIOResource) ||
+	(EH_IO_EXTINT == enEHIOResource) ||
+	(EH_IO_ADD6 == enEHIOResource) ||
+	(EH_IO_ADD7 == enEHIOResource))
 	{
 	    if (TRUE == TEPMHA_boModuleIsTimer(pvModule))
 		{
@@ -857,7 +899,7 @@ void TEMPHA_vResetTimerFlag(void* pvModule, uint32 u32ChannelIDX)
 
 uint32 TEPMHA_u32GetFreeVal(void* pvModule, uint32 u32ChannelIDX)
 {
-    uint32 u32FreeVal;
+    uint32 u32FreeVal = ~0;
 
 #ifdef BUILD_MK60
 	u32FreeVal = pstTimerModule->CNT;
@@ -867,8 +909,6 @@ uint32 TEPMHA_u32GetFreeVal(void* pvModule, uint32 u32ChannelIDX)
 	{
 	    u32FreeVal = ((tstTimerModule*)pvModule)->TC_CHANNEL[u32ChannelIDX / 2].TC_CV;
 	}
-
-
 #endif
 
 	return u32FreeVal;
@@ -876,19 +916,25 @@ uint32 TEPMHA_u32GetFreeVal(void* pvModule, uint32 u32ChannelIDX)
 
 void TEPMHA_vDisconnectEnable(void* pvModule, uint32 u32ChannelIDX)
 {
-	uint32 u32Temp;
-
 #ifdef BUILD_MK60
+	uint32 u32Temp;
 	u32Temp = (tstTimerModule*)pvModule->CONTROLS[u32ChannelIDX].CnSC;
 	u32Temp &= ~FTM_CnSC_CHIE_MASK;
 	pstTimerModule->CONTROLS[u32ChannelIDX].CnSC = u32Temp;
 #endif //BUILD_MK60
 }
 
-void TEPMHA_u32GetTimerVal(IOAPI_tenEHIOResource enEHIOResource, puint32 pu32Val)
+TEPMAPI_ttEventTime TEPMHA_u32GetTimerVal(IOAPI_tenEHIOResource enEHIOResource)
 {
-//matthew todo
+	tstTimerModule* pstTimerModule;
+	TEPMAPI_ttEventTime tEventTime = 0;
 
+#ifdef BUILD_SAM3X8E
+	pstTimerModule = TEPMHA_pvGetTimerModuleFromVIO(enEHIOResource);
+	tEventTime = pstTimerModule->TC_CHANNEL[0].TC_CV;
+#endif //BUILD_SAM3X8E
+
+	return tEventTime;
 }
 
 void* TEPMHA_pvGetTimerModuleFromVIO(IOAPI_tenEHIOResource enEHIOResource)
@@ -920,19 +966,6 @@ void* TEPMHA_pvGetTimerModuleFromVIO(IOAPI_tenEHIOResource enEHIOResource)
 	}
 	
 	return pvModule;
-}
-
-static void TEPMHA_vInitInterrupts(IRQn_Type enIrq)
-{
-	IRQ_vEnableIRQ(enIrq, IRQ_enPRIO_15, TEPM_vInterruptHandler, NULL);
-}
-
-static uint32 TEPMHA_pstGetFTMChannel(IOAPI_tenEHIOResource enEHIOResource)
-{
-	uint32 u32ChannelIDX;
-	
-	u32ChannelIDX = TEPMHA_u32GetFTMTableIndex(enEHIOResource);
-	return TEPMHA_rastTEPMChannel[u32ChannelIDX].u32Channel;
 }
 
 uint32 TEPMHA_u32GetTimerChannelsPerInterruptGroup(void)
@@ -969,29 +1002,6 @@ IOAPI_tenEHIOResource TEPMHA_enGetTimerResourceFromVIOAndIndex(IOAPI_tenEHIOReso
 	}
 #endif //BUILD_SAM3X8E
 	return enChannelEHIOResource;
-}
-
-static IOAPI_tenEHIOResource TEPMHA_enGetParentResourceFromVIO(IOAPI_tenEHIOResource enEHIOResource)
-{
-    IOAPI_tenEHIOResource enParentVIOResource;
-
-#ifdef BUILD_SAM3X8E
-	switch (enEHIOResource)
-	{
-		case EH_VIO_TCC0: enParentVIOResource = EH_VIO_TC0; break;
-		case EH_VIO_TCC1: enParentVIOResource = EH_VIO_TC0; break;
-		case EH_VIO_TCC2: enParentVIOResource = EH_VIO_TC0; break;
-		case EH_VIO_TCC3: enParentVIOResource = EH_VIO_TC1; break;
-		case EH_VIO_TCC4: enParentVIOResource = EH_VIO_TC1; break;
-		case EH_VIO_TCC5: enParentVIOResource = EH_VIO_TC1; break;
-		case EH_VIO_TCC6: enParentVIOResource = EH_VIO_TC2; break;
-		case EH_VIO_TCC7: enParentVIOResource = EH_VIO_TC2; break;
-		case EH_VIO_TCC8: enParentVIOResource = EH_VIO_TC2; break;
-		default : enParentVIOResource = EH_IO_Invalid; break;
-	}
-#endif //BUILD_SAM3X8E
-
-    return enParentVIOResource;
 }
 
 uint32 TEPMHA_u32GetTimerStartChannelInterruptGroup(IOAPI_tenEHIOResource enEHIOResource)
@@ -1050,31 +1060,6 @@ TEPMHA_tenModule TEPMHA_enTimerEnumFromModule(tstTimerModule* pstTimerModule)
 	return enTimerModule;
 }
 
-TEPMHA_tenModule TEPMHA_enTimerEnumFromResource(IOAPI_tenEHIOResource enEHIOResource)
-{
-    TEPMHA_tenModule enTimerModule;
-	  
-    switch (enEHIOResource)
-	{
-#ifdef BUILD_SAM3X8E
-        case EH_VIO_TC0: enTimerModule = TEPMHA_enTC0; break;	
-        case EH_VIO_TC1: enTimerModule = TEPMHA_enTC1; break;
-        case EH_VIO_TC2: enTimerModule = TEPMHA_enTC2; break;
-        case EH_VIO_TCC0: enTimerModule = TEPMHA_enTC0; break;
-        case EH_VIO_TCC1: enTimerModule = TEPMHA_enTC0; break;
-        case EH_VIO_TCC2: enTimerModule = TEPMHA_enTC0; break;
-        case EH_VIO_TCC3: enTimerModule = TEPMHA_enTC1; break;
-        case EH_VIO_TCC4: enTimerModule = TEPMHA_enTC1; break;
-        case EH_VIO_TCC5: enTimerModule = TEPMHA_enTC1; break;
-        case EH_VIO_TCC6: enTimerModule = TEPMHA_enTC2; break;
-        case EH_VIO_TCC7: enTimerModule = TEPMHA_enTC2; break;
-        case EH_VIO_TCC8: enTimerModule = TEPMHA_enTC2; break;
-#endif
-		default: enTimerModule = 0; break;
-	}
-	
-	return enTimerModule;
-}
 
 static void TEPMHA_vSyncModules(void)
 {
@@ -1161,3 +1146,5 @@ static Bool TEPMHA_boModuleIsPWM(void* pvModule)
 
     return boRetVal;
 }
+
+#pragma GCC diagnostic pop

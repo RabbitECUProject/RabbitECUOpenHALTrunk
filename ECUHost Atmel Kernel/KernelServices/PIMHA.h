@@ -18,12 +18,12 @@
 #include "IOAPI.h"
 #include "types.h"
 
-#ifdef BUILD_MK60
+#if defined(BUILD_MK60)
 typedef PORT_Type tstPortModule;
 typedef GPIO_Type tstGPIOModule;
 #endif
 
-#ifdef BUILD_SAM3X8E
+#if defined(BUILD_SAM3X8E)
 typedef Pio tstGPIOModule;
 #endif
 
@@ -71,33 +71,33 @@ typedef Pio tstGPIOModule;
 #ifdef BUILD_MK60
 #define PIMHA_nGPIOPointerMap \
 {                           \
-    {PTA},                  \
-    {PTB},                  \
-    {PTC},                  \
-    {PTD},                  \
-    {PTE}                   \
+    PTA,                  \
+    PTB,                  \
+    PTC,                  \
+    PTD,                  \
+    PTE                   \
 }					
 #endif		
 
 #ifdef BUILD_SAM3X8E
 #define PIMHA_nGPIOPointerMap \
 {                           \
-	{PIOA},                  \
-	{PIOB},                  \
-	{PIOC},                  \
-	{PIOD},                  \
-	{PIOD}                   \
+	PIOA,                  \
+	PIOB,                  \
+	PIOC,                  \
+	PIOD,                  \
+	PIOD                   \
 }
 #endif					
 
 #ifdef BUILD_MK60
 #define PIMHA_nPortClockMasks \
 {                           \
-    {SIM_SCGC5_PORTA_MASK}, \
-    {SIM_SCGC5_PORTB_MASK}, \
-    {SIM_SCGC5_PORTC_MASK}, \
-    {SIM_SCGC5_PORTD_MASK}, \
-    {SIM_SCGC5_PORTE_MASK}  \
+    SIM_SCGC5_PORTA_MASK, \
+    SIM_SCGC5_PORTB_MASK, \
+    SIM_SCGC5_PORTC_MASK, \
+    SIM_SCGC5_PORTD_MASK, \
+    SIM_SCGC5_PORTE_MASK  \
 }
 #endif  //BUILD_MK60
 
@@ -105,10 +105,10 @@ typedef Pio tstGPIOModule;
 #ifdef BUILD_SAM3X8E
 #define PIMHA_nPortClockMasks \
 {                           \
-	{PIOA_IRQn}, \
-	{PIOB_IRQn}, \
-	{PIOC_IRQn}, \
-	{PIOD_IRQn}  \
+	PIOA_IRQn, \
+	PIOB_IRQn, \
+	PIOC_IRQn, \
+	PIOD_IRQn  \
 }
 #endif  //BUILD_MK60
 

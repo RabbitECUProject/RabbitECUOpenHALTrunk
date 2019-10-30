@@ -33,6 +33,7 @@
 Bool BOOSTED_boIndexAndCalculateMap(SPREADAPI_ttSpreadIDX, SPREADAPI_ttSpreadIDX, MAPSAPI_ttMapIDX);
 Bool BOOSTED_boIndexAndCalculateTable(SPREADAPI_ttSpreadIDX, TABLEAPI_ttTableIDX);	
 SPREADAPI_tstSpreadResult* BOOSTED_pstGetSpread(SPREADAPI_ttSpreadIDX);
+void BOOSTED_vEnableWatchdog(uint16 u16ReloadCount, uint16 u16WindowCount);
 
 #endif // BOOSTED_H
 

@@ -21,6 +21,7 @@
 #include "BVM.h"
 #include "CAM.h"
 #include "CTS.h"
+#include "ATS.h"
 #include "DIAG.h"
 #include "declarations.h"
 #include "EST.h"
@@ -49,13 +50,14 @@
 	{&CAM_vStart,	&CAM_vRun, &CAM_vTerminate, &CAM_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask10ms},										\
 	{&FUEL_vStart,	&FUEL_vRun, &FUEL_vTerminate, &FUEL_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},								\
 	{&CTS_vStart,	&CTS_vRun, &CTS_vTerminate, &CTS_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},											\
+	{&ATS_vStart,	&ATS_vRun, &ATS_vTerminate, &ATS_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},											\
 	{&EST_vStart,	&EST_vRun, &EST_vTerminate, &EST_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},											\
-	{&IAC_vStart,	&IAC_vRun, &IAC_vTerminate, &IAC_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask25ms},										\
+	{&IAC_vStart,	&IAC_vRun, &IAC_vTerminate, &IAC_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask5ms},										\
 	{&USERDIAG_vStart, &USERDIAG_vRun, &USERDIAG_vTerminate, &USERDIAG_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},	\
 	{&SENSORS_vStart, &SENSORS_vRun, &SENSORS_vTerminate, &SENSORS_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},			\
 	{&FILM_vStart, &FILM_vRun, &FILM_vTerminate, &FILM_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask10ms},								\
-	{&RELAYS_vStart, &RELAYS_vRun, &RELAYS_vTerminate, &RELAYS_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask10ms},								\
-	{&USERCAL_vStart,	&USERCAL_vRun, &USERCAL_vTerminate, NULL, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms}										\
+	{&RELAYS_vStart, &RELAYS_vRun, &RELAYS_vTerminate, &RELAYS_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask2ms},								\
+	{&USERCAL_vStart,	&USERCAL_vRun, &USERCAL_vTerminate, NULL, TASKAPI_enTaskPrLowest, TASKAPI_enTask5ms}										\
 }
 
 #ifdef EXTERN
@@ -70,11 +72,11 @@
 #define USER_xEnterCritical()/*CR1_16*/
 #define USER_xExitCritical()/*CR1_16*/
 
-#if BUILD_ALLOW_CRITICAL
-	#undef USER_xEnterCritical()/*CR1_16*/
-	#undef USER_xExitCritical()/*CR1_16*/
-	#define USER_xEnterCritical() CPU_xEnterCritical()/*CR1_16*/
-	#define USER_xExitCritical() CPU_xExitCritical()/*CR1_16*/
+#ifdef BUILD_ALLOW_CRITICAL
+	#undef USER_xEnterCritical
+	#undef USER_xExitCritical
+	#define USER_xEnterCritical CPU_xEnterCritical
+	#define USER_xExitCritical CPU_xExitCritical
 #endif
 
 #define USER_nVarsRAMBase 0x20000000u
@@ -96,6 +98,7 @@ typedef enum
 	USER_enCAM,
 	USER_enFUEL,	
 	USER_enCTS,	
+	USER_enATS,	
 	USER_enEST,	
 	USER_enIAC,	
 	USER_enDIAG,

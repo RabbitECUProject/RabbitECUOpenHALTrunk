@@ -23,7 +23,9 @@ tstI2CModule* IICHA_pstIIC;
 
 uint32 IIC_u32PortClockRequested;
 
+#if defined(BUILD_MK60)
 static sint32 IICHA_u32GetIICIndex(IOAPI_tenEHIOResource);
+#endif //BUILD_MK60
 
 void IICHA_vStart(puint32 const u32Stat)
 {
@@ -45,13 +47,15 @@ void IICHA_vTerminate(puint32 const pu32Stat)
 
 SYSAPI_tenSVCResult IICHA_enInitBus(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tstPortConfigCB* pstPortConfigCB)
 {
+	SYSAPI_tenSVCResult enSVCResult = SYSAPI_enResourceAlreadyAllocated;	
+#ifdef BUILD_MK60	
 	uint32 u32Mul;
 	uint32 u32DivCalc;
 	uint32 u32Div;
 	uint32 u32DivMapIDX;
 	tstI2CModule* pstIIC;
 	IRQn_Type enIRQType;
-	SYSAPI_tenSVCResult enSVCResult = SYSAPI_enResourceAlreadyAllocated;
+
 	REGSET_tstReg32Val IIC_astIICReg32Val[3];
 	sint32 i32IDX = IICHA_u32GetIICIndex(enEHIOResource);	
 	
@@ -59,7 +63,6 @@ SYSAPI_tenSVCResult IICHA_enInitBus(IOAPI_tenEHIOResource enEHIOResource, IOAPI_
 	
 	switch (enEHIOResource)
 	{
-#ifdef BUILD_MK60
 		case EH_VIO_IIC1:
 		{				
 			IIC_xRequestPortClock(SIM_SCGC4_IIC0_MASK);
@@ -103,7 +106,6 @@ SYSAPI_tenSVCResult IICHA_enInitBus(IOAPI_tenEHIOResource enEHIOResource, IOAPI_
 			IIC_xRequestPortClock(SIM_SCGC4_IIC1_MASK);			
 			break;
 		}
-#endif //BUILD_MK60
 		default:
 		{
 			break;
@@ -112,23 +114,22 @@ SYSAPI_tenSVCResult IICHA_enInitBus(IOAPI_tenEHIOResource enEHIOResource, IOAPI_
 	
 	if (SYSAPI_enOK	== enSVCResult)
 	{
-#ifdef BUILD_MK60
 		pstIIC->F = (I2C_F_MULT(u32Mul) | I2C_F_ICR(u32Div));	
 		pstIIC->C1 |= I2C_C1_IICEN_MASK;		
 		IRQ_vEnableIRQ(enIRQType);
-#endif //BUILD_MK60
 	}
-	
+#endif //BUILD_MK60	
 	return enSVCResult;
 }
 
 void IICHA_vInitTransfer(IOAPI_tstTransferCB* pstTransferCB)
 {
+#ifdef BUILD_MK60	
 	IICHA_pstTransferCB = pstTransferCB;
 
 	switch (pstTransferCB->enEHIOResource)
 	{
-#ifdef BUILD_MK60
+
 		case EH_VIO_IIC1:
 		{
 			IICHA_pstIIC = I2C0;
@@ -139,19 +140,16 @@ void IICHA_vInitTransfer(IOAPI_tstTransferCB* pstTransferCB)
 			IICHA_pstIIC->D = *(uint8*)IIC_pvData;
 			IICHA_pvData = (void*)((uint32)IIC_pvData + 1);
 		}
-#endif  //BUILD_MK60
 		default:
         {
 		    break;
 		}
 	}
-
+#endif  //BUILD_MK60
 }
 
 void IICHA_vInterrupt(IOAPI_tenEHIOResource enEHIOResource)
 {
-	IOAPI_tenPortMode enMode;
-	
 	if (NULL != IICHA_pstIIC)
 	{
 #ifdef BUILD_MK60
@@ -182,6 +180,7 @@ void IICHA_vInterrupt(IOAPI_tenEHIOResource enEHIOResource)
 	}
 }
 
+#if defined(BUILD_MK60)
 static sint32 IICHA_u32GetIICIndex(IOAPI_tenEHIOResource enEHIOResource)
 {
 	sint32 i32IDX = -1;
@@ -193,7 +192,7 @@ static sint32 IICHA_u32GetIICIndex(IOAPI_tenEHIOResource enEHIOResource)
 		
 	return i32IDX;
 }
-
+#endif //BUILD_MK60
 
 
 

@@ -20,9 +20,9 @@
 
 /* GLOBAL MACRO DEFINITIONS ***************************************************/
 #define MAP_nVoltsFilteredInitVal	(uint32)(101300u)
-#define MAP_nADFiltVal						(0x10)
-#define MAP_nSensorGain						(30000u)
-#define MAP_nSensorOffset					(-20000u)
+#define MAP_nADFiltVal						(0x40)
+#define MAP_nSensorGain						(26000u)
+#define MAP_nSensorOffset					(-2200u)
 #define MAP_nAirDensMgpL					(1190u)
 #define MAP_nRunFreq                        (200)	
 
@@ -44,9 +44,11 @@ EXTERN GPM6_ttVolts MAP_tSensorVolts;/*CR1_88*/
 //ASAM mode=readvalue name="MAP Sensor Voltage" type=uint32 offset=0 min=0 max=5 m=0.001 b=0 units="V" format=5.3 help="MAP Sensor Voltage"
 EXTERN GPM6_ttPa MAP_tKiloPaRaw;
 EXTERN GPM6_ttPa MAP_tKiloPaFiltered;
-//ASAM mode=readvalue name="MAP kPa" type=uint32 offset=0 min=0 max=120 m=0.001 b=0 units="kPa" format=5.3 help="Manifold Pressure"
+//ASAM mode=readvalue name="MAP kPa" type=uint32 offset=0 min=0 max=500 m=0.001 b=0 units="kPa" format=5.3 help="Manifold Pressure"
 EXTERN GPM6_ttUg MAP_tManChargeMassUg;
 EXTERN sint32 MAP_s32ManDeltaChargeMassPerSUg;
+EXTERN uint16 MAP_u16VE;
+EXTERN Bool MAP_boHighVacuum;
 		
 /* GLOBAL FUNCTION DECLARATIONS ***********************************************/
 void MAP_vStart(uint32 * const pu32Arg);

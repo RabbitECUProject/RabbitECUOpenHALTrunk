@@ -31,6 +31,7 @@ void DACHA_vStart(puint32 const pu32Stat)
 
 void DACHA_vRun(puint32 const pu32Stat)
 {
+#ifdef BUILD_MK60	
 	tstDACModule* pstDAC = NULL;	
 	uint32 u32QueueIDX;
 	uint32 u32DACIDX;
@@ -40,7 +41,7 @@ void DACHA_vRun(puint32 const pu32Stat)
 	{
 		if (u32ClockReq == (u32ClockReq & DACHA_u32PortClockRequested))
 		{
-#ifdef BUILD_MK60
+
 			pstDAC = (0 == u32DACIDX) ? DAC0 : DAC1;	
 				
 			if ((pstDAC->C2 & DAC_C2_DACBFUP_MASK) < ++DACHA_au32QueueIDX[u32DACIDX])
@@ -55,10 +56,11 @@ void DACHA_vRun(puint32 const pu32Stat)
 			
 			/* Set the read pointer */
 			pstDAC->C2 = (pstDAC->C2 & DAC_C2_DACBFUP_MASK) | DAC_C2_DACBFRP(DACHA_au32QueueIDX[u32DACIDX]);
-#endif //BUILD_MK60
+
 		}
 		u32ClockReq *= 2;
 	}
+#endif //BUILD_MK60	
 }
 
 void DACHA_vTerminate(puint32 const pu32Stat)
@@ -114,12 +116,11 @@ SYSAPI_tenSVCResult DACHA_vInitDACResource(IOAPI_tenEHIOResource enEHIOResource,
 }
 			
 void DACHA_vWriteDACQueue(IOAPI_tenEHIOResource enEHIOResource, DACAPI_ttOutputVoltage* pOutputVoltage)
-{
+{		
+#ifdef BUILD_MK60
 	uint32 u32QueueIDX;
 	tstDACModule* pstDAC;
 	uint32 u32Queue;
-				
-#ifdef BUILD_MK60
 	pstDAC = (EH_O_DAC1 == enEHIOResource) ? DAC0 : DAC1;
 	u32Queue = (EH_O_DAC1 == enEHIOResource) ? 0 : 1;
 	

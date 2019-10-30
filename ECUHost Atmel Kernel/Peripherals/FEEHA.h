@@ -178,6 +178,9 @@ typedef struct
 #define FEEHA_WORK_DATA_END			0x2007FFFFu
 #define FEEHA_WORK_DATA_MAX			0x4000u
 
+#define FEEHA_EXC_RECS_START        (FEEHA_EEPROM_START + 0x7000)
+#define FEEHA_EXC_RECS_END          (FEEHA_EEPROM_START + 0x7000 + 0xfff)
+
 // FEE sector sizes
 #define FEEHA_PFLASH_SCTR_BYTES	4096u							// Program Flash bytes per sector
 #define FEEHA_DFLASH_SCTR_BYTES	4096u							// Data 	 Flash bytes per sector

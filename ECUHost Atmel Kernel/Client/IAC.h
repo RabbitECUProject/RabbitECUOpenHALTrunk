@@ -16,12 +16,24 @@
 
 #include <string.h>
 #include "CTS.h"
+#include "TPS.h"
 #include "IOAPI.h"
 #include "SETUP.h"
 #include "USER.h"
 
 /* GLOBAL MACRO DEFINITIONS ***************************************************/
-		
+
+#ifdef EXTERN
+#undef EXTERN
+#endif
+#ifdef _IAC_C
+#define EXTERN
+#else
+#define EXTERN extern
+#endif
+
+#define IAC_LEARN_COUNTS 400
+
 /* GLOBAL TYPE DEFINITIONS ****************************************************/
 
 typedef enum
@@ -35,6 +47,13 @@ typedef enum
 	IAC_enOpenLoop,
 	IAC_enClosedLoop
 } IAC_tenControlState;
+
+/* GLOBAL VARIABLE DECLARATIONS ***********************************************/
+EXTERN uint32 IAC_u32ISCDuty;
+EXTERN IAC_tenControlState IAC_enControlState;
+EXTERN Bool IAC_boOverrunCutRPMEnable;
+EXTERN sint32 IAC_s32ISCESTTrim[2];
+
 		
 /* GLOBAL FUNCTION DECLARATIONS ***********************************************/
 void IAC_vStart(uint32 * const pu32Arg);

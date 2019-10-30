@@ -100,8 +100,8 @@ Bool MAP_vCalculate(MAPSAPI_ttMapIDX tMapIDX)
 	tSpreadIDXX = MAP_apstMapCB[tMapIDX]->tSpreadIDXX;
 	tSpreadIDXY = MAP_apstMapCB[tMapIDX]->tSpreadIDXY;
 	
-	stSpreadResultX = SPREAD_stGetSpread(tSpreadIDXX);
-	stSpreadResultY = SPREAD_stGetSpread(tSpreadIDXY);
+	stSpreadResultX = *SPREAD_pstGetSpread(tSpreadIDXX);
+	stSpreadResultY = *SPREAD_pstGetSpread(tSpreadIDXY);
 	
 	switch (MAP_astMapCB[tMapIDX].enDataType)
 	{
@@ -111,17 +111,17 @@ Bool MAP_vCalculate(MAPSAPI_ttMapIDX tMapIDX)
 		case TYPE_enInt16:
 		{
             pvMapRowData = MAP_astMapCB[tMapIDX].pvMapData;
-			pvMapRowData += stSpreadResultX.u16SpreadIndex * MAP_astMapCB[tMapIDX].i16MapSizeX * sizeof(uint16);
-            u16DataResult[0] = MAP_u16Interp(pvMapRowData, stSpreadResultY.u16SpreadIndex, stSpreadResultY.u16SpreadOffset);
-			pvMapRowData +=MAP_astMapCB[tMapIDX].i16MapSizeX * sizeof(uint16);
-            u16DataResult[1] = MAP_u16Interp(pvMapRowData, stSpreadResultY.u16SpreadIndex, stSpreadResultY.u16SpreadOffset);
-			*(sint16*)MAP_astMapCB[tMapIDX].pvOutputData = MAP_u16Interp(&u16DataResult, 0, stSpreadResultX.u16SpreadOffset);
+			pvMapRowData = (void*)((uint32)pvMapRowData + stSpreadResultX.uSpreadData.stSpreadResult.u16SpreadIndex * MAP_astMapCB[tMapIDX].i16MapSizeX * sizeof(uint16));
+            u16DataResult[0] = MAP_u16Interp(pvMapRowData, stSpreadResultY.uSpreadData.stSpreadResult.u16SpreadIndex, stSpreadResultY.uSpreadData.stSpreadResult.u16SpreadOffset);
+			pvMapRowData = (void*)((uint32)pvMapRowData + MAP_astMapCB[tMapIDX].i16MapSizeX * sizeof(uint16));
+            u16DataResult[1] = MAP_u16Interp(pvMapRowData, stSpreadResultY.uSpreadData.stSpreadResult.u16SpreadIndex, stSpreadResultY.uSpreadData.stSpreadResult.u16SpreadOffset);
+			*(sint16*)MAP_astMapCB[tMapIDX].pvOutputData = MAP_u16Interp(&u16DataResult, 0, stSpreadResultX.uSpreadData.stSpreadResult.u16SpreadOffset);
 			break;
 		}
 		case TYPE_enInt32:
 		{
 			ps32Data = (sint32*)MAP_astMapCB[tMapIDX].pvMapData;
-			ps32Data += stSpreadResultX.u16SpreadIndex;
+			ps32Data += stSpreadResultX.uSpreadData.stSpreadResult.u16SpreadIndex;
 		
 			s32DataL = *ps32Data;
 			s32DataR = *(ps32Data + 1);		
@@ -144,8 +144,8 @@ Bool MAP_vCalculate(MAPSAPI_ttMapIDX tMapIDX)
 			s32DataL = (*ps32Data) / u32Factor;
 			s32DataR = (*(ps32Data + 1)) / u32Factor;		
 			
-			u32Data = (s32DataR * stSpreadResultX.u16SpreadOffset) +
-								(s32DataL * (0xffff - stSpreadResultX.u16SpreadOffset));
+			u32Data = (s32DataR * stSpreadResultX.uSpreadData.stSpreadResult.u16SpreadOffset) +
+								(s32DataL * (0xffff - stSpreadResultX.uSpreadData.stSpreadResult.u16SpreadOffset));
 			
 			u32Data /= 0xffff;			//matthew check this look for a better way to hold precision
 			u32Data *= u32Factor;
@@ -156,11 +156,11 @@ Bool MAP_vCalculate(MAPSAPI_ttMapIDX tMapIDX)
 		case TYPE_enUInt32:
 		{
             pvMapRowData = MAP_astMapCB[tMapIDX].pvMapData;
-			pvMapRowData += stSpreadResultX.u16SpreadIndex * MAP_astMapCB[tMapIDX].i16MapSizeX * sizeof(uint32);
-            u32DataResult[0] = MAP_u32Interp(pvMapRowData, stSpreadResultY.u16SpreadIndex, stSpreadResultY.u16SpreadOffset);
-			pvMapRowData +=MAP_astMapCB[tMapIDX].i16MapSizeX * sizeof(uint32);
-            u32DataResult[1] = MAP_u32Interp(pvMapRowData, stSpreadResultY.u16SpreadIndex, stSpreadResultY.u16SpreadOffset);
-			*(uint32*)MAP_astMapCB[tMapIDX].pvOutputData = MAP_u32Interp(&u32DataResult, 0, stSpreadResultX.u16SpreadOffset);
+			pvMapRowData = (void*)((uint32)pvMapRowData + stSpreadResultX.uSpreadData.stSpreadResult.u16SpreadIndex * MAP_astMapCB[tMapIDX].i16MapSizeX * sizeof(uint32));
+            u32DataResult[0] = MAP_u32Interp(pvMapRowData, stSpreadResultY.uSpreadData.stSpreadResult.u16SpreadIndex, stSpreadResultY.uSpreadData.stSpreadResult.u16SpreadOffset);
+			pvMapRowData = (void*)((uint32)pvMapRowData + MAP_astMapCB[tMapIDX].i16MapSizeX * sizeof(uint32));
+            u32DataResult[1] = MAP_u32Interp(pvMapRowData, stSpreadResultY.uSpreadData.stSpreadResult.u16SpreadIndex, stSpreadResultY.uSpreadData.stSpreadResult.u16SpreadOffset);
+			*(uint32*)MAP_astMapCB[tMapIDX].pvOutputData = MAP_u32Interp(&u32DataResult, 0, stSpreadResultX.uSpreadData.stSpreadResult.u16SpreadOffset);
 			break;
 		}			
 	}			
@@ -168,19 +168,25 @@ Bool MAP_vCalculate(MAPSAPI_ttMapIDX tMapIDX)
 	OS_stSVCDataStruct.pvData = NULL;
 	
 	/* TODO suppress warning */
-	(void)u8DataR;
-	(void)u16DataR;
-	(void)s8DataL;
-	(void)s8DataR;
-	(void)u8Data;
-	(void)u16Data;
-	(void)s16Data;
-	(void)pu16Data;
-	(void)ps8Data;
-	(void)s8Data;
-	(void)s32Data;
-	(void)pu8Data;
-	
+	UNUSED(u8DataR);
+	UNUSED(u16DataR);
+	UNUSED(s8DataL);
+	UNUSED(s8DataR);
+	UNUSED(u8Data);
+	UNUSED(u16Data);
+	UNUSED(s16Data);
+	UNUSED(pu16Data);
+	UNUSED(ps8Data);
+	UNUSED(s8Data);
+	UNUSED(s32Data);
+	UNUSED(pu8Data);
+	UNUSED(u32DataR);
+	UNUSED(u32DataL);
+	UNUSED(s16DataL);
+	UNUSED(s16DataR);
+	UNUSED(pu32Data);
+	UNUSED(ps16Data);
+				
 	return true;
 }
 
@@ -192,7 +198,7 @@ static uint16 MAP_u16Interp(void* pvMapData, uint16 u16SpreadIDX, uint16 u16Spre
 	uint32 u32ShiftR = 0;
 	uint32 u32Factor, u32Data;
 
-	ps16Data = (sint16*)pvMapData;
+	ps16Data = (uint16*)pvMapData;
 	ps16Data += u16SpreadIDX;
 		
 	s16DataL = *ps16Data;
@@ -233,7 +239,7 @@ static uint32 MAP_u32Interp(void* pvMapData, uint16 u16SpreadIDX, uint16 u16Spre
 	uint32 u32ShiftR = 0;
 	uint32 u32Factor, u32Data;
 
-	pu32Data = (sint32*)pvMapData;
+	pu32Data = (uint32*)pvMapData;
 	pu32Data += u16SpreadIDX;
 		
 	u32DataL = *pu32Data;

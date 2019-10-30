@@ -2,11 +2,11 @@
 /*    Copyright (c) 2016 MD Automotive Controls. Original Work.               */
 /*    License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher   */
 /******************************************************************************/
-/* CONTEXT:KERNEL                                                                   */                      
-/* PACKAGE TITLE:      MSG                    																*/
-/* DESCRIPTION:        This code provides functions for OS messaging					*/
-/*										 																												*/
-/* FILE NAME:          MSG.c                                             			*/
+/* CONTEXT:KERNEL                                                             */                      
+/* PACKAGE TITLE:      MSG                                                    */
+/* DESCRIPTION:        This code provides functions for OS messaging          */
+/*                                                                            */
+/* FILE NAME:          MSG.c                                                  */
 /* REVISION HISTORY:   28-03-2016 | 1.0 | Initial revision                    */
 /*                                                                            */
 /******************************************************************************/
@@ -144,8 +144,8 @@ void MSG_boMBXInvalidate(MSG_tstMBX* const pstMBX)
 
 static sint32 MSG_u32GetFreeMBX(void)
 {
-	uint32 u32MBXIDX;
-	sint32 i32RetIDX;
+	uint32 u32MBXIDX = 0;
+	sint32 i32RetIDX = 0;
 		
 	for (u32MBXIDX = 0; u32MBXIDX < MSG_nMBXCount; u32MBXIDX++)
 	{

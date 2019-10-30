@@ -20,12 +20,18 @@
 /* modified linux task queue header */
 typedef void (*pfInterTaskFunction)(void);
 
-typedef BUILDPACKEDKEIL struct tq_struct  
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
+#pragma GCC diagnostic ignored "-Wpacked"
+
+typedef struct tq_struct  
 {
 	struct tq_struct* next;			/* linked list of queued tasks */
 	struct tq_struct* prev;			/* doubly linked list for removal and insertion */
 	struct TASK_tstTask stTask;			/* the task */
 } BUILDPACKEDATMEL tq_struct;
+
+#pragma GCC diagnostic pop
 
 typedef struct tq_struct* task_queue;
 

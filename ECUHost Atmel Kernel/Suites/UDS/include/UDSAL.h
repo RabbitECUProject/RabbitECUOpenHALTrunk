@@ -2,10 +2,10 @@
 /*    Copyright (c) 2016 MD Automotive Controls. Original Work.               */
 /*    License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher   */
 /******************************************************************************/
-/* CONTEXT:KERNEL                                                                   */                      
-/* PACKAGE TITLE:      XXX Header File                    										*/
-/* DESCRIPTION:        XXX   																									*/
-/* FILE NAME:          XXX.h                                         					*/
+/* CONTEXT:KERNEL                                                             */                      
+/* PACKAGE TITLE:      XXX Header File                                        */
+/* DESCRIPTION:        XXX                                                    */
+/* FILE NAME:          XXX.h                                                  */
 /* REVISION HISTORY:   19-08-2016 | 1.0 | Initial revision                    */
 /*                                                                            */
 /******************************************************************************/
@@ -35,7 +35,7 @@
 #define UDSAL_READ_TRANSFER_SIZE	32
 #define UDSAL_WRITE_TRANSFER_SIZE	32
 
-#if	BUILD_PBL	
+#if	defined(BUILD_PBL)
 	#define UDSAL_DL_BUFF_SIZE 				32768
 #else
 	#define UDSAL_DL_BUFF_SIZE 				1
@@ -57,6 +57,12 @@
 #endif	
 
 //UDS supported services
+#define UDSAL_SID_MODE1				0x01
+#define UDSAL_SID_MODE2				0x02
+#define UDSAL_SID_MODE3				0x03
+#define UDSAL_SID_MODE4				0x04
+#define UDSAL_SID_MODE6				0x06
+#define UDSAL_SID_MODE7				0x07
 #define UDSAL_SID_DSC 				0x10
 #define UDSAL_SID_ER					0x11
 #define UDSAL_SID_RDTCREC			0x12
@@ -85,7 +91,7 @@
 #define UDSAL_SID_INSTRBLID 	0xA5
 #define UDSAL_SID_RBDYNLID		0xAA
 #define UDSAL_SID_INSTRBCID		0xB2
-#define UDSAL_SID_COUNT				31
+#define UDSAL_SID_COUNT				34
 
 //UDS subservice
 #define UDSAL_SSID_RC_STR			0x01
@@ -149,7 +155,10 @@ typedef enum
 	UDSAL_enAppContext
 } UDSAL_tenContext;
 
-typedef __packed struct
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-braces"
+
+typedef struct
 {
 	uint8 u8Service;
 	uint8 u8BytesMin;
@@ -158,6 +167,8 @@ typedef __packed struct
 	UDSAL_tenContext enContext;
 	pfUDSALProcess pfProcess;
 } UDSAL_tstALProcessInfo;
+
+#pragma GCC diagnostic pop
 
 typedef struct
 {
@@ -169,16 +180,15 @@ typedef struct
 	bool boComplete;
 } UDSAL_tstDLControlBlock;
 
-typedef enum
-{
-	UDSAL_enDiagSessionInactive,
-	UDSAL_enDiagSessionDefault,
-	UDSAL_enDiagSessionProgramming,
-	UDSAL_enDiagSessionExtended
-} UDSAL_tenDiagSession;
 
 #define UDSAL_nALProcessInfo																															\
 {																																													\
+	{ UDSAL_SID_MODE1 				, 0, 0, 6, 		UDSAL_enPBLContext,	UDSAL_u8MODE1 },						\
+	{ UDSAL_SID_MODE2 				, 0, 0, 6, 		UDSAL_enPBLContext,	UDSAL_u8MODE2 },						\
+	{ UDSAL_SID_MODE3 				, 0, 0, 6, 		UDSAL_enPBLContext,	UDSAL_u8MODE3 },						\
+	{ UDSAL_SID_MODE4 				, 0, 0, 0, 		UDSAL_enPBLContext,	UDSAL_u8MODE4 },						\
+	{ UDSAL_SID_MODE6 				, 0, 0, 0, 		UDSAL_enPBLContext,	UDSAL_u8MODE6 },						\
+	{ UDSAL_SID_MODE7 				, 0, 0, 0, 		UDSAL_enPBLContext,	UDSAL_u8MODE7 },						\
 	{ UDSAL_SID_DSC 				, 0, 0, 0, 		UDSAL_enPBLContext,	UDSAL_u8SESSION },						\
 	{ UDSAL_SID_ER					, 0, 0, 0, 		UDSAL_enPBLContext,	UDSAL_u8RESET },							\
 	{ UDSAL_SID_RDTCREC			, 0, 0, 0, 		UDSAL_enPBLContext,	NULL },												\
@@ -207,6 +217,64 @@ typedef enum
 	{ UDSAL_SID_INSTRBLID 	, 0, 0, 0, 		UDSAL_enPBLContext,	NULL },												\
 	{ UDSAL_SID_RBDYNLID		, 0, 0, 0, 		UDSAL_enPBLContext,	NULL },												\
 	{ UDSAL_SID_INSTRBCID		, 0, 0, 0, 		UDSAL_enPBLContext,	NULL }												\
+}
+
+#define UDSAL_nMode1InfoByteOffset	\
+{\
+	0,\
+	4,\
+	8,\
+	10,\
+	12,\
+	13,\
+	14,\
+	15,\
+	16,\
+	17,\
+	18,\
+	19,\
+	20,\
+	22,\
+	23,\
+	24,\
+	25,\
+	27,\
+	28,\
+	29,\
+	30,\
+	32,\
+	34,\
+	36,\
+	38,\
+	40,\
+	42,\
+	44,\
+	46,\
+	47,\
+	48,\
+	49,\
+	51,\
+	55,\
+	57,\
+	59,\
+	61,\
+	65,\
+	69,\
+	73,\
+	77,\
+	81,\
+	85,\
+	89,\
+	93,\
+	94,\
+	95,\
+	96,\
+	97,\
+	98,\
+	100,\
+	102,\
+	103,\
+	107\
 }
 
 #define UDSAL_xCalcBytesFree()																				\

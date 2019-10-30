@@ -44,7 +44,7 @@ typedef enum
 } CTRLAPI_tenPIDRate;
 
 
-typedef BUILDPACKEDKEIL struct
+typedef struct
 {
 	sint32* pi32Target;
 	sint32* pi32Feedback;

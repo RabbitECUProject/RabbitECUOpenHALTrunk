@@ -83,14 +83,14 @@ typedef enum
 	enChannelErr
 } ENE_tenChannelStatus;
 
-typedef BUILDPACKEDKEIL struct
+typedef struct
 {
 	uint8 	au8ETHMACDestination[6];
 	uint8 	au8ETHMACSource[6];
 	uint16	u16ETHLengthOrType;
 } ENE_tstETHHeader;
 
-typedef BUILDPACKEDKEIL struct
+typedef struct
 {
 	uint8 	u8IPVersionIHL;
 	uint8 	u8DSCPECN;
@@ -104,17 +104,17 @@ typedef BUILDPACKEDKEIL struct
 	uint32	u32DestinationIPAddress;
 } ENE_tstIPHeader;
 
-typedef BUILDPACKEDKEIL struct
+typedef struct
 {
 	uint32 	u32Dummy;
 } ENE_tstTCPHeader;
 
-typedef BUILDPACKEDKEIL struct
+typedef struct
 {
 	uint32 	u32Dummy;
 } ENE_tstICMPHeader;
 
-typedef BUILDPACKEDKEIL struct
+typedef struct
 {
 	uint16	u16SourcePort;
 	uint16  u16DestinationPort;
@@ -122,7 +122,7 @@ typedef BUILDPACKEDKEIL struct
 	uint16	u16UDPHeaderChecksum;
 } ENE_tstUDPHeader;
 
-typedef BUILDPACKEDKEIL struct
+typedef struct
 {
 	ENE_tstETHHeader	stETHHeader;
 	// IP header union

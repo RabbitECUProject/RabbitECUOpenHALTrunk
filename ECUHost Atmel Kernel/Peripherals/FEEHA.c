@@ -14,6 +14,7 @@
 #include "FEE.h"
 #include "FEEHA.h"
 #include "FLASHHA.h"
+#include "TEPM.h"
 
 tstFTFEConfig FEE_stFlashSSDConfig;
 
@@ -33,12 +34,13 @@ uint32 Sum;
 uint32 unsecure_key;
 uint32 i;
 uint8 u8WriteCount;
+uint32 FEE_u32RunCount;
 
 FEE_tstWriteControlBlock FEE_stWriteControlBlock;
 FEE_tenPgmErrCode FEE_enPgmErrCode;
 FEE_tstWorkingPage FEE_stWorkingPage;
 
-#if	BUILD_SBL
+#if	defined(BUILD_SBL)
 	uint8 FEE_au8ProgBuff[FEE_PFLASH_SCTR_BYTES];
 #else
 	uint8 FEE_au8ProgBuff[1];
@@ -47,12 +49,15 @@ FEE_tstWorkingPage FEE_stWorkingPage;
 const REGSET_tstReg8Val FEEHA_rastFTFEReg8Val[] = FEEHA_nReg8Set;
 
 static Bool FEEHA_boPartitionDFlash(void);
+
+#if defined(BUILD_MK60)
 static void FEEHA_vInitFlashConfig(void);
+#endif
 
 
 void FEEHA_vStartSBL(void)
 {
-#if BUILD_SBL
+#if defined(BUILD_SBL)
 	FTFE_Type* pstFTFE = FTFE;	
 	
 	if (((pstFTFE -> FCNFG) & FTFE_FCNFG_RAMRDY_MASK) != FTFE_FCNFG_RAMRDY_MASK)	
@@ -65,10 +70,10 @@ void FEEHA_vStartSBL(void)
 
 Bool FEEHA_boCheckPartition(void)
 {
-	tstFTFEModule* pstFTFE;	
 	Bool boPartitionOK = false;
 	
 #ifdef BUILD_MK60
+	tstFTFEModule* pstFTFE;	
     pstFTFE = FTFE;
 
 	if (((pstFTFE -> FCNFG) & FTFE_FCNFG_EEERDY_MASK) != FTFE_FCNFG_EEERDY_MASK)
@@ -87,6 +92,7 @@ Bool FEEHA_boCheckPartition(void)
 
 Bool FEEHA_boNVMWorkingCopy(Bool boNVMToWorking, Bool boCheckCRC16MakeCRC16)
 {		
+	static uint32 u32LastWriteCount;
 	Bool boCopyOK = false;
 	puint16 pu16CRC16Computed;
 	puint16 pu16CRC16Stored;
@@ -197,7 +203,7 @@ Bool FEEHA_boNVMWorkingCopy(Bool boNVMToWorking, Bool boCheckCRC16MakeCRC16)
 				
 			if ((NULL != FEE_stWorkingPage.pu8WorkingData) && (*pu16CRC16Stored == *pu16CRC16Computed))
 			{
-				memcpy(FEE_stWorkingPage.pu8WorkingData, 0x000c0000, FEE_stWorkingPage.s16WorkingDataCount);
+				memcpy(FEE_stWorkingPage.pu8WorkingData, (void*)0x000c0000, FEE_stWorkingPage.s16WorkingDataCount);
 				boCopyOK = true;
 			}
 		}
@@ -205,7 +211,7 @@ Bool FEEHA_boNVMWorkingCopy(Bool boNVMToWorking, Bool boCheckCRC16MakeCRC16)
 	else
 	/* Copy working page to NVM page */
 	{
-		if (NULL != FEE_stWorkingPage.pu8WorkingData)
+		if ((NULL != FEE_stWorkingPage.pu8WorkingData) && (10000 < (FEE_u32RunCount - u32LastWriteCount)))
 		{
 			pu16CRC16Computed = (puint16)(CRC16_pu16CalcCRC(0xffff, FEE_stWorkingPage.pu8WorkingData,
 			FEE_stWorkingPage.s16WorkingDataCount - 2));
@@ -216,7 +222,29 @@ Bool FEEHA_boNVMWorkingCopy(Bool boNVMToWorking, Bool boCheckCRC16MakeCRC16)
 			/* Copy the computed CRC into the working page */
 			*pu16CRC16Stored = *pu16CRC16Computed;
 
+			uint32_t u32LoopDelay = 0x1800000;
+
+			TEPM_vEnableSequences(FALSE);
+			IRQ_vEnableRTOS(FALSE);
+
+			while (0 != u32LoopDelay)
+			{
+				u32LoopDelay--;
+			}
+
+			/* Erase flash */
+			flash_erase_all(0x00c0000);
+
+			/* Write working page to flash */
 			flash_write(0x00c0000, FEE_stWorkingPage.pu8WorkingData, FEE_stWorkingPage.s16WorkingDataCount , 1u);
+			u32LastWriteCount = FEE_u32RunCount;
+
+			u32LoopDelay = ~0;
+
+			while (0 != u32LoopDelay)
+			{
+				u32LoopDelay--;
+			}
 		}
 	}
 #endif //BUILD_SAM3X8E
@@ -226,14 +254,15 @@ Bool FEEHA_boNVMWorkingCopy(Bool boNVMToWorking, Bool boCheckCRC16MakeCRC16)
 
 Bool FEEHA_boWriteNVM(puint8 pu8SourceData, puint8 pu8DestData, uint32 u32DataByteCount)
 {
-	tstFTFEModule* pstFTFE;	
 	Bool boCopyOK = TRUE;		
-	uint32 u32SourceWord = (uint32)pu8SourceData;
-	uint32 u32DestinationWord = (uint32)pu8DestData;	
 	uint32 u32RetCode;
 
 
 #ifdef BUILD_MK60
+	tstFTFEModule* pstFTFE;	
+	uint32 u32SourceWord = (uint32)pu8SourceData;
+	uint32 u32DestinationWord = (uint32)pu8DestData;
+	tstFTFEModule* pstFTFE;	
     pstFTFE = FTFE;
 	u32RetCode = FTFx_OK;
 
@@ -289,22 +318,29 @@ Bool FEEHA_boWriteNVM(puint8 pu8SourceData, puint8 pu8DestData, uint32 u32DataBy
 		boCopyOK = FALSE;
 	}
 #endif //BUILD_MK60
+
+#ifdef BUILD_SAM3X8E
+	/* Write working page to flash */
+	u32RetCode = flash_write(0x00c0000 + (uint32)pu8DestData, (const void*)pu8SourceData, u32DataByteCount, 0u);
+
+	boCopyOK = 0 == u32RetCode;
+#endif
 	
 	return boCopyOK;
 }	
 
 
 Bool FEEHA_boNVMClear(void)
-{
-	tstFTFEModule* pstFTFE;		
+{	
 	Bool boClearOK = false;
+
+#ifdef BUILD_MK60
+	uint32 u32DestinationWord;
+	uint32 u32RetCode;
 	uint32 u32NVMWordCount;
 	uint32 u32NVMWordIDX;
 	uint32 u32SourceWord = 0;
-	uint32 u32DestinationWord;
-	uint32 u32RetCode;
-
-#ifdef BUILD_MK60
+	tstFTFEModule* pstFTFE;	
     pstFTFE = FTFE;
     u32RetCode = FTFx_OK;
 		
@@ -349,16 +385,16 @@ Bool FEEHA_boNVMClear(void)
 
 Bool FEEHA_boEraseForDownload(puint8 pu8TargetAddress, uint32 u32EraseCount)
 {
-	tstFTFEModule* pstFTFE;
-	uint32 u32ReturnCode;
-	uint16 u16WordCount;
-	uint16 u16SectorEraseCount;
-	uint32* pu32SectorWord;	
-	puint32 pu32TargetAddress;
 	Bool boEraseErr = false;
-	FEE_enPgmErrCode = enErrNone;
 	
 #ifdef BUILD_MK60
+	FEE_enPgmErrCode = enErrNone;	
+	uint32* pu32SectorWord;	
+	puint32 pu32TargetAddress;
+	uint16 u16WordCount;
+	uint16 u16SectorEraseCount;
+	uint32 u32ReturnCode;
+	tstFTFEModule* pstFTFE;
     pstFTFE = FTFE;
 	if (((pstFTFE -> FSTAT) & FTFE_FSTAT_CCIF_MASK) == FTFE_FSTAT_CCIF_MASK)
 	{
@@ -491,23 +527,18 @@ Bool FEEHA_boEraseForDownload(puint8 pu8TargetAddress, uint32 u32EraseCount)
 
 
 #endif //BUILD_SAM3X8E
-
-
-
 	
 	return boEraseErr;
 }
 
 static Bool FEEHA_boPartitionDFlash(void)
 {
-	tstFTFEModule* pstFTFE;
-	uint32* pu32SectorWord;
-
 	Bool boWriteErr = false;
 	
-	FEE_enPgmErrCode = enErrNone;
-
-#ifdef BUILD_MK60    
+#ifdef BUILD_MK60  
+	FEE_enPgmErrCode = enErrNone;  
+	uint32* pu32SectorWord;
+	tstFTFEModule* pstFTFE;
 	pstFTFE = FTFE;
 	
 	if (((pstFTFE -> FSTAT) & FTFE_FSTAT_CCIF_MASK) == FTFE_FSTAT_CCIF_MASK)
@@ -549,17 +580,16 @@ static Bool FEEHA_boPartitionDFlash(void)
 
 Bool FEEHA_boWriteSector(void)
 {
-	tstFTFEModule* pstFTFE;
+	Bool boWriteErr = false;
+	
+#ifdef BUILD_MK60
+	FEE_enPgmErrCode = enErrNone;
 	uint32* pu32ProgramWord;
 	uint32* pu32SourceWord;
 	uint32* pu32SectorWord;
-	uint16 u16WordCount;
-	uint16 u16ByteCount;	
-	Bool boWriteErr = false;
-	
-	FEE_enPgmErrCode = enErrNone;
-	
-#ifdef BUILD_MK60
+	uint16 u16WordCount;	
+	uint16 u16ByteCount;
+	tstFTFEModule* pstFTFE;
 	pstFTFE = FTFE;
 	if (((pstFTFE -> FSTAT) & FTFE_FSTAT_CCIF_MASK) == FTFE_FSTAT_CCIF_MASK)
 	{
@@ -714,7 +744,7 @@ Bool FEEHA_boStart(uint32* const u32Stat)
 
 void FEEHA_vRun(uint32* const u32Stat)
 {	
-
+	FEE_u32RunCount++;
 }
 
 void FEEHA_vTerminate(uint32* const u32Stat)
@@ -731,10 +761,10 @@ Bool FEEHA_boPartition(void)
 	return boRetVal;
 }
 
-
+#ifdef BUILD_MK60
 static void FEEHA_vInitFlashConfig(void)
 {
-#ifdef BUILD_MK60
+
 	FEE_stFlashSSDConfig.ftfxRegBase = FTFx_REG_BASE;
 	FEE_stFlashSSDConfig.PFlashBlockBase = PFLASH_BLOCK_BASE;
 	FEE_stFlashSSDConfig.PFlashBlockSize = PBLOCK_SIZE;
@@ -745,9 +775,8 @@ static void FEEHA_vInitFlashConfig(void)
 	FEE_stFlashSSDConfig.EEEBlockSize = 0;
 	FEE_stFlashSSDConfig.DebugEnable = DEBUGENABLE;
 	FEE_stFlashSSDConfig.CallBack = NULL_CALLBACK;
-#endif
 }
-
+#endif //BUILD_MK60
 
 
 

@@ -78,19 +78,19 @@
 	12,													\
 	256,                                                \
 	1024,												\
-	1024												\	
+	1024												\
 }
 
-#if BUILD_PBL
+#ifdef BUILD_PBL
 	#define DLL_xGetClientHandle()	0xf0000000
 #endif
-#if BUILD_SBL
+#ifdef BUILD_SBL
 	#define DLL_xGetClientHandle()	0xf0000000
 #endif
-#if BUILD_KERNEL
+#ifdef BUILD_KERNEL
 	#define DLL_xGetClientHandle()	OS_stSVCDataStruct.tClientHandle | 0xf0000000
 #endif
-#if BUILD_KERNEL_APP
+#ifdef BUILD_KERNEL_APP
 	#define DLL_xGetClientHandle()	OS_stSVCDataStruct.tClientHandle | 0xf0000000
 #endif
 
@@ -156,6 +156,8 @@ DLL_tDLLVirtualChannel DLL_tGetVirtualChannel(IOAPI_tenEHIOResource);
 Bool DLL_boInitDLLChannel(IOAPI_tenEHIOResource, IOAPI_tstPortConfigCB*);
 IOAPI_tenPortMode DLL_enGetChannelMode(IOAPI_tenEHIOResource);
 DLL_tstRXDLLData* DLL_pstGetRXBuffer(IOAPI_tenEHIOResource);
+void* DLL_pvGetBuffered(IOAPI_tenEHIOResource);
+void DLL_vIPBufferTX(IOAPI_tenEHIOResource, puint8, uint32);
 
 #endif //DLL_H
 

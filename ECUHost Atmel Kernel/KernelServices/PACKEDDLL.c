@@ -11,6 +11,7 @@
 /******************************************************************************/
 
 #include "DLL.h"
+#include "packeddll.h"
 
 void PACKEDDLL_vUnpack(DLL_tstRXDLLData* pRXFrame)
 {

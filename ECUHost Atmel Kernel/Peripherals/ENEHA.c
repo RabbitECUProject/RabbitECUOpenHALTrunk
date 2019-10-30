@@ -48,6 +48,7 @@ void ENEHA_vTerminate(uint32* const u32Stat)
 
 static void ENEHA_vInit(void)
 {
+#ifdef BUILD_MK60	
 	tstENETConfig stEnetConfig;
 	MPU_Type* pstMPU = MPU;
 	tstENETModule* pstENET;	
@@ -55,7 +56,6 @@ static void ENEHA_vInit(void)
 	
 	REGSET_vInitReg32(&ENEHA_rastENEReg32Val[0]);	
 
-#ifdef BUILD_MK60
 	pstENET = ENET;
     stEnetConfig.ch = 1;            
 	stEnetConfig.interface = mac_rmii;   
@@ -106,16 +106,6 @@ static void ENEHA_vInit(void)
 	eth_phy_reg_dump(stEnetConfig.ch, ENE_nPHYAddress);		
 	enet_start(stEnetConfig.ch);
 	nbuf_start_rx(stEnetConfig.ch);
-#endif //BUILD_MK60
-}
-
-void ENE_vEnableInterrupts(void)
-{
-	tstENETModule* pstENET;	
-	
-#ifdef BUILD_MK60
-	pstENET = ENET;
-	pstENET -> EIMR = ENET_EIR_TXF_MASK | ENET_EIR_RXF_MASK;
 #endif //BUILD_MK60
 }
 

@@ -15,6 +15,7 @@
 
 #include <string.h>
 #include "declarations.h"
+#include "compiler.h"
 
 #ifdef OS_C
 #include "OSHA.h"

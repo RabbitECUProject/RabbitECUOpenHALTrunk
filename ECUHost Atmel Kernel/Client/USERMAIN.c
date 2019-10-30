@@ -18,6 +18,7 @@
 uint32 USER_u32Stat;
 
 /* GLOBAL FUNCTION DEFINITIONS ************************************************/
+int usermain(void);
 
 #if (BUILD_USER == 1)
 int usermain(void)

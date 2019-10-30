@@ -240,7 +240,16 @@ uint32 CANHA_u32InitBus(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tstPortConfi
 			stMBConfig.uc_length = 8;
 			stMBConfig.uc_tx_prio = 0;
 			stMBConfig.ul_status = 0;
-			stMBConfig.ul_id_msk = 0x7ff;
+
+			if (pstPortConfigCB->enLLProtocol == PROTAPI_enLLCAN11)
+			{
+				stMBConfig.ul_id_msk = 0x7ff;
+			}
+			else
+			{
+				stMBConfig.ul_id_msk = 0x7ffffff;
+			}
+
 			stMBConfig.ul_id = pstPortConfigCB->stNetConfig.uNetInfo.stCANNetInfo.u32CANDiagAddress;
 			stMBConfig.ul_fid = 0;
 			stMBConfig.ul_datal = 0;
@@ -248,7 +257,6 @@ uint32 CANHA_u32InitBus(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tstPortConfi
 			can_mailbox_init(pstCAN, &stMBConfig);
 
 			stMBConfig.ul_mb_idx++;//1
-			stMBConfig.ul_id_msk = 0x7ff;
 			stMBConfig.ul_id = pstPortConfigCB->stNetConfig.uNetInfo.stCANNetInfo.u32GlobalCANDiagAddress;
 			can_mailbox_init(pstCAN, &stMBConfig);
 
@@ -398,8 +406,6 @@ void CANHA_vInitTransfer(IOAPI_tstTransferCB* pstTransferCB)
 #endif
 
 #ifdef BUILD_SAM3X8E
-	uint32 u32MBIDX;
-	
 	switch (pstTransferCB->enEHIOResource)
 	{
 		case EH_VIO_CAN1:
@@ -455,6 +461,8 @@ Bool CANHA_boReadMB(tstCANModule* pstCAN, CANHA_tstCANMB* pstCANMB)
 	if (u8MBIDX < 8)
 	{
 		mailbox.ul_mb_idx = u8MBIDX;
+		mailbox.ul_status = pstCAN->CAN_MB[u8MBIDX].CAN_MSR;
+
 		can_mailbox_read(pstCAN, &mailbox);
 
 		pstCANMB->u32ID = mailbox.ul_fid;
@@ -473,35 +481,43 @@ Bool CANHA_boReadMB(tstCANModule* pstCAN, CANHA_tstCANMB* pstCANMB)
     return boReadOK;
 }
 
-static Bool CANHA_boWriteMB(tstCANModule* pstCAN, PROTAPI_tstCANMsg* pstCANMSG)
+static Bool  __attribute__((optimize("-O0"))) CANHA_boWriteMB(tstCANModule* pstCAN, PROTAPI_tstCANMsg* pstCANMSG)
 {
 	Bool boWriteOK = false;
 
 #ifdef BUILD_SAM3X8E
 	can_mb_conf_t mailbox;
 	uint8 u8MBIDX = 6;
-	uint8 u32MBMask = 0x40;
 	uint32 u32TempSource;
 	uint32 u32TempDest;
 
-	mailbox.ul_mb_idx = u8MBIDX;
-	mailbox.ul_id = (pstCANMSG->u32ID) << 0x12;//matthew macro?
-	mailbox.uc_length = pstCANMSG->u8DLC;
-	mailbox.uc_id_ver = 0;
+	if ((pstCANMSG->u32ID) < 0x7ff)
+	{
+		//pstCANMSG->u32ID = 0x100;//debugging
+	//}
+	//else
+	//{
+		//boWriteOK = true;
+	//}
 
-	u32TempSource = pstCANMSG->u32DWH;
-	u32TempDest = HTONL(u32TempSource);
-	mailbox.ul_datal = u32TempDest;
+		mailbox.ul_mb_idx = u8MBIDX;
+		mailbox.ul_id = (pstCANMSG->u32ID) << 0x12;//matthew macro?
+		mailbox.uc_length = pstCANMSG->u8DLC;
+		mailbox.uc_id_ver = 0;
 
-	u32TempSource = pstCANMSG->u32DWL;
-	u32TempDest = HTONL(u32TempSource);
-	mailbox.ul_datah = u32TempDest;
+		u32TempSource = pstCANMSG->u32DWH;
+		u32TempDest = HTONL(u32TempSource);
+		mailbox.ul_datal = u32TempDest;
 
-	can_mailbox_write(pstCAN, &mailbox);
+		u32TempSource = pstCANMSG->u32DWL;
+		u32TempDest = HTONL(u32TempSource);
+		mailbox.ul_datah = u32TempDest;
 
-	//can_mailbox_send_transfer_cmd(pstCAN, &mailbox);
-	can_global_send_transfer_cmd(pstCAN, 0x40);
-	boWriteOK = true;
+		can_mailbox_write(pstCAN, &mailbox);
+
+		can_mailbox_send_transfer_cmd(pstCAN, &mailbox);
+		boWriteOK = true;
+	}
 
 #endif //BUILD_SAM3X8E
     return boWriteOK;

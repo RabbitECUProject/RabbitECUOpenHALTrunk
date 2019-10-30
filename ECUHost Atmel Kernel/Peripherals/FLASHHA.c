@@ -712,6 +712,7 @@ uint32_t flash_is_locked(uint32_t ul_start, uint32_t ul_end)
 		}
 	}
 
+	UNUSED(ul_error);
 	return ul_num_locked_regions;
 }
 

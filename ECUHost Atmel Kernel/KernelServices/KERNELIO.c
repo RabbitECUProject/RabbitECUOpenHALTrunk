@@ -1,22 +1,28 @@
 /******************************************************************************/
-/*    Copyright (c) 2016 MD Automotive Controls. Original Work.               */
-/*    License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher   */
+/*    Copyright (c) 2018 MD Automotive Controls. Original Work.               */
 /******************************************************************************/
-/* CONTEXT:KERNEL                                                             */                      
+/* CONTEXT:KERNEL                                                             */
 /* PACKAGE TITLE:      XXX                                                    */
 /* DESCRIPTION:        XXX                                                    */
 /* FILE NAME:          XXX.c                                                  */
-/* REVISION HISTORY:   19-08-2016 | 1.0 | Initial revision                    */
+/* REVISION HISTORY:   20-06-2018 | 1.0 | Initial revision                    */
 /*                                                                            */
 /******************************************************************************/
+/* Licensing Information
+Licensor: MDAC
+Licensed to: PRD
+Licensed software: ECUHost Kernel for Rabbit ECU
+License number: XXX
+*/
+
+
 #include "CPUAbstract.h"
 #include "kernelio.h"
 
-const IO_tstEHPadResource IO_rastEHPadResource[IO_Total_Discrete_Count + KERNEL_DISCRETE_HIDDEN] = IO_nPadResourceMap;
+const IO_tstEHPadResource IO_rastEHPadResource[IO_Total_Discrete_Count + KERNEL_DISCRETE_HIDDEN + 1] = IO_nPadResourceMap;
 IOAPI_tenEHIOResource IO_aenEHIOMasterList[RESM_nMastersMax];
 
 static void IO_vSetIOMux(IOAPI_tenEHIOResource, IOAPI_tenEHIOType, uint32);
-static void IO_vClearMasterList(void);
 
 void IO_vInitDIOResource(IOAPI_tenEHIOResource enIOResource, IOAPI_tenEHIOType enIOType, IOAPI_tenDriveStrength enDriveStrength)
 {
@@ -33,11 +39,9 @@ void IO_vInitADCResource(IOAPI_tenEHIOResource enIOResource, IOAPI_tenEHIOType e
 		|| ((0u != IO_rastEHPadResource[enIOResource].boIsADD) && (IOAPI_enADD == enEHIOType)))
 	/* Init DIO only if port bit non zero signifies DIO supported */
 	{	
-#if BUILD_PBL
-#elif BUILD_SBL
-#elif BUILD_KERNEL	
+#if defined(BUILD_PBL) || defined(BUILD_SBL) || defined(BUILD_KERNEL)	
 		ADC_vInitADCResource(enIOResource, enEHIOType, pstADCCB);	
-#elif BUILD_KERNEL_APP
+#elif defined(BUILD_KERNEL_APP)
 		ADC_vInitADCResource(enIOResource, enEHIOType, pstADCCB);			
 #endif		
 	}
@@ -49,11 +53,9 @@ void IO_vInitDACResource(IOAPI_tenEHIOResource enIOResource, IOAPI_tenEHIOType e
 
 	/* Init DIO only if port bit non zero signifies DIO supported */
 	{	
-#if BUILD_PBL
-#elif BUILD_SBL		
-#elif BUILD_KERNEL	
+#if defined(BUILD_PBL) || defined(BUILD_SBL) || defined(BUILD_KERNEL)	
 		DAC_vInitDACResource(enIOResource, pstDACCB);	
-#elif BUILD_KERNEL_APP	
+#elif defined(BUILD_KERNEL_APP	)
 		DAC_vInitDACResource(enIOResource, pstDACCB);			
 #endif		
 	}
@@ -62,17 +64,15 @@ void IO_vInitDACResource(IOAPI_tenEHIOResource enIOResource, IOAPI_tenEHIOType e
 
 SYSAPI_tenSVCResult IO_enInitCommsResource(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tstPortConfigCB* pstPortConfigCB)
 {
-	SYSAPI_tenSVCResult enSVCResult;
+	SYSAPI_tenSVCResult enSVCResult = SYSAPI_enFail;
 	uint32 u32MuxSel = 0;
 	
 	if ((EH_FIRST_IIC <= enEHIOResource) &&
 	(EH_LAST_IIC >= enEHIOResource))
 	{
-#if BUILD_PBL
-#elif BUILD_SBL
-#elif BUILD_KERNEL
+#if defined(BUILD_PBL) || defined(BUILD_SBL) || defined(BUILD_KERNEL)	
 		enSVCResult = IIC_enInitBus(enEHIOResource, pstPortConfigCB);
-#elif BUILD_KERNEL_APP
+#elif defined(BUILD_KERNEL_APP)
 		enSVCResult = IIC_enInitBus(enEHIOResource, pstPortConfigCB);		
 #endif		
 	}
@@ -90,7 +90,8 @@ SYSAPI_tenSVCResult IO_enInitCommsResource(IOAPI_tenEHIOResource enEHIOResource,
 	{
 		u32MuxSel = CAN_u32InitBus(enEHIOResource, pstPortConfigCB);
 		IO_vSetIOMux(pstPortConfigCB->stPinConfig.uPinInfo.stCANPinInfo.enRXPin, IOAPI_enCANBus, u32MuxSel);
-		IO_vSetIOMux(pstPortConfigCB->stPinConfig.uPinInfo.stCANPinInfo.enTXPin, IOAPI_enCANBus, u32MuxSel);		
+		IO_vSetIOMux(pstPortConfigCB->stPinConfig.uPinInfo.stCANPinInfo.enTXPin, IOAPI_enCANBus, u32MuxSel);	
+		enSVCResult = SYSAPI_enOK;	
 	}	
 
 	else if ((EH_FIRST_SPI <= enEHIOResource) &&
@@ -100,6 +101,7 @@ SYSAPI_tenSVCResult IO_enInitCommsResource(IOAPI_tenEHIOResource enEHIOResource,
 		IO_vSetIOMux(pstPortConfigCB->stPinConfig.uPinInfo.stSPIPinInfo.enMOSIPin, IOAPI_enSPIBus, u32MuxSel);
 		IO_vSetIOMux(pstPortConfigCB->stPinConfig.uPinInfo.stSPIPinInfo.enMISOPin, IOAPI_enSPIBus, u32MuxSel);
 		IO_vSetIOMux(pstPortConfigCB->stPinConfig.uPinInfo.stSPIPinInfo.enSCKPin, IOAPI_enSPIBus, u32MuxSel);
+		enSVCResult = SYSAPI_enOK;	
 	}
 
 	else if ((EH_VIO_USB <= enEHIOResource) &&
@@ -121,63 +123,9 @@ SYSAPI_tenSVCResult IO_enInitTEPMChannel(IOAPI_tenEHIOResource enEHIOResource, T
 {
 	SYSAPI_tenSVCResult enSVCResult = SYSAPI_enOK;
 	uint32 u32MuxSel;
-	uint32 u32Masters;
-	uint32 u32MasterIDX = 0;
-	Bool boMasterOK = FALSE;
-	SYSAPI_ttClientHandle tMasterClientHandle;
-	
-	IO_vClearMasterList();
-	u32Masters = RESM_u32GetMasterEHIOResourceList(enEHIOResource, (IOAPI_tenEHIOResource*)&IO_aenEHIOMasterList);
-	
-#if BUILD_PBL
-#elif BUILD_SBL
-#elif BUILD_KERNEL
-	while (u32Masters > u32MasterIDX)
-	{
-		tMasterClientHandle = RESM_u32GetMasterEHIOResource(IO_aenEHIOMasterList[u32MasterIDX]);
-		if (OS_stSVCDataStruct.tClientHandle != tMasterClientHandle)
-		{
-			if (0 == tMasterClientHandle)
-			{
-				enSVCResult = SYSAPI_enMasterResourceUninitialised;
-			}
-			else
-			{
-				enSVCResult = SYSAPI_enMasterResourceMismatch;				
-			}
-			boMasterOK = FALSE;
-			OS_stSVCDataStruct.pvData = (void*)&IO_aenEHIOMasterList;
-		}
-		u32MasterIDX++;
-	}
-		
-	u32MuxSel = TEPM_u32InitTEPMChannel(enEHIOResource, pstTEPMChannelCB);
-#elif BUILD_KERNEL_APP
-	while (u32Masters > u32MasterIDX)
-	{
-		tMasterClientHandle = RESM_u32GetMasterEHIOResource(IO_aenEHIOMasterList[u32MasterIDX]);
-		if (OS_stSVCDataStruct.tClientHandle != tMasterClientHandle)
-		{
-			if (0 == tMasterClientHandle)
-			{
-				enSVCResult = SYSAPI_enMasterResourceUninitialised;
-			}
-			else
-			{
-				enSVCResult = SYSAPI_enMasterResourceMismatch;				
-			}
-			boMasterOK = FALSE;
-			OS_stSVCDataStruct.pvData = (void*)&IO_aenEHIOMasterList;
-		}
-		u32MasterIDX++;
-	}
-		
 	u32MuxSel = TEPM_u32InitTEPMChannel(enEHIOResource, pstTEPMChannelCB);	
-#endif	
 	IO_vSetIOMux(enEHIOResource, IOAPI_enTEPM, u32MuxSel);
 	
-	/* TODO suppress warning */
-	(void)boMasterOK;
 	return enSVCResult;
 }
 
@@ -192,7 +140,7 @@ void IO_vAssertDIOResource(IOAPI_tenEHIOResource enIOResource, IOAPI_tenTriState
 
 Bool IO_boGetDIOResource(IOAPI_tenEHIOResource enIOResource)
 {
-	Bool boPinState;
+	Bool boPinState = false;
 
 	if (0u != IO_rastEHPadResource[enIOResource].u32PortBit)
 	/* Assert DIO only if port bit non zero signifies DIO supported */
@@ -226,12 +174,3 @@ static void IO_vSetIOMux(IOAPI_tenEHIOResource enIOResource, IOAPI_tenEHIOType e
 	PIM_vSetPortMux(enPort, enIOType, u32PortBit, u32MuxSel);
 }
 
-static void IO_vClearMasterList(void)
-{
-	uint32 u32MasterIDX;
-	
-	for (u32MasterIDX = 0; u32MasterIDX < RESM_nMastersMax; u32MasterIDX++)
-	{	
-		IO_aenEHIOMasterList[u32MasterIDX] = EH_IO_Invalid;
-	}
-}

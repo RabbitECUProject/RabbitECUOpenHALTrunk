@@ -25,6 +25,9 @@
 #define TPS_nDerivCalcRate (20u)
 #define TPS_nRunRate    (1000u)
 #define TPS_nThrottleMovingCounterDurationMs (500u)
+#define TPS_nFirstDLimitPos   (600u)
+#define TPS_nFirstDLimitNeg   (-600u)
+#define TPS_nSecondDLimit   (25u)
 
 #ifdef EXTERN
 	#undef EXTERN
@@ -35,7 +38,7 @@
 	#define EXTERN extern
 #endif
 
-#define TPS_nAreaVolRatioData\
+#define TPS_nAreaVolRatioData \
 {0xFFFF,\
 	0x619E,\
 	0x186B,\
@@ -54,7 +57,7 @@
 	0x30,\
 0x1F}
 
-#define TPS_nAngleSpreadData\
+#define TPS_nAngleSpreadData \
 {0x0,\
 0xB32,\
 0x1664,\
@@ -73,6 +76,8 @@
 0x10CB4,\
 0x15F8E}
 
+#define TPS_nTransitionCounterTipIn 500
+
 
 /* GLOBAL VARIABLE DECLARATIONS ***********************************************/
 EXTERN uint32 TPS_u32ADCRaw;
@@ -84,11 +89,24 @@ EXTERN GPM6_ttTheta TPS_tThetaRaw;
 EXTERN GPM6_ttTheta TPS_tThetaPreFiltered;
 EXTERN GPM6_ttTheta TPS_tThetaFiltered;
 //ASAM mode=readvalue name="Throttle Angle" type=uint32 offset=0 min=0 max=90 m=0.001 b=0 units="degrees" format=3.1 help="Throttle Angle"
-EXTERN GPM6_ttTheta TPS_tThetaDerivative;
+EXTERN GPM6_ttThetaDT TPS_tThetaDerivative;
 //ASAM mode=readvalue name="TPS Movement Rate" type=sint32 offset=0 min=-1000 max=1000 m=0.001 b=0 units="degrees/s" format=5.3 help="Throttle Angle Movement"
+EXTERN uint32 TPS_tThetaDerivativeNormalised;
 EXTERN uint32 TPS_u32ManifoldVolumeTau;
 EXTERN uint32 TPS_u32AreaVolRatio;
 EXTERN uint32 TPS_u32ThrottleMovingCounter;
+//ASAM mode=readvalue name="TPS Moving Counter" type=int32 offset=0 min=0 max=2000 m=1 b=0 units="dl" format=4.0 help="TPS Moving Counter"
+EXTERN Bool TPS_boThrottleClosed;
+EXTERN uint16 TPS_u16CANTPSDeltaNegCount;
+//ASAM mode=readvalue name="CAN TPS Move Neg Count" type=uint16 offset=0 min=0 max=1000 m=1 b=0 units="dl" format=4.0 help="Throttle Angle Movement"
+EXTERN uint16 TPS_u16CANTPSDeltaPosCount;
+//ASAM mode=readvalue name="CAN TPS Move Pos Count" type=uint16 offset=0 min=0 max=1000 m=1 b=0 units="dl" format=4.0 help="Throttle Angle Movement"
+EXTERN uint32 TPS_u32MovingTPSEnrichment;
+//ASAM mode=readvalue name="Moving TPS Enrichment" type=int32 offset=0 min=0 max=2000 m=1 b=0 units="dl" format=4.0 help="Throttle Enrichment"
+EXTERN uint32 TPS_u32TipInEnrichment;
+//ASAM mode=readvalue name="Tip In Enrichment" type=int32 offset=0 min=0 max=2000 m=1 b=0 units="dl" format=4.0 help="Tip In Enrichment"
+EXTERN uint32 TPS_u32TransitionCounter;
+//ASAM mode=readvalue name="TPS Transition Counter" type=int32 offset=0 min=0 max=2000 m=1 b=0 units="dl" format=4.0 help="TPS Transition Counter"
 
 /* GLOBAL FUNCTION DECLARATIONS ***********************************************/
 void TPS_vStart(uint32 * const pu32Arg);

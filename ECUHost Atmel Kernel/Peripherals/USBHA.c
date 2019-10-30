@@ -122,7 +122,7 @@ void USBHA_vSend(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8Data, uint32 u3
 
 puint8 USBHA_pu8Receive(IOAPI_tenEHIOResource enEHIOResource)
 {
-
+	return NULL;
 }
 
 

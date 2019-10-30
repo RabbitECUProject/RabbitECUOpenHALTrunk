@@ -63,16 +63,28 @@ void SRLTFR_vTerminate(puint32 const pu32Arg)
 SYSAPI_tenSVCResult SRLTFR_enEnqueue(IOAPI_tstTransferCB* pstTransferCB)
 {
 	SYSAPI_tenSVCResult enSVCResult = SYSAPI_enQueueFull;
+	uint32 u32Flag;
 	
+
 	if (!CQUEUE_xIsFull(&stTransferQueue))
 	{
 		memcpy((void*)&astTransferInfo[stTransferQueue.u32Head],
-					 (void*)pstTransferCB,
-					  sizeof(IOAPI_tstTransferCB));	
+						 (void*)pstTransferCB,
+						  sizeof(IOAPI_tstTransferCB));	
 
 		enSVCResult = SYSAPI_enOK;
 		CQUEUE_xAddItem(&stTransferQueue);
-	}		
+
+		if (TRUE == pstTransferCB->boBlockingMode)
+		{
+			SRLTFR_vRun(&u32Flag);
+			enSVCResult = SYSAPI_enOK;
+
+			/* Clear the queue because it was all sent in blocking mode */
+			CQUEUE_xRemoveItem(&stTransferQueue);
+		}
+	}
+	
 	
 	return enSVCResult;
 }

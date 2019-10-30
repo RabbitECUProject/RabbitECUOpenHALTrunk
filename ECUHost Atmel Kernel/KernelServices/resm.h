@@ -41,7 +41,6 @@ void RESM_vStart(uint32* const u32Stat);
 void RESM_vRun(uint32* const u32Stat);
 void RESM_vTerminate(uint32* const u32Stat);
 SYSAPI_ttClientHandle RESM_RequestEHIOResource(IOAPI_tenEHIOResource, SYSAPI_ttClientHandle);
-uint32 RESM_u32GetMasterEHIOResourceList(IOAPI_tenEHIOResource, IOAPI_tenEHIOResource*);
 SYSAPI_ttClientHandle RESM_u32GetMasterEHIOResource(IOAPI_tenEHIOResource);
 
 #endif //RESM_H

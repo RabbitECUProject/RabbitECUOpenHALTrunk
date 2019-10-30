@@ -21,6 +21,7 @@
 #if BUILD_USER
 
 #include "SETUP.h"
+#include "diag.h"
 
 
 /* LOCAL VARIABLE DEFINITIONS (STATIC) ****************************************/
@@ -55,6 +56,8 @@ Bool SETUP_boSetupADSE(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tenEHIOType e
 	{	
 		*pu32Arg |= (uint32)SYSAPI_enResourceInitFailed;/*CR1_13*/
 	}
+
+	return TRUE;
 }
 
 TABLEAPI_ttTableIDX SETUP_tSetupTable(void* pvTableData, void* pvOutputData, TYPE_tenDataType enDataType, sint16 s16TableSize, SPREADAPI_ttSpreadIDX tSpreadIDX, TABLEAPI_pfPIDResultCB pfResultCB)
@@ -102,7 +105,8 @@ MAPSAPI_ttMapIDX SETUP_tSetupMap(void* pvMapData, void* pvOutputData, TYPE_tenDa
 SPREADAPI_ttSpreadIDX SETUP_tSetupSpread(void* pvSourceData, void* pvSpreadData, TYPE_tenDataType enDataType, sint16 s16SpreadSize, SPREADAPI_tenSpreadRate enSpreadRate, SPREADAPI_pfPIDResultCB pfResultCB)
 {
 	SPREADAPI_tstSpreadCB stSpreadCB;	
-	SPREADAPI_ttSpreadIDX tSpreadIDX;		
+	SPREADAPI_ttSpreadIDX tSpreadIDX;	
+	USERDIAG_tstSpreadIDXAddressPair stSpreadIDXAddressPair;		
 	
 	stSpreadCB.pvSourceData = pvSourceData;
 	stSpreadCB.pvSpreadData = pvSpreadData;
@@ -113,7 +117,14 @@ SPREADAPI_ttSpreadIDX SETUP_tSetupSpread(void* pvSourceData, void* pvSpreadData,
 	
 	USER_vSVC(SYSAPI_enInitialiseSpreadResource, (void*)&stSpreadCB, NULL, NULL);	
 	tSpreadIDX = (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)	?
-				(SPREADAPI_ttSpreadIDX)pstSVCDataStruct->tClientHandle : -1;		
+				(SPREADAPI_ttSpreadIDX)pstSVCDataStruct->tClientHandle : -1;	
+				
+	if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)
+	{
+		stSpreadIDXAddressPair.pData = pvSpreadData;
+		stSpreadIDXAddressPair.tSpreadIDX = tSpreadIDX;
+		USERDIAG_vAddIDXAddressPair(&stSpreadIDXAddressPair);
+	}		
 
 	return tSpreadIDX;
 }
@@ -138,7 +149,7 @@ void SETUP_vSetupDigitalIO(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tenEHIOTy
 	}
 }
 
-SETUP_vSetDigitalIOHigh(IOAPI_tenEHIOResource enEHIOResource)
+void SETUP_vSetDigitalIOHigh(IOAPI_tenEHIOResource enEHIOResource)
 {
     IOAPI_tenTriState enTriState = IOAPI_enHigh;
 
@@ -146,7 +157,7 @@ SETUP_vSetDigitalIOHigh(IOAPI_tenEHIOResource enEHIOResource)
 	    (void*)&enTriState,	(void*)NULL);
 }
 
-SETUP_vSetDigitalIOLow(IOAPI_tenEHIOResource enEHIOResource)
+void SETUP_vSetDigitalIOLow(IOAPI_tenEHIOResource enEHIOResource)
 {
 	IOAPI_tenTriState enTriState = IOAPI_enLow;
 
@@ -164,6 +175,12 @@ Bool SETUP_vGetDigitalIO(IOAPI_tenEHIOResource enEHIOResource)
 	boResult = *(Bool*)pstSVCDataStruct->pvArg1;
 
 	return boResult;
+}
+
+void SETUP_vSetupSimpleCamSync(IOAPI_tenEHIOResource enEHIOResource, Bool boCamSyncHighLate, uint32 u32CamSyncSampleToothCount)
+{
+	USER_vSVC(SYSAPI_enSetupSimpleCamSync, (void*)&enEHIOResource,
+	(void*)&boCamSyncHighLate,	(void*)&u32CamSyncSampleToothCount);
 }
 
 #endif //BUILD_USER

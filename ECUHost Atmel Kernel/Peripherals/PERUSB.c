@@ -53,7 +53,7 @@ void USB_vSend(IOAPI_tenEHIOResource enEHIOResource, uint8* pu8Data, uint32 u32T
 	USBHA_vSend(enEHIOResource, pu8Data, u32TXByteCount);
 }
 
-uint8 USB_u8Receive(IOAPI_tenEHIOResource enEHIOResource)
+puint8 USB_pu8Receive(IOAPI_tenEHIOResource enEHIOResource)
 {
 	return USBHA_pu8Receive(enEHIOResource);	
 }

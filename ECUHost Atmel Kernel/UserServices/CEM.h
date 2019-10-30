@@ -21,6 +21,8 @@
 
 #define CEM_xEdgesCount (CEM_u8FallingEdgesCount + CEM_u8RisingEdgesCount)
 #define CEM_nEdgesMax   80u
+#define CEM_nSeqGroupCount 2
+#define CEM_nSeqcount 4
 
 #ifdef EXTERN
 	#undef EXTERN
@@ -35,26 +37,45 @@ typedef enum
 {
    CEM_enAutocorrelationMode,
    CEM_enOneGroupMissing,
+   CEM_enTypeSuzukiM15A,
    CEM_enModeCount
 } CEM_tenTriggerType;
 
+typedef enum
+{
+	CEM_enStartGap,
+	CEM_enEndGap,
+	CEM_enSameGap
+} CEM_enGapStatus;
+
 EXTERN uint32 CEM_u32GlobalCycleFraction;
+EXTERN uint8 CEM_u32SyncPoints;
+EXTERN uint8 CEM_u8PhaseRepeats;
 EXTERN uint32 CEM_u32GlobalCycleTime;
-EXTERN TEPMAPI_ttEventTime CEM_tGlobalCycleOrigin;
 EXTERN uint32 CEM_u32GlobalCycleOriginCount;
 EXTERN TEPMAPI_ttEventTime CEM_tEventTimeLast;
+EXTERN TEPMAPI_ttEventTime CEM_tSyncTimeLast;
+EXTERN uint32 CEM_u32SequenceFraction;
 EXTERN uint32 CEM_u32CrankErrorCounts;
 //ASAM mode=readvalue name="Crank Error Counts" type=uint32 offset=0 min=0 max=65535 m=1 b=0 units="counts" format=5.3 help="Crank Error Counts"
+EXTERN uint32 CEM_u32CamErrorCounts;
+//ASAM mode=readvalue name="Cam Error Counts" type=uint32 offset=0 min=0 max=65535 m=1 b=0 units="counts" format=5.3 help="Cam Error Counts"
+EXTERN uint32 CEM_u32CrankRunningErrorCounts;
+//ASAM mode=readvalue name="Crank Running Error Counts" type=uint32 offset=0 min=0 max=65535 m=1 b=0 units="counts" format=5.3 help="Crank Running Error Counts"
+EXTERN uint32 CEM_u32CamRunningErrorCounts;
+//ASAM mode=readvalue name="Cam Running Error Counts" type=uint32 offset=0 min=0 max=65535 m=1 b=0 units="counts" format=5.3 help="Cam Running Error Counts"
 
 void CEM_vStart(uint32* const);
 void CEM_vRun(uint32* const);
 void CEM_vTerminate(uint32* const);
-Bool CEM_boPopulateCrankEdgeArrays(puint16 const, const Bool, IOAPI_tenEdgePolarity);
+Bool CEM_boPopulateCrankEdgeArrays(puint16 const pu16EdgeFractionArray, const Bool boFirstRising, IOAPI_tenEdgePolarity enEdgePolarity, uint32_t u32TriggerType);
 Bool CEM_boPopulateSyncPointsArray(puint16 const);
 void CEM_vPrimaryEventCB(IOAPI_tenEHIOResource, TEPMAPI_ttEventTime);
 void CEM_vPhaseEventCB(IOAPI_tenEHIOResource, TEPMAPI_ttEventTime);
+TEPMAPI_ttEventTime CEM_ttGetModulePhase(uint32 u32ChannelIDX);
 void CEM_vFreqEventCB(IOAPI_tenEHIOResource, TEPMAPI_ttEventTime);
-TEPMAPI_ttEventTime CEM_ttGetModulePhase(TEPMHA_tenModule);
+void CEM_vSetupSimpleCamSync(IOAPI_tenEHIOResource, Bool, uint32);
+void CEM_vSetSyncPhaseRepeats(uint32 u32SyncPhaseRepeats);
 
 #endif //CEM_H
 

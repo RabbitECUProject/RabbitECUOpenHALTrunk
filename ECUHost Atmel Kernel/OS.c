@@ -52,8 +52,7 @@ typedef struct
 } OS_tstCLIENTTaskNodePool;
 
 /* local functions */
-void OS_vBackgroundDispatcher(void);
-Bool OS_boCreateThread(OS_tenQueueType, TASK_tProgramCounter);
+static Bool OS_boCreateThread(OS_tenQueueType, TASK_tProgramCounter);
 Bool OS_boCreateDispatcherTask(OS_tenQueueType, TASK_tProgramCounter);
 void OS_vSystemDummyThread(uint32* const);
 static void OS_vRunQueues(void);
@@ -300,7 +299,9 @@ OS_tenOSKernelMode OS_enGetOSKernelMode(void)
 
 void OS_vOverrunTaskReport(OS_tenQueueType enQueueType)
 {
-	
+	static uint32 u32OverrunCount = 0;
+
+	u32OverrunCount++;	
 }
 
 void OS_vSuspendThread(OS_tenQueueType enQueueType)
@@ -308,7 +309,7 @@ void OS_vSuspendThread(OS_tenQueueType enQueueType)
 	
 }
 
-Bool OS_boCreateThread(OS_tenQueueType enQueueType, TASK_tProgramCounter pEntryPoint)
+static Bool OS_boCreateThread(OS_tenQueueType enQueueType, TASK_tProgramCounter pEntryPoint)
 {
 	/* add the thread to system node pool */
 	OS_stKERNELTaskNodePool.stqTask[OS_stKERNELTaskNodePool.u32TotalCount].stTask.tTaskID = 1000;
@@ -372,6 +373,10 @@ SYSAPI_tenSVCResult OS_enAddTaskToQueue(OS_tenQueueType enQueueType, struct TASK
 			{				
 				queue_task(&OS_stCLIENTTaskNodePool.stqTask[OS_stCLIENTTaskNodePool.u32TotalCount++], &OS_apstTaskQueue[OS_enCLIENTQueueTerminate]);		
 				OS_stCLIENTTaskNodePool.u32TerminateCount++;
+				break;
+			}
+			default:
+			{
 				break;
 			}						
 		}

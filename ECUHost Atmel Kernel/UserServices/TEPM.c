@@ -10,6 +10,7 @@
 /* REVISION HISTORY:   19-08-2016 | 1.0 | Initial revision                    */
 /*                                                                            */
 /******************************************************************************/
+#define _TEPM_C
 
 #include <string.h>
 #include "build.h"
@@ -39,7 +40,6 @@ TEPMAPI_tstTimedKernelEvent TEPM_aastTimedKernelEvents[TEPMHA_nEventChannels][TE
 const TEPM_tstTEPMChannel TEPM_rastTEPMChannel[] = TEPMHA_nChannelInfo;
 const IOAPI_tenEHIOResource TEPM_rastTEPMFastChannel[] = TEPMHA_nChannelFastInfo;
 const IOAPI_tenEHIOResource TEPM_rastTEPMSlowChannel[] = TEPMHA_nChannelSlowInfo;
-const TEPM_tstMasters TEPM_rastMasters[] = TEPMHA_nMasterInfo;
 CQUEUE_tstQueue TEPM_astProgramKernelQueue[TEPMHA_nEventChannels];
 CQUEUE_tstQueue TEPM_astProgramUserQueue[TEPMHA_nEventChannels];
 TEPMAPI_tpfEventCB TEPM_atpfEventKernelCB[TEPMHA_nEventChannels];
@@ -48,15 +48,20 @@ TEPM_tstTEPMResult TEPM_astEventResult[TEPMHA_nEventChannels];
 MSG_tstMBX* TEPM_apstMBX[TEPMHA_nEventChannels];
 Bool TEPM_aboTEPMChannelModeInput[TEPMHA_nEventChannels];
 Bool TEPM_aboTEPMChannelModeOutput[TEPMHA_nEventChannels];
+Bool TEPM_aboTEPMChannelAsyncRequestEnable[TEPMHA_nEventChannels];
+uint32 TEPM_au32TEPMChannelSequence[TEPMHA_nEventChannels];
 uint32 TEPM_u32PortClockRequested;
-Bool boSynchroniseEnable;
+Bool TEPM_aboSynchroniseEnable[TEPMHA_nEventChannels];
+volatile Bool TEPM_aboQueueOverflow[TEPMHA_nEventChannels];
+EXTERN uint32 CAM_u32RPMRaw;	
+Bool TEPM_boDisableSequences;
 
 #define TEPM_nTableCount sizeof(TEPM_rastTEPMChannel) / sizeof(TEPM_tstTEPMChannel)
 
 /* Private function declarations
    ----------------------------*/
-static void TEPM_vRunEventProgramUserQueue(void*, uint32, uint32);
-static void TEPM_vRunEventProgramKernelQueue(void*, uint32, uint32, Bool);	 
+static void TEPM_vRunEventProgramUserQueue(void);
+static void TEPM_vRunEventProgramKernelQueue(void*, uint32, uint32, uint32, Bool);	 
 static void* TEPM_pvGetModule(IOAPI_tenEHIOResource);	 
 static void* TEPM_pstGetModuleFromEnum(TEPMHA_tenModule);
 static uint32 TEPM_u32GetTimerHardwareChannel(IOAPI_tenEHIOResource);
@@ -80,9 +85,28 @@ void TEPM_vStart(puint32 const pu32Arg)
 		TEPM_apstMBX[u32QueueIDX] = NULL;
 		TEPM_aboTEPMChannelModeInput[u32QueueIDX] = FALSE;
 		TEPM_aboTEPMChannelModeOutput[u32QueueIDX] = FALSE;
+		TEPM_aboTEPMChannelAsyncRequestEnable[u32QueueIDX] = FALSE;
+		TEPM_au32TEPMChannelSequence[u32QueueIDX] = ~0;
+		TEPM_boDisableSequences = FALSE;
 	}
-	
-	boSynchroniseEnable = TRUE;
+}
+
+void TEPM_vAsyncRequest(void)
+{
+	CEM_u32GlobalCycleFraction = 0x0000;
+	TEPM_vStartEventProgramKernelQueues(TRUE, 0);
+	CEM_u32GlobalCycleFraction += (0x10000 / CEM_u32SyncPoints);
+	TEPM_vStartEventProgramKernelQueues(TRUE, 1);
+
+	CEM_u32GlobalCycleFraction = 0x10000;
+	TEPM_vStartEventProgramKernelQueues(TRUE, 4);
+	CEM_u32GlobalCycleFraction += (0x10000 / CEM_u32SyncPoints);
+	TEPM_vStartEventProgramKernelQueues(TRUE, 5);
+}
+
+void TEPM_vEnableSequences(Bool boEnable)
+{
+	TEPM_boDisableSequences = ~boEnable;
 }
 
 void TEPM_vRun(puint32 const pu32Arg)
@@ -99,9 +123,7 @@ void TEPM_vTerminate(puint32 const pu32Arg)
 
 uint32 TEPM_u32InitTEPMChannel(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_tstTEPMChannelCB* pstTEPMChannelCB)
 {
-	uint32 u32ChannelIDX;
 	uint32 u32TableIDX;
-	uint32 u32ControlWord = 0;
 	MSG_tenMBXErr enMBXErr;
 
 	TEPMHA_vInitTEPMChannel(enEHIOResource, pstTEPMChannelCB);
@@ -119,6 +141,21 @@ uint32 TEPM_u32InitTEPMChannel(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_tst
 	    TEPM_aboTEPMChannelModeOutput[u32TableIDX] = TRUE;	
 	    TEPM_aboTEPMChannelModeInput[u32TableIDX] = FALSE;
     }
+
+	TEPM_au32TEPMChannelSequence[u32TableIDX] = pstTEPMChannelCB->u32Sequence & 0xffff;
+
+	if (((TEPM_au32TEPMChannelSequence[u32TableIDX] & 0x0ff) == 0x0ff) ||
+	    ((TEPM_au32TEPMChannelSequence[u32TableIDX] & 0xff00) == 0xff00))
+	{
+		TEPM_au32TEPMChannelSequence[u32TableIDX] |= 0x02000000;
+	}
+	else
+	{
+		TEPM_au32TEPMChannelSequence[u32TableIDX] |= 0x01000000;
+	}
+
+
+	TEPM_aboTEPMChannelAsyncRequestEnable[u32TableIDX] = pstTEPMChannelCB->boAsyncRequestEnable;
 
 	/* Check if a mailbox is allocated for this table index */
 	if (NULL == TEPM_apstMBX[u32TableIDX])
@@ -139,22 +176,6 @@ SYSAPI_tenSVCResult TEPM_vInitTEPMResource(IOAPI_tenEHIOResource enEHIOResource,
 	return TEPMHA_vInitTEPMResource(enEHIOResource, pstTEPMResourceCB);
 }
 
-void TEPM_boGetMasterEHIOResourceList(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tenEHIOResource* penEHIOResource, puint32 pu32MasterCount)
-{
-	uint32 u32ChannelIDX = TEPMHA_u32GetFTMTableIndex(enEHIOResource);
-	uint32 u32MasterIDX = 0;
-	
-	while ((RESM_nMastersMax > *pu32MasterCount) && (TEPMHA_nMastersMax > u32MasterIDX))
-	{
-		if (NULL != TEPM_rastMasters[u32ChannelIDX].enEHIOResource[u32MasterIDX])
-		{
-			*penEHIOResource = TEPM_rastMasters[u32ChannelIDX].enEHIOResource[u32MasterIDX];
-			penEHIOResource++; 
-			(*pu32MasterCount)++; 
-			u32MasterIDX++;
-		}
-	}
-}
 
 void TEPM_vAppendTEPMQueue(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_tstTimedUserEvent* pstTimedEvents, TEPMAPI_ttEventCount tEventCount)
 {
@@ -180,8 +201,10 @@ void TEPM_vAppendTEPMQueue(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_tstTime
 	if (TRUE == boQueueEmpty)
 	{
 		u32ChannelIDX = TEPM_rastTEPMChannel[u32TableIDX].u32Channel;
-		//TEPM_vRunEventProgramUserQueue(FTM0, u32ChannelIDX, u32TableIDX);	//matthew problem
+		TEPM_vRunEventProgramUserQueue();	//matthew problem
 	}
+	
+	UNUSED(u32ChannelIDX);
 }
 
 void TEPM_vConfigureUserTEPMInput(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_tstTimedUserEvent* pstTimedEvent)
@@ -206,6 +229,10 @@ void TEPM_vConfigureUserTEPMInput(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_
 		{
 			TEPM_atpfEventKernelCB[u32TableIDX] = & CEM_vFreqEventCB;	
 			break;	
+		}
+		default:
+		{
+			break;
 		}
 	}		
 		
@@ -273,18 +300,22 @@ void TEPM_u32GetFreeVal(IOAPI_tenEHIOResource enEHIOResource, puint32 pu32Data)
     TEPMHA_vGetFreeVal(pvModule, pu32Data);
 }
 
-void TEPM_vInterruptHandler(IOAPI_tenEHIOResource enEHVIOResource)
+void TEPM_vInterruptHandler(IOAPI_tenEHIOResource enEHVIOResource, void* pvData)
 {
 	uint32 u32ChannelIDX;
 	uint32 u32TableIDX;
 	uint32 u32Flags;
 	TEPMAPI_tpfEventCB pfTEPMEventCB;
-    static uint32 u32Sequence;
+    static uint32 u32Sequence[2];
 	uint32 u32StartChannelIDX;
 	uint32 u32EndChannelIDX;
     IOAPI_tenEHIOResource enEHIOResource;
+	uint32 u32Prio = *(puint32)pvData;
+	static uint32 u32FalseAlarmCount;
 
-	u32Sequence++;
+	CPU_xEnterCritical();
+
+	u32Sequence[u32Prio]++;
 
 	/* Note here the resource passed in is the timer module resource not the timer channel */
 	void* pvModule = TEPMHA_pvGetTimerModuleFromVIO(enEHVIOResource);
@@ -295,18 +326,32 @@ void TEPM_vInterruptHandler(IOAPI_tenEHIOResource enEHVIOResource)
 	/* Loop through the channels contained within this interrupt group */
 	for (u32ChannelIDX = u32StartChannelIDX; u32ChannelIDX < u32EndChannelIDX; u32ChannelIDX++)
 	{
-	    if (true == TEPMHA_boFlagIsSet(pvModule, u32ChannelIDX, &u32Flags, u32Sequence))
+	    if (true == TEPMHA_boFlagIsSet(pvModule, u32ChannelIDX, &u32Flags, u32Sequence[u32Prio], u32Prio))
 		{
 		    if (true == TEMPHA_boInterruptEnabled(pvModule, u32ChannelIDX))
-			{							
+			{										
 				enEHIOResource = TEPMHA_enGetTimerResourceFromVIOAndIndex(enEHVIOResource, u32ChannelIDX);
 				u32TableIDX = TEPMHA_u32GetFTMTableIndex(enEHIOResource);													
 				
 				if (TRUE == TEPM_aboTEPMChannelModeOutput[u32TableIDX])
-				{			
-					TEPM_vInitiateUserCallBack(enEHIOResource, TEPMHA_tGetScheduledVal(pvModule, u32ChannelIDX, TEPM_aboTEPMChannelModeInput[u32TableIDX], u32Flags));						
-					//TEPM_vRunEventProgramUserQueue(pvModule, u32ChannelIDX, u32TableIDX);	
-					TEPM_vRunEventProgramKernelQueue(pvModule, u32ChannelIDX, u32TableIDX, false);
+				{				
+					if (TRUE == TEPM_aboQueueOverflow[u32TableIDX])
+					{
+						TEPM_aboQueueOverflow[u32TableIDX] = FALSE;
+						CQUEUE_xSetHead(TEPM_astProgramKernelQueue + u32TableIDX, 0);
+						TEPM_vStartEventProgramKernelQueues(FALSE, TEPM_au32TEPMChannelSequence[u32TableIDX]);	
+					}
+
+					else if (FALSE == TEPMHA_boCheckFalseAlarm(pvModule, u32ChannelIDX, TEPMHA_u32GetTimerHardwareSubChannel(u32TableIDX)))	
+					{
+						TEPM_vRunEventProgramKernelQueue(pvModule, u32ChannelIDX, u32TableIDX, 
+							TEPM_au32TEPMChannelSequence[u32TableIDX], false);
+						TEPM_vInitiateUserCallBack(enEHIOResource, TEPMHA_tGetScheduledVal(pvModule, u32ChannelIDX, TEPM_aboTEPMChannelModeInput[u32TableIDX], u32Flags));
+					}				
+					else
+					{
+						u32FalseAlarmCount++;
+					}
 				}			
 				else if (TRUE == TEPM_aboTEPMChannelModeInput[u32TableIDX])
 				{
@@ -323,6 +368,8 @@ void TEPM_vInterruptHandler(IOAPI_tenEHIOResource enEHVIOResource)
 			//break;
 		}
 	}
+
+	CPU_xExitCritical();
 }
 
 IOAPI_tenTriState TEPM_enGetTimerDigitalState(IOAPI_tenEHIOResource enEHIOResource)
@@ -332,8 +379,9 @@ IOAPI_tenTriState TEPM_enGetTimerDigitalState(IOAPI_tenEHIOResource enEHIOResour
 
 /* Private function definitions
    ---------------------------*/	
-static void TEPM_vRunEventProgramUserQueue(void* pvModule, uint32 u32ChannelIDX, uint32 u32TableIDX)
+static void TEPM_vRunEventProgramUserQueue(void)
 {
+#if 0
 	TEPMAPI_tstTimedUserEvent* pstTimedEvent;
 	TEPMAPI_ttEventTime tEventTimeScheduled;
 	TEPMAPI_ttEventTime tEventTimeRemains;	
@@ -396,92 +444,130 @@ static void TEPM_vRunEventProgramUserQueue(void* pvModule, uint32 u32ChannelIDX,
 		TEPMHA_vDisconnectEnable(pvModule, u32ChannelIDX);
 #endif		
 	}
+#endif
 }
 
 
-void TEPM_vStartEventProgramKernelQueues(void)
+void TEPM_vStartEventProgramKernelQueues(Bool boAsyncRequest, uint32 u32SequenceIDX)
 {
 	IOAPI_tenEHIOResource enEHIOResource;		
 	void* pvModule;
 	uint32 u32ChannelIDX;
 	uint32 u32SubChannelIDX;
-	
-	for (enEHIOResource = EH_IO_TMR1; enEHIOResource < EH_LAST_TMR; enEHIOResource++)
+	const IOAPI_tenEHIOResource raenResourceList[] = TEPMHA_nChannelResourceList;
+	uint32 u32TimerChannelIDX;
+	uint32 u32TableIDX;
+	static uint32 u32SyncRPMLimit = 2000;
+
+	if (TRUE == boAsyncRequest)
 	{
-		uint32 u32TableIDX = TEPMHA_u32GetFTMTableIndex(enEHIOResource);
+		CEM_u32GlobalCycleTime = 0x8000;
+	}
+	
+	for (u32TimerChannelIDX = 0; u32TimerChannelIDX < TEPMHA_nEventChannels; u32TimerChannelIDX++)
+	{
+		enEHIOResource = raenResourceList[u32TimerChannelIDX];
+		u32TableIDX = TEPMHA_u32GetFTMTableIndex(enEHIOResource);
 		
-		if (FALSE == TEPM_aboTEPMChannelModeInput[u32TableIDX])
+		if ((TRUE == TEPM_aboTEPMChannelModeOutput[u32TableIDX]) &&
+			((u32SequenceIDX == (TEPM_au32TEPMChannelSequence[u32TableIDX] & 0xff)) ||
+			 (u32SequenceIDX == ((TEPM_au32TEPMChannelSequence[u32TableIDX] & 0xff00) >> 8))))
 		{
-			if ((TRUE == CQUEUE_xIsEmpty(TEPM_astProgramKernelQueue + u32TableIDX)) &&
-					(TRUE == CQUEUE_xIsStaticActive(TEPM_astProgramKernelQueue + u32TableIDX)))
-			{
-				pvModule = TEPMHA_pvGetModuleFromEnum(TEPM_rastTEPMChannel[u32TableIDX].enModule);		
-				u32ChannelIDX = TEPM_u32GetTimerHardwareChannel(enEHIOResource);	
-				u32SubChannelIDX = TEPMHA_u32GetTimerHardwareSubChannel(u32TableIDX);
-			
-				/* Queue didn't end normally last cycle */			
-				TEPMHA_vForceQueueTerminate(pvModule, u32ChannelIDX, u32SubChannelIDX);				
-				CQUEUE_xResetStaticHead(TEPM_astProgramKernelQueue + u32TableIDX);	
-			}	
-			
-			//if ((FALSE == CQUEUE_xIsEmpty(TEPM_astProgramKernelQueue + u32TableIDX)) &&
-					//(TRUE == CQUEUE_xIsStaticActive(TEPM_astProgramKernelQueue + u32TableIDX)))
-			//{		
-				///* Queue didn't end normally last cycle */			
-				//TEPMHA_vForceQueueTerminate(pvModule, u32ChannelIDX);				
-				//CQUEUE_xResetStaticHead(TEPM_astProgramKernelQueue + u32TableIDX);							
-			//}		
+			TEPM_aboSynchroniseEnable[u32TimerChannelIDX] = u32SyncRPMLimit < CAM_u32RPMRaw ? FALSE : TRUE;
 
-			if (FALSE == CQUEUE_xIsEmpty(TEPM_astProgramKernelQueue + u32TableIDX) &&
-					TRUE == CQUEUE_xIsAtStaticHead(TEPM_astProgramKernelQueue + u32TableIDX))
+			if (((TRUE == TEPM_aboTEPMChannelAsyncRequestEnable[u32TableIDX]) && (TRUE == boAsyncRequest)) ||
+				(FALSE == boAsyncRequest))
 			{
-			    /* This queue is populated and head is at zero (static head) */
-				pvModule = TEPMHA_pvGetModuleFromEnum(TEPM_rastTEPMChannel[u32TableIDX].enModule);		
-				u32ChannelIDX = TEPM_u32GetTimerHardwareChannel(enEHIOResource);	
+				//if ((TRUE == CQUEUE_xIsEmpty(TEPM_astProgramKernelQueue + u32TableIDX)) &&
+				//		(TRUE == CQUEUE_xIsStaticActive(TEPM_astProgramKernelQueue + u32TableIDX)))
+				/* EMPTY TEST MAYBE NOT REQUIRED */
+				if ((TRUE == CQUEUE_xIsEmpty(TEPM_astProgramKernelQueue + u32TableIDX)) &&
+                    (TRUE == CQUEUE_xIsStaticActive(TEPM_astProgramKernelQueue + u32TableIDX)) &&
+                    (FALSE == CQUEUE_xIsAtStaticHead(TEPM_astProgramKernelQueue + u32TableIDX)))
+				{
+					pvModule = TEPMHA_pvGetModuleFromEnum(TEPM_rastTEPMChannel[u32TableIDX].enModule);		
+					u32ChannelIDX = TEPM_u32GetTimerHardwareChannel(enEHIOResource);	
+					u32SubChannelIDX = TEPMHA_u32GetTimerHardwareSubChannel(u32TableIDX);
+			
+					/* Queue didn't end normally last cycle */			
+					TEPMHA_vForceQueueTerminate(pvModule, u32ChannelIDX, u32SubChannelIDX);				
+					CQUEUE_xResetStaticHead(TEPM_astProgramKernelQueue + u32TableIDX);	
+					//TEPM_aboQueueOverflow[u32TableIDX] = TRUE;
+				}										
 
-				TEPM_vRunEventProgramKernelQueue(pvModule, u32ChannelIDX, u32TableIDX, false);
+				if (FALSE == CQUEUE_xIsEmpty(TEPM_astProgramKernelQueue + u32TableIDX) &&
+						TRUE == CQUEUE_xIsAtStaticHead(TEPM_astProgramKernelQueue + u32TableIDX))
+				{
+					/* This queue is populated and head is at zero (static head) */
+					pvModule = TEPMHA_pvGetModuleFromEnum(TEPM_rastTEPMChannel[u32TableIDX].enModule);		
+					u32ChannelIDX = TEPM_u32GetTimerHardwareChannel(enEHIOResource);	
+
+					TEPM_vRunEventProgramKernelQueue(pvModule, u32ChannelIDX, u32TableIDX, 
+						u32SequenceIDX, false);
+
+					TEPM_aboQueueOverflow[u32TimerChannelIDX] = FALSE;
+				}
 			}
 		}
 	}
 }
 
-void TEPM_u32GetTimerVal(IOAPI_tenEHIOResource enEHIOResource, puint32 pu32Val)
+void TEPM_vGetTimerVal(IOAPI_tenEHIOResource enEHIOResource, puint32 pu32Val)
 {
-	TEPMHA_u32GetTimerVal(enEHIOResource, pu32Val);
+	*pu32Val = TEPMHA_u32GetTimerVal(enEHIOResource);
 }
 
 void TEPM_vSynchroniseEventProgramKernelQueues(void)
 {
 	IOAPI_tenEHIOResource enEHIOResource;		
 	void* pvModule;
+	const IOAPI_tenEHIOResource raenResourceList[] = TEPMHA_nChannelResourceList;
 	uint32 u32ChannelIDX;
+	uint32 u32TimerChannelIDX;
+	uint32 u32TableIDX;
+
 	
-	for (enEHIOResource = EH_IO_TMR1; enEHIOResource < EH_LAST_TMR; enEHIOResource++)
+	for (u32TimerChannelIDX = 0; u32TimerChannelIDX < TEPMHA_nEventChannels; u32TimerChannelIDX++)
 	{
-		uint32 u32TableIDX = TEPMHA_u32GetFTMTableIndex(enEHIOResource);
+		enEHIOResource = raenResourceList[u32TimerChannelIDX];
+		u32TableIDX = TEPMHA_u32GetFTMTableIndex(enEHIOResource);
 
 		if (FALSE == CQUEUE_xIsEmpty(TEPM_astProgramKernelQueue + u32TableIDX) &&
-				FALSE == CQUEUE_xIsAtStaticHead(TEPM_astProgramKernelQueue + u32TableIDX))
+			(FALSE == CQUEUE_xIsAtStaticHead(TEPM_astProgramKernelQueue + u32TableIDX)) &&
+			(TRUE == TEPM_aboTEPMChannelModeOutput[u32TableIDX]))
 		{
 			/* If not at static head which means queue is done and reset */
 			pvModule = TEPMHA_pvGetModuleFromEnum(TEPM_rastTEPMChannel[u32TableIDX].enModule);		
 			u32ChannelIDX = TEPM_u32GetTimerHardwareChannel(enEHIOResource);	
 
-			TEPM_vRunEventProgramKernelQueue(pvModule, u32ChannelIDX, u32TableIDX, true);
+			TEPM_vRunEventProgramKernelQueue(pvModule, u32ChannelIDX, u32TableIDX, 
+				TEPM_au32TEPMChannelSequence[u32TableIDX], true);
 		}
 	}
 }
 
 
-static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelIDX, uint32 u32TableIDX, Bool boSynchroniseUpdate)
+static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelIDX, uint32 u32TableIDX, uint32 u32SequenceIDX, Bool boSynchroniseUpdate)
 {
 	TEPMAPI_tstTimedKernelEvent* pstTimedEvent = NULL;
-	TEPMAPI_ttEventTime tEventTimeScheduled;
+	TEPMAPI_ttEventTime tEventTimeScheduled = 0;
 	TEPMAPI_ttEventTime tEventTimeRemains;	
 	uint32 u32Temp;
 	uint32 u32ModulePhaseCorrect = 0;
 	uint32 u32SubChannelIDX;
 	volatile Bool boSynchroniseAbort = FALSE;
+	uint32 u32GlobalSequenceFraction;
+
+	/* Mask out the sequence index  alternate origin index and windows span */
+	u32SequenceIDX &= 0xff;
+
+//#define DEBUG_TEPM
+
+#ifdef DEBUG_TEPM
+	static volatile uint32 test[15];
+	static uint32 test_idx;
+#endif
+
 	
 	if (FALSE == CQUEUE_xIsEmpty(TEPM_astProgramKernelQueue + u32TableIDX))
 	{
@@ -496,7 +582,7 @@ static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelID
 				{
 					case TEPMAPI_enGlobalLinkedFraction:
 					{
-						if (FALSE == boSynchroniseEnable)
+						if (FALSE == TEPM_aboSynchroniseEnable[u32TableIDX])
 						{				
 							/* Not eligible for a synchronise so abort */
 							pstTimedEvent = NULL;
@@ -525,30 +611,58 @@ static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelID
 			{
 				case TEPMAPI_enGlobalLinkedFraction:
 				{				
-				    u32ModulePhaseCorrect = (uint32)CEM_ttGetModulePhase(TEPMHA_enTimerEnumFromModule(pvModule));					
-					u32Temp = CEM_u32GlobalCycleTime / 8;//matthew changed for SAM3X8E CAVEAT GRANULARITY MK60!!!!
+#ifdef DEBUG_TEPM
+					//test[test_idx] = CEM_u32GlobalCycleTime;
+					//test_idx = (test_idx + 1) & 0x0f;
+#endif
 
-					if (CEM_u32GlobalCycleFraction < *(pstTimedEvent->ptEventTime))
-					{						
-						u32Temp *= (*(pstTimedEvent->ptEventTime) - CEM_u32GlobalCycleFraction);
-						u32Temp = MIN(0x7fc00000, u32Temp);	
-						u32Temp /= 0x2000;					
-						tEventTimeScheduled = CEM_tEventTimeLast + u32ModulePhaseCorrect + u32Temp;
-						tEventTimeRemains = tEventTimeScheduled - TEPMHA_u32GetFreeVal(pvModule, u32ChannelIDX);
+				    u32ModulePhaseCorrect = (uint32)CEM_ttGetModulePhase(3 * (uint32)TEPMHA_enTimerEnumFromModule(pvModule) + u32ChannelIDX / 2);					
+
+					if (1 == (TEPM_au32TEPMChannelSequence[u32TableIDX] >> 24))
+					{
+						u32GlobalSequenceFraction = 0xffff & (CEM_u32GlobalCycleFraction - (u32SequenceIDX * 0x10000 / CEM_u32SyncPoints));
+
+						/* Divide global cycle time by 8 for scale again by phase repeats this might be half global window */
+						u32Temp = CEM_u32GlobalCycleTime / (8 * CEM_u8PhaseRepeats);
+					}
+					else
+					{
+						u32GlobalSequenceFraction = 0xffff & ((CEM_u32GlobalCycleFraction >> 1) - (u32SequenceIDX * 0x8000 / CEM_u32SyncPoints));
+
+						/* Divide global cycle time by 8 for scale */
+						u32Temp = CEM_u32GlobalCycleTime / 8;//matthew changed for SAM3X8E CAVEAT GRANULARITY MK60!!!!
+					}
+
+
+					if (u32GlobalSequenceFraction < *(pstTimedEvent->ptEventTime))
+					{
+						if (((0 == u32GlobalSequenceFraction) && (FALSE == boSynchroniseUpdate)) || (TRUE == boSynchroniseUpdate))
+						{						
+							u32Temp *= (*(pstTimedEvent->ptEventTime) - u32GlobalSequenceFraction);
+							u32Temp = MIN(0x7fc00000, u32Temp);	
+							u32Temp /= 0x2000;							
+										
+							tEventTimeScheduled = CEM_tSyncTimeLast + u32ModulePhaseCorrect + u32Temp;
+							tEventTimeRemains = tEventTimeScheduled - TEPMHA_u32GetFreeVal(pvModule, u32ChannelIDX);
 					
-						if (FALSE == boSynchroniseUpdate)
-						{
-							if ((TEPM_nSoonCounts > tEventTimeRemains) || ((UINT32_MAX / 2) < tEventTimeRemains))
+							if (FALSE == boSynchroniseUpdate)
 							{
-								tEventTimeScheduled = TEPMHA_u32GetFreeVal(pvModule, u32ChannelIDX) + TEPM_nSoonCounts;
+								if ((TEPM_nSoonCounts > tEventTimeRemains) || ((UINT32_MAX / 2) < tEventTimeRemains))
+								{
+									tEventTimeScheduled = TEPMHA_u32GetFreeVal(pvModule, u32ChannelIDX) + TEPM_nSoonCounts;
+								}
+							}
+							else
+							{
+								if ((TEPM_nSoonCounts > tEventTimeRemains) || ((UINT32_MAX / 2) < tEventTimeRemains))
+								{
+									boSynchroniseAbort = TRUE;
+								}												
 							}
 						}
 						else
 						{
-							if ((TEPM_nSoonCounts > tEventTimeRemains) || ((UINT32_MAX / 2) < tEventTimeRemains))
-							{
-								boSynchroniseAbort = TRUE;
-							}												
+							boSynchroniseAbort = TRUE;
 						}
 					}
 					else
@@ -566,7 +680,7 @@ static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelID
 					u32Temp /= 0x8000;					
 					tEventTimeScheduled = TEPMHA_tGetScheduledVal(pvModule, u32ChannelIDX, FALSE, 0) + u32Temp;
 					tEventTimeRemains = tEventTimeScheduled - TEPMHA_u32GetFreeVal(pvModule, u32ChannelIDX);
-					if ((TEPM_nSoonCounts > tEventTimeRemains) || (-TEPM_nSoonCounts < tEventTimeRemains))
+					if ((TEPM_nSoonCounts > tEventTimeRemains) || ((uint32)-TEPM_nSoonCounts < tEventTimeRemains))
 					{
 						tEventTimeScheduled = TEPMHA_u32GetFreeVal(pvModule, u32ChannelIDX) + 0x80;
 					}
@@ -575,11 +689,11 @@ static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelID
 				}	
 				case TEPMAPI_enHardLinkedTimeStep:
 				{		
-					if (-TEPM_nSoonCounts > *(pstTimedEvent->ptEventTime))
+					if ((uint32)-TEPM_nSoonCounts > *(pstTimedEvent->ptEventTime))
 					{
 						tEventTimeScheduled = TEPMHA_tGetScheduledVal(pvModule, u32ChannelIDX, FALSE, 0) + *(pstTimedEvent->ptEventTime);
 						tEventTimeRemains = tEventTimeScheduled - TEPMHA_u32GetFreeVal(pvModule, u32ChannelIDX);
-					    if ((TEPM_nSoonCounts > tEventTimeRemains) || (-TEPM_nSoonCounts < tEventTimeRemains))
+					    if ((TEPM_nSoonCounts > tEventTimeRemains) || ((uint32)-TEPM_nSoonCounts < tEventTimeRemains))
 						{
 							tEventTimeScheduled = TEPMHA_u32GetFreeVal(pvModule, u32ChannelIDX) + 0x80;
 						}
@@ -598,7 +712,22 @@ static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelID
 
 			if (FALSE == boSynchroniseAbort)
 			{
-				TEPMHA_vCapComAction(pstTimedEvent->enAction, pvModule, u32ChannelIDX, u32SubChannelIDX, tEventTimeScheduled);	
+				if (FALSE == TEPM_boDisableSequences)
+				{
+					TEPMHA_vCapComAction(pstTimedEvent->enAction, pvModule, u32ChannelIDX, u32SubChannelIDX, tEventTimeScheduled);	
+
+					if (EH_IO_Invalid != pstTimedEvent->enEHIOBitMirrorResource)
+					{
+						if (TEPMAPI_enSetLow == pstTimedEvent->enAction)
+						{
+							IO_vAssertDIOResource(pstTimedEvent->enEHIOBitMirrorResource, IOAPI_enHigh);
+						}
+					}
+				}
+				else
+				{
+					TEPMHA_vCapComAction(TEPMAPI_enSetLow, pvModule, u32ChannelIDX, u32SubChannelIDX, tEventTimeScheduled);	
+				}
 			}
 			
 			if (FALSE == boSynchroniseUpdate)
@@ -613,6 +742,12 @@ static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelID
 		if (TRUE == CQUEUE_xIsStaticActive(TEPM_astProgramKernelQueue + u32TableIDX))
 		{		
 			CQUEUE_xResetStaticHead(TEPM_astProgramKernelQueue + u32TableIDX);	
+			pstTimedEvent = &TEPM_aastTimedKernelEvents[u32TableIDX][0];
+
+			if (EH_IO_Invalid != pstTimedEvent->enEHIOBitMirrorResource)
+			{
+				IO_vAssertDIOResource(pstTimedEvent->enEHIOBitMirrorResource, IOAPI_enLow);
+			}
 		}
 
 		/* The queue is empty so go ahead and disable interrupts and connection */
@@ -643,15 +778,6 @@ static uint32 TEPM_u32GetTimerHardwareChannel(IOAPI_tenEHIOResource enEHIOResour
 	u32ChannelIDX = TEPMHA_u32GetFTMTableIndex(enEHIOResource);
 
 	return TEPM_rastTEPMChannel[u32ChannelIDX].u32Channel;
-}
-
-static uint32 TEPM_u32GetTimerHardwareSubChannel(IOAPI_tenEHIOResource enEHIOResource)
-{
-	uint32 u32ChannelIDX;
-	
-	u32ChannelIDX = TEPMHA_u32GetFTMTableIndex(enEHIOResource);
-
-	return TEPM_rastTEPMChannel[u32ChannelIDX].u32SubChannel;
 }
 
 uint32 TEPM_u32GetFTMTableIndex(IOAPI_tenEHIOResource enEHIOResource)

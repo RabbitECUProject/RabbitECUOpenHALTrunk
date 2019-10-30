@@ -23,7 +23,7 @@
 typedef sint16 TABLEAPI_ttTableIDX;/*CR1_118*/
 typedef void (*TABLEAPI_pfPIDResultCB)(sint32);
 
-typedef BUILDPACKEDKEIL struct
+typedef struct
 {
 	void* pvTableData;
 	void* pvOutputData;

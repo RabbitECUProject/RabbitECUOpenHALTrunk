@@ -35,7 +35,7 @@ void CAN_vTerminate(uint32* const);
 void CAN_vInitTransfer(IOAPI_tstTransferCB*);
 Bool CAN_boReadMB(tstCANModule*, CANHA_tstCANMB*);
 SYSAPI_tenSVCResult CAN_u32InitBus(IOAPI_tenEHIOResource, IOAPI_tstPortConfigCB*);
-void CAN_vInterrupt(IOAPI_tenEHIOResource);
+void CAN_vInterrupt(IOAPI_tenEHIOResource, void*);
 
 #endif //CAN_H
 

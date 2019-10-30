@@ -46,7 +46,7 @@ typedef Adc tstADCModule;
 #ifdef BUILD_SAM3X8E
 #define ADCHA_nReg32Set              \
 {  								     \
-	{ NULL, 0, REGSET_enOverwrite }  \
+	NULL, 0, REGSET_enOverwrite  \
 }
 #endif //BUILD_MK60
 
@@ -92,78 +92,78 @@ typedef Adc tstADCModule;
 #if defined(BUILD_SAM3X8E) && defined(BUILD_ARDUINO_DUE)
 #define ADCHA_nChannelInfo                                                  \
 {                                                                           \
-    {EH_IO_ADD1, ADCHA_enADC0, 7, ADCHA_enChannelA, true},                   \
-    {EH_IO_ADD2, ADCHA_enADC0, 6, ADCHA_enChannelA, true},                   \
-    {EH_IO_ADD3, ADCHA_enADC0, 5, ADCHA_enChannelA, true},                   \
-    {EH_IO_ADD4, ADCHA_enADC0, 4, ADCHA_enChannelA, true},                   \
-    {EH_IO_ADD5, ADCHA_enADC0, 3, ADCHA_enChannelA, true},                   \
-    {EH_IO_ADD6, ADCHA_enADC0, 2, ADCHA_enChannelA, true},                   \
-    {EH_IO_ADD7, ADCHA_enADC0, 1, ADCHA_enChannelA, true},                   \
-    {EH_IO_ADD8, ADCHA_enADC0, 0, ADCHA_enChannelA, true},                   \
-    {EH_IO_ADD9, ADCHA_enADC0, 10, ADCHA_enChannelA, true},                  \
-    {EH_IO_ADD10, ADCHA_enADC0, 11, ADCHA_enChannelA, true},                 \
-    {EH_IO_ADD11, ADCHA_enADC0, 12, ADCHA_enChannelA, true},                 \
-    {EH_IO_ADD12, ADCHA_enADC0, 13, ADCHA_enChannelA, true},                 \
-    {EH_IO_DAC1, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_DAC2, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_CAN1R, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},    \
-    {EH_IO_CAN1T, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},    \
-    {EH_IO_IO22, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO23, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO24, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO25, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO26, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO27, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO28, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO29, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO30, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO31, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO32, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO33, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO34, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO35, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO36, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO37, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO38, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO39, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO40, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO41, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO42, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO43, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO44, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO45, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO46, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO47, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO48, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO49, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO50, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO51, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IO52, ADCHA_enADC0, 14, ADCHA_enChannelA, true},                 \
-    {EH_IO_IO53, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_IIC1_SCL, ADCHA_enADC0, 9, ADCHA_enChannelA, true},              \
-    {EH_IO_IIC1_SDA, ADCHA_enADC0, 8, ADCHA_enChannelA, true},              \
-    {EH_IO_UART1_RX, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false}, \
-    {EH_IO_UART1_TX, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false}, \
-    {EH_IO_UART2_RX, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false}, \
-    {EH_IO_UART2_TX, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false}, \
-    {EH_IO_UART3_RX, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false}, \
-    {EH_IO_UART3_TX, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false}, \
-    {EH_IO_UART5_RX, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false}, \
-    {EH_IO_UART5_TX, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false}, \
-    {EH_IO_TMR1, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_TMR2, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_TMR3, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_TMR4, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_TMR5, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_TMR6, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_TMR7, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_TMR8, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_TMR9, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},     \
-    {EH_IO_TMR10, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},    \
-    {EH_IO_TMR11, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},    \
-    {EH_IO_TMR12, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false},    \
-    {EH_IO_IIC2_SDA, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false}, \
-    {EH_IO_IIC2_SCL, ADCHA_enADCModuleInvalid, 0, ADCHA_enChannelA, false}  \
+    {EH_IO_ADD1, ADCHA_enADC0, 7,  true},                   \
+    {EH_IO_ADD2, ADCHA_enADC0, 6,  true},                   \
+    {EH_IO_ADD3, ADCHA_enADC0, 5,  true},                   \
+    {EH_IO_ADD4, ADCHA_enADC0, 4,  true},                   \
+    {EH_IO_ADD5, ADCHA_enADC0, 3,  true},                   \
+    {EH_IO_ADD6, ADCHA_enADC0, 2,  true},                   \
+    {EH_IO_ADD7, ADCHA_enADC0, 1,  true},                   \
+    {EH_IO_ADD8, ADCHA_enADC0, 0,  true},                   \
+    {EH_IO_ADD9, ADCHA_enADC0, 10,  true},                  \
+    {EH_IO_ADD10, ADCHA_enADC0, 11,  true},                 \
+    {EH_IO_ADD11, ADCHA_enADC0, 12,  true},                 \
+    {EH_IO_ADD12, ADCHA_enADC0, 13,  true},                 \
+    {EH_IO_DAC1, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_DAC2, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_CAN1R, ADCHA_enADCModuleInvalid, 0,  false},    \
+    {EH_IO_CAN1T, ADCHA_enADCModuleInvalid, 0,  false},    \
+    {EH_IO_IO22, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO23, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO24, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO25, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO26, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO27, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO28, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO29, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO30, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO31, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO32, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO33, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO34, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO35, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO36, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO37, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO38, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO39, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO40, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO41, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO42, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO43, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO44, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO45, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO46, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO47, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO48, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO49, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO50, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO51, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IO52, ADCHA_enADC0, 14,  true},                 \
+    {EH_IO_IO53, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_IIC1_SCL, ADCHA_enADC0, 9,  true},              \
+    {EH_IO_IIC1_SDA, ADCHA_enADC0, 8,  true},              \
+    {EH_IO_UART1_RX, ADCHA_enADCModuleInvalid, 0,  false}, \
+    {EH_IO_UART1_TX, ADCHA_enADCModuleInvalid, 0,  false}, \
+    {EH_IO_UART2_RX, ADCHA_enADCModuleInvalid, 0,  false}, \
+    {EH_IO_UART2_TX, ADCHA_enADCModuleInvalid, 0,  false}, \
+    {EH_IO_UART3_RX, ADCHA_enADCModuleInvalid, 0,  false}, \
+    {EH_IO_UART3_TX, ADCHA_enADCModuleInvalid, 0,  false}, \
+    {EH_IO_UART5_RX, ADCHA_enADCModuleInvalid, 0,  false}, \
+    {EH_IO_UART5_TX, ADCHA_enADCModuleInvalid, 0,  false}, \
+    {EH_IO_TMR1, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_TMR2, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_TMR3, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_TMR4, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_TMR5, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_TMR6, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_TMR7, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_TMR8, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_TMR9, ADCHA_enADCModuleInvalid, 0,  false},     \
+    {EH_IO_TMR10, ADCHA_enADCModuleInvalid, 0,  false},    \
+    {EH_IO_TMR11, ADCHA_enADCModuleInvalid, 0,  false},    \
+    {EH_IO_TMR12, ADCHA_enADCModuleInvalid, 0,  false},    \
+    {EH_IO_IIC2_SDA, ADCHA_enADCModuleInvalid, 0,  false}, \
+    {EH_IO_IIC2_SCL, ADCHA_enADCModuleInvalid, 0,  false}  \
 }
 #endif //BUILD_SAM3X8E
 
@@ -432,6 +432,7 @@ void ADCHA_vInitChannel(IOAPI_tenEHIOResource);
 tstADCModule* ADCHA_pstGetADCModule(ADCHA_tenADCModule);
 uint32 ADCHA_u32GetAvailableResultCount(tstADCModule*);
 void ADCHA_vClearModuleBusy(ADCHA_tenADCModule);
+void ADCHA_vReset(ADCHA_tenADCModule enADCModule);
 
 #endif //ADCHA_H
 

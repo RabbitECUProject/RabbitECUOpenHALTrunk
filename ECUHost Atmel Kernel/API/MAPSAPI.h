@@ -3,57 +3,42 @@
 /*    License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher   */
 /******************************************************************************/
 /* CONTEXT:USER_APP                                                           */
-/* API TITLE:          CEMAPI                                                 */
+/* API TITLE:          MapsAPI                                                */
 /* DESCRIPTION:        This API provides type definitions for objects and     */
-/*                     functions required by Kernel Cyclic Event Manager      */
+/*                     functions required by Kernel managed maps              */
 /*                     initialisation, functions and events                   */
 /*                                                                            */
-/* FILE NAME:          CEMAPI.h                                               */
+/* FILE NAME:          MapsAPI.h                                              */
 /* REVISION HISTORY:   07-03-2016 | 1.0 | Initial revision                    */
 /*                                                                            */
 /******************************************************************************/
-#ifndef CEMAPI_H
-#define CEMAPI_H
+#ifndef MAPSAPI_H
+#define MAPSAPI_H
 
-
-/* GLOBAL MACRO DEFINITIONS ***************************************************/
+#include "types.h"
+#include "SPREADSAPI.h"
 
 
 /* GLOBAL TYPE DEFINITIONS ****************************************************/
-typedef uint16 CEMAPI_ttEventTime;
-typedef void (*CEMAPI_tpfEventCB)(IOAPI_tenEHIOResource, CEMAPI_ttEventTime);
+typedef sint16 MAPSAPI_ttMapIDX;/*CR1_118*/
+typedef void (*MAPSAPI_pfPIDResultCB)(sint32);
 
-typedef enum
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
+
+typedef __packed struct
 {
-	CEMAPI_enHardwareRising,
-	CEMAPI_enHardwareFalling,
-	CEMAPI_enHardwareAny	
-} CEMAPI_tenEventTrigger;
+	void* pvMapData;
+	void* pvOutputData;
+	TYPE_tenDataType enDataType;
+	sint16 i16MapSizeX;
+	sint16 i16MapSizeY;
+	SPREADAPI_ttSpreadIDX tSpreadIDXX;
+	SPREADAPI_ttSpreadIDX tSpreadIDXY;
+	MAPSAPI_pfPIDResultCB pfResultCB;
+} MAPSAPI_tstMapCB;
 
-typedef struct
-{
-	uint32 u32TriggerType;
-	IOAPI_tenEdgePolarity enEdgePolarity;
-	Bool boFirstEdgeRising;
-} CEM_tstPatternSetupCB;
+#pragma GCC diagnostic pop
 
-typedef struct
-{
-	uint32 u32CycleDuration;
-	puint32 pu32EventProgram;
-	puint32 pu32CallbackProgram;
-	IOAPI_tenEHIOResource enIOHardwareTrigger;
-} IOAPI_tenCEMCycleCB;
-	
-	
-	
-	
-	
-	
-	
-
-
-
-
-#endif //CEMAPI_H
+#endif //MAPSAPI_H
 

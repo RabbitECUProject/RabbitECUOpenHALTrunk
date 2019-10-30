@@ -21,11 +21,20 @@
 /* GLOBAL TYPE DEFINITIONS ****************************************************/
 typedef sint16 SPREADAPI_ttSpreadIDX;/*CR1_111*/
 
-typedef BUILDPACKEDKEIL struct
+typedef struct
 {
 	uint16 u16SpreadIndex;
 	uint16 u16SpreadOffset;
-} SPREADAPI_tstSpreadResult;
+} tstSpreadResult;
+
+typedef struct
+{
+	union
+	{
+		tstSpreadResult stSpreadResult;
+		uint32 u32Data;
+	} uSpreadData;
+}  SPREADAPI_tstSpreadResult;
 
 typedef void (*SPREADAPI_pfPIDResultCB)(SPREADAPI_tstSpreadResult);
 
@@ -45,7 +54,7 @@ typedef enum
 	SPREADAPI_enSpreadCall = 11,	
 } SPREADAPI_tenSpreadRate;
 
-typedef BUILDPACKEDKEIL struct
+typedef struct
 {
 	void* pvSourceData;
 	void* pvSpreadData;

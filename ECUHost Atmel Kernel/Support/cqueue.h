@@ -82,6 +82,11 @@ if (false == (CQUEUE_xIsEmpty(x)))                    \
 }                                                     \
 CPU_xExitCritical()
 
+#define CQUEUE_xSetHead(x, y)                         \
+CPU_xEnterCritical();                                 \
+(x)->u32Head = y;                                 \
+CPU_xExitCritical()
+
 #define CQUEUE_vClearCount(x)	\
 x##.u32Head = 0;							\
 x##.u32Tail = 0

@@ -251,7 +251,7 @@
         <documentation help="http://asf.atmel.com/docs/3.31.0/common.applications.user_application.arduino_due_x/html/index.html" />
         <offline-documentation help="" />
         <dependencies>
-          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.31.0" />
+          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.39.0" />
         </dependencies>
         <project id="common.applications.user_application.arduino_due_x" value="Add" config="" content-id="Atmel.ASF" />
         <board id="board.arduino_due_x" value="Add" config="" content-id="Atmel.ASF" />
@@ -331,6 +331,8 @@
       <ToolNumber>J41800058780</ToolNumber>
       <ToolName>Atmel-ICE</ToolName>
     </com_atmel_avrdbg_tool_atmelice>
+    <ResetRule>0</ResetRule>
+    <EraseKey />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <ToolchainSettings>
@@ -353,7 +355,6 @@
   </armgcc.compiler.symbols.DefSymbols>
   <armgcc.compiler.directories.IncludePaths>
     <ListValues>
-      <Value>%24(PackRepoDir)\atmel\SAM3X_DFP\1.0.41\include</Value>
       <Value>%24(PackRepoDir)\arm\cmsis\4.2.0\CMSIS\Include\</Value>
       <Value>../src/ASF/sam/utils/cmsis/sam3x/include</Value>
       <Value>../src/config</Value>
@@ -392,6 +393,7 @@
       <Value>../src/ASF/common/services/usb/udc</Value>
       <Value>../src/ASF/sam/drivers/uotghs</Value>
       <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>%24(PackRepoDir)\atmel\SAM3X_DFP\1.0.50\include</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.level>Optimize for size (-Os)</armgcc.compiler.optimization.level>
@@ -407,15 +409,14 @@
   </armgcc.linker.libraries.Libraries>
   <armgcc.linker.libraries.LibrarySearchPaths>
     <ListValues>
+      <Value>..\src\ASF\thirdparty\CMSIS\Lib\GCC</Value>
       <Value>%24(ProjectDir)\Device_Startup</Value>
-      <Value>../src/ASF/thirdparty/CMSIS/Lib/GCC</Value>
     </ListValues>
   </armgcc.linker.libraries.LibrarySearchPaths>
   <armgcc.linker.optimization.GarbageCollectUnusedSections>True</armgcc.linker.optimization.GarbageCollectUnusedSections>
   <armgcc.linker.miscellaneous.LinkerFlags>-Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/ASF/sam/utils/linker_scripts/sam3x/sam3x8/gcc/flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
   <armgcc.assembler.general.IncludePaths>
     <ListValues>
-      <Value>%24(PackRepoDir)\atmel\SAM3X_DFP\1.0.41\include</Value>
       <Value>%24(PackRepoDir)\arm\cmsis\4.2.0\CMSIS\Include\</Value>
       <Value>../src/ASF/sam/utils/cmsis/sam3x/include</Value>
       <Value>../src/config</Value>
@@ -454,12 +455,12 @@
       <Value>../src/ASF/common/services/usb/udc</Value>
       <Value>../src/ASF/sam/drivers/uotghs</Value>
       <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>%24(PackRepoDir)\atmel\SAM3X_DFP\1.0.50\include</Value>
     </ListValues>
   </armgcc.assembler.general.IncludePaths>
   <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM3=true -DBOARD=ARDUINO_DUE_X -D__SAM3X8E__ -Dprintf=iprintf -Dscanf=iscanf -DUDD_ENABLE</armgcc.preprocessingassembler.general.AssemblerFlags>
   <armgcc.preprocessingassembler.general.IncludePaths>
     <ListValues>
-      <Value>%24(PackRepoDir)\atmel\SAM3X_DFP\1.0.41\include</Value>
       <Value>%24(PackRepoDir)\arm\cmsis\4.2.0\CMSIS\Include\</Value>
       <Value>../src/ASF/sam/utils/cmsis/sam3x/include</Value>
       <Value>../src/config</Value>
@@ -498,6 +499,7 @@
       <Value>../src/ASF/common/services/usb/udc</Value>
       <Value>../src/ASF/sam/drivers/uotghs</Value>
       <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>%24(PackRepoDir)\atmel\SAM3X_DFP\1.0.50\include</Value>
     </ListValues>
   </armgcc.preprocessingassembler.general.IncludePaths>
 </ArmGcc>
@@ -523,8 +525,8 @@
       <Value>printf=iprintf</Value>
       <Value>__SAM3X8E__</Value>
       <Value>BUILD_PACKED</Value>
-      <Value>USERDIAG_nEnableUSB</Value>
       <Value>UDD_ENABLE</Value>
+      <Value>BUILD_GUI_VE</Value>
     </ListValues>
   </armgcc.compiler.symbols.DefSymbols>
   <armgcc.compiler.directories.IncludePaths>
@@ -576,12 +578,12 @@
       <Value>../src/ASF/common/services/usb/udc</Value>
       <Value>../src/ASF/sam/drivers/uotghs</Value>
       <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>%24(PackRepoDir)\atmel\SAM3X_DFP\1.0.50\include</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.level>Optimize (-O1)</armgcc.compiler.optimization.level>
   <armgcc.compiler.optimization.OtherFlags>-fdata-sections</armgcc.compiler.optimization.OtherFlags>
   <armgcc.compiler.optimization.DebugLevel>Maximum (-g3)</armgcc.compiler.optimization.DebugLevel>
-  <armgcc.compiler.warnings.AllWarnings>True</armgcc.compiler.warnings.AllWarnings>
   <armgcc.compiler.miscellaneous.OtherFlags>-pipe -fno-strict-aliasing -Wall -Wstrict-prototypes -Wmissing-prototypes -Werror-implicit-function-declaration -Wpointer-arith -std=gnu99 -ffunction-sections -fdata-sections -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int -Wmain -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef -Wshadow -Wbad-function-cast -Wwrite-strings -Wsign-compare -Waggregate-return  -Wmissing-declarations -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations -Wpacked -Wredundant-decls -Wnested-externs -Wlong-long -Wunreachable-code -Wcast-align --param max-inline-insns-single=500</armgcc.compiler.miscellaneous.OtherFlags>
   <armgcc.linker.libraries.Libraries>
     <ListValues>
@@ -591,8 +593,8 @@
   </armgcc.linker.libraries.Libraries>
   <armgcc.linker.libraries.LibrarySearchPaths>
     <ListValues>
+      <Value>..\src\ASF\thirdparty\CMSIS\Lib\GCC</Value>
       <Value>%24(ProjectDir)\Device_Startup</Value>
-      <Value>../src/ASF/thirdparty/CMSIS/Lib/GCC</Value>
     </ListValues>
   </armgcc.linker.libraries.LibrarySearchPaths>
   <armgcc.linker.optimization.GarbageCollectUnusedSections>True</armgcc.linker.optimization.GarbageCollectUnusedSections>
@@ -600,7 +602,6 @@
   <armgcc.linker.miscellaneous.LinkerFlags>-Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/ASF/sam/utils/linker_scripts/sam3x/sam3x8/gcc/flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
   <armgcc.assembler.general.IncludePaths>
     <ListValues>
-      <Value>%24(PackRepoDir)\atmel\SAM3X_DFP\1.0.41\include</Value>
       <Value>%24(PackRepoDir)\arm\cmsis\4.2.0\CMSIS\Include\</Value>
       <Value>../src/ASF/sam/utils/cmsis/sam3x/include</Value>
       <Value>../src/config</Value>
@@ -639,13 +640,13 @@
       <Value>../src/ASF/common/services/usb/udc</Value>
       <Value>../src/ASF/sam/drivers/uotghs</Value>
       <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>%24(PackRepoDir)\atmel\SAM3X_DFP\1.0.50\include</Value>
     </ListValues>
   </armgcc.assembler.general.IncludePaths>
   <armgcc.assembler.debugging.DebugLevel>Default (-g)</armgcc.assembler.debugging.DebugLevel>
   <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM3=true -DBOARD=ARDUINO_DUE_X -D__SAM3X8E__ -Dprintf=iprintf -Dscanf=iscanf -DUDD_ENABLE</armgcc.preprocessingassembler.general.AssemblerFlags>
   <armgcc.preprocessingassembler.general.IncludePaths>
     <ListValues>
-      <Value>%24(PackRepoDir)\atmel\SAM3X_DFP\1.0.41\include</Value>
       <Value>%24(PackRepoDir)\arm\cmsis\4.2.0\CMSIS\Include\</Value>
       <Value>../src/ASF/sam/utils/cmsis/sam3x/include</Value>
       <Value>../src/config</Value>
@@ -684,6 +685,7 @@
       <Value>../src/ASF/common/services/usb/udc</Value>
       <Value>../src/ASF/sam/drivers/uotghs</Value>
       <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>%24(PackRepoDir)\atmel\SAM3X_DFP\1.0.50\include</Value>
     </ListValues>
   </armgcc.preprocessingassembler.general.IncludePaths>
   <armgcc.preprocessingassembler.debugging.DebugLevel>Default (-Wa,-g)</armgcc.preprocessingassembler.debugging.DebugLevel>
@@ -752,6 +754,12 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="Client\AFM.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Client\ATS.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Client\ATS.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="Client\BOOSTED.c">
@@ -890,12 +898,6 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="KernelServices\commonNL.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="KernelServices\DISK.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="KernelServices\DISK.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="KernelServices\DLL.c">
@@ -1142,18 +1144,6 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="Peripherals\PERUSB.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Peripherals\SDHC.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Peripherals\SDHC.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Peripherals\SDHCHA.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Peripherals\SDHCHA.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="Peripherals\SPIHA.c">

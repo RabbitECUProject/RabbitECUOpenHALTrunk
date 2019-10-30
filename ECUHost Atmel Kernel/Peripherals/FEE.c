@@ -16,7 +16,7 @@ FEE_tstWriteControlBlock FEE_stWriteControlBlock;
 FEE_tenPgmErrCode FEE_enPgmErrCode;
 FEE_tstWorkingPage FEE_stWorkingPage;
 
-#if	BUILD_SBL
+#if	defined(BUILD_SBL)
 	uint8 FEE_au8ProgBuff[FEE_PFLASH_SCTR_BYTES];
 #else
 	uint8 FEE_au8ProgBuff[1];
@@ -25,7 +25,7 @@ FEE_tstWorkingPage FEE_stWorkingPage;
 
 void FEE_vStartSBL(void)
 {
-#if BUILD_SBL
+#if defined(BUILD_SBL)
     FEEHA_vStartSBL();
 #endif	
 }
@@ -142,6 +142,7 @@ Bool FEE_boPartition(void)
 	
 	return boRetVal;
 }
+
 
 Bool FEE_boWriteControlBlock(COMMONNL_tstRXLargeBuffer* const pstParamSourceBuffer, 
 															 uint8* const pu8ParamTargetAddress, 

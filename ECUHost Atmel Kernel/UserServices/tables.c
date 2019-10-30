@@ -74,22 +74,6 @@ TABLEAPI_ttTableIDX TABLE_tRequestKernelTable(TABLEAPI_tstTableCB* pstTableCBReq
 	return TableIDX;	
 }
 
-Bool TABLE_vSetKernelTableAddress(TABLEAPI_ttTableIDX tTableIDX, void* pvTableData)
-{
-    Bool boRetVal = false;
-
-	if (TABLE_nKernelTableCount < tTableIDX)
-	{
-		if (NULL != TABLE_apstTableCB[tTableIDX])
-		{
-			TABLE_apstTableCB[tTableIDX]->pvTableData = pvTableData;
-			boRetVal = true;
-		}			
-	}		
-
-	return boRetVal;
-}
-
 
 Bool TABLE_vCalculate(TABLEAPI_ttTableIDX tTableIDX)
 {
@@ -107,7 +91,7 @@ Bool TABLE_vCalculate(TABLEAPI_ttTableIDX tTableIDX)
 	uint32 u32Factor;
 	tSpreadIDX = TABLE_astTableCB[tTableIDX].tSpreadIDX;
 	
-	stSpreadResult = SPREAD_stGetSpread(tSpreadIDX);
+	stSpreadResult = *SPREAD_pstGetSpread(tSpreadIDX);
 	
 	switch (TABLE_astTableCB[tTableIDX].enDataType)
 	{
@@ -117,7 +101,7 @@ Bool TABLE_vCalculate(TABLEAPI_ttTableIDX tTableIDX)
 		case TYPE_enInt16:
 		{
 			ps16Data = (sint16*)TABLE_astTableCB[tTableIDX].pvTableData;
-			ps16Data += stSpreadResult.u16SpreadIndex;
+			ps16Data += stSpreadResult.uSpreadData.stSpreadResult.u16SpreadIndex;
 		
 			s16DataL = *ps16Data;
 			s16DataR = *(ps16Data + 1);		
@@ -140,8 +124,8 @@ Bool TABLE_vCalculate(TABLEAPI_ttTableIDX tTableIDX)
 			s16DataL = (*ps16Data) / u32Factor;
 			s16DataR = (*(ps16Data + 1)) / u32Factor;		
 			
-			u32Data = (s16DataR * stSpreadResult.u16SpreadOffset) +
-								(s16DataL * (0xffff - stSpreadResult.u16SpreadOffset));
+			u32Data = (s16DataR * stSpreadResult.uSpreadData.stSpreadResult.u16SpreadOffset) +
+								(s16DataL * (0xffff - stSpreadResult.uSpreadData.stSpreadResult.u16SpreadOffset));
 			
 			u32Data *= u32Factor;
 			u32Data /= 0xffff;
@@ -152,18 +136,18 @@ Bool TABLE_vCalculate(TABLEAPI_ttTableIDX tTableIDX)
 		case TYPE_enInt32:
 		{
 			ps32Data = (sint32*)TABLE_astTableCB[tTableIDX].pvTableData;
-			ps32Data += stSpreadResult.u16SpreadIndex;
+			ps32Data += stSpreadResult.uSpreadData.stSpreadResult.u16SpreadIndex;
 		
 			s32DataL = *ps32Data;
 			s32DataR = *(ps32Data + 1);		
 		
-			while ((0x4000 <= s32DataL) || (-0x4000 >= s32DataL))
+			while ((0x4000L <= s32DataL) || (-0x4000L >= s32DataL))
 			{
 				u32ShiftL++;
 				s32DataL /= 2;
 			}	
 			
-			while ((0x4000 <= s32DataR) || (-0x4000 >= s32DataR))
+			while ((0x4000L <= s32DataR) || (-0x4000L >= s32DataR))
 			{
 				u32ShiftR++;
 				s32DataR /= 2;
@@ -172,22 +156,22 @@ Bool TABLE_vCalculate(TABLEAPI_ttTableIDX tTableIDX)
 			u32ShiftL = (u32ShiftL > u32ShiftR) ? u32ShiftL : u32ShiftR;
 			u32Factor = MATH_u32IDXToMask(u32ShiftL);
 			
-			s32DataL = (*ps32Data) / u32Factor;
-			s32DataR = (*(ps32Data + 1)) / u32Factor;		
+			s32DataL = (*ps32Data) / (sint32)u32Factor;
+			s32DataR = (*(ps32Data + 1)) / (sint32)u32Factor;		
 			
-			u32Data = (s32DataR * stSpreadResult.u16SpreadOffset) +
-								(s32DataL * (0xffff - stSpreadResult.u16SpreadOffset));
+			s32Data = (s32DataR * (sint32)stSpreadResult.uSpreadData.stSpreadResult.u16SpreadOffset) +
+								(s32DataL * (sint32)(0xffff - stSpreadResult.uSpreadData.stSpreadResult.u16SpreadOffset));
 			
-			u32Data /= 0xffff;			//matthew check this look for a better way to hold precision
-			u32Data *= u32Factor;
+			s32Data /= 0xffff;			//matthew check this look for a better way to hold precision
+			s32Data *= u32Factor;
 			
-			*(sint32*)TABLE_astTableCB[tTableIDX].pvOutputData = (sint32)u32Data;
+			*(sint32*)TABLE_astTableCB[tTableIDX].pvOutputData = s32Data;
 			break;
 		}		
 		case TYPE_enUInt32:
 		{
 			pu32Data = (uint32*)TABLE_astTableCB[tTableIDX].pvTableData;
-			pu32Data += stSpreadResult.u16SpreadIndex;
+			pu32Data += stSpreadResult.uSpreadData.stSpreadResult.u16SpreadIndex;
 			
 			u32DataL = *pu32Data;
 			u32DataR = *(pu32Data + 1);
@@ -210,8 +194,8 @@ Bool TABLE_vCalculate(TABLEAPI_ttTableIDX tTableIDX)
 			u32DataL = (*pu32Data) / u32Factor;
 			u32DataR = (*(pu32Data + 1)) / u32Factor;
 			
-			u32Data = (u32DataR * stSpreadResult.u16SpreadOffset) +
-			(u32DataL * (0xffff - stSpreadResult.u16SpreadOffset));
+			u32Data = (u32DataR * stSpreadResult.uSpreadData.stSpreadResult.u16SpreadOffset) +
+			(u32DataL * (0xffff - stSpreadResult.uSpreadData.stSpreadResult.u16SpreadOffset));
 			
 			u32Data /= 0xffff;			//matthew check this look for a better way to hold precision
 			u32Data *= u32Factor;

@@ -26,7 +26,13 @@ const USERDIAG_tstIdentifierIB USERDIAG_rastIdentifierIB[] = USER_DIAG_nCIDInfo;
 DIAGAPI_tenDiagSecurityLevel USERDIAG_enSecLevel;
 uint32 USERDIAG_u32GlobalTimeTick;
 //ASAM mode=readvalue name="DIAGGlobalTimeTick" type=uint32 offset=0 min=0 max=10000 m=1 b=0 units="dl" format=6.0 help="Data Logging Global Time Tick"   
-
+puint8 USERDIAG_pu8Mode1Data;
+puint8 USERDIAG_pu8Mode2Data;
+puint8 USERDIAG_pu8Mode3Data;
+puint8 USERDIAG_pu8Mode4Data;
+puint8 USERDIAG_pu8Mode6Data;
+puint8 USERDIAG_pu8Mode7Data;
+uint16 USERDIAG_rau16Mode1DataOffsets[MODE1_PIDS_COUNT] = USERDIAG_nMode1PIDOffsets;
 
 /* LOCAL FUNCTION PROTOTYPES (STATIC) *****************************************/
 /*******************************************************************************
@@ -42,6 +48,7 @@ uint32 USERDIAG_u32GlobalTimeTick;
 * Return Value     : Nil
 *******************************************************************************/
 static void	DIAG_vNTOH(puint8 pu8Data, uint8 u8DataCount, uint8 u8DataSize);
+static SPREADAPI_ttSpreadIDX USERDIAG_stGetSpreadIDX(puint8 pu8Data);
 
 /*******************************************************************************
 * Interface        : USERDIAG_i16GetCIDParamAddress
@@ -63,10 +70,23 @@ void USERDIAG_vStart(puint32 const pu32Arg)
 	IOAPI_tenEHIOResource enEHIOResource;
 	IOAPI_tstPortConfigCB stPortConfigCB;	
 	DIAGAPI_tenCallBackType enCallBackType;
+	uint32 u32DiagSpreadsIDX;
 	
 	USERDIAG_u32GlobalTimeTick = 0;
+
+	for (u32DiagSpreadsIDX = 0; u32DiagSpreadsIDX < DIAG_nSPREADSRECORDSMAX; u32DiagSpreadsIDX++)
+	{
+		DIAG_astIDXAddressPairs[u32DiagSpreadsIDX].pData = NULL;
+		DIAG_astIDXAddressPairs[u32DiagSpreadsIDX].tSpreadIDX = ~0;
+	}
+
+	for (u32DiagSpreadsIDX = 0; u32DiagSpreadsIDX < DIAG_nSPREADSMAX; u32DiagSpreadsIDX++)
+	{
+		DIAG_apu8SpreadTableAddresses[DIAG_nSPREADSMAX] = NULL;
+	}
 	
-#if USERDIAG_nEnableUART	
+		
+#if defined(USERDIAG_nEnableUART)
 	if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)
 	{		
 		/* Setup the USERDIAG UART resources */
@@ -102,7 +122,7 @@ void USERDIAG_vStart(puint32 const pu32Arg)
 	}	
 #endif
 	
-#ifdef USERDIAG_nEnableCAN	
+#if defined(USERDIAG_nEnableCAN)
 	if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)
 	{		
 		/* Setup the USERDIAG CAN resources */
@@ -118,11 +138,11 @@ void USERDIAG_vStart(puint32 const pu32Arg)
 			stPortConfigCB.stPinConfig.uPinInfo.stCANPinInfo.enRXPin = EH_IO_CAN1R;
 			stPortConfigCB.stPinConfig.uPinInfo.stCANPinInfo.enTXPin = EH_IO_CAN1T;	
 			stPortConfigCB.stNetConfig.uNetInfo.stCANNetInfo.u32GlobalCANDiagAddress = 0x7df;
-			stPortConfigCB.stNetConfig.uNetInfo.stCANNetInfo.u32CANDiagAddress = 0x750;			
-			stPortConfigCB.stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityAddress[0] = 0x450;
-			stPortConfigCB.stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityAddress[1] = 0x550;
-			stPortConfigCB.stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityAddress[2] = 0x650;
-			stPortConfigCB.stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityAddress[3] = 0x700;			
+			stPortConfigCB.stNetConfig.uNetInfo.stCANNetInfo.u32CANDiagAddress = 0x7e0;			
+			stPortConfigCB.stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityAddress[0] = 1217;
+			stPortConfigCB.stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityAddress[1] = 401;
+			stPortConfigCB.stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityAddress[2] = 1809;
+			stPortConfigCB.stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityAddress[3] = 2024;					
 			stPortConfigCB.stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityMask[0] = 0x7ff;				
 			stPortConfigCB.stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityMask[1] = 0x7ff;	
 			stPortConfigCB.stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityMask[2] = 0x7ff;	
@@ -146,7 +166,7 @@ void USERDIAG_vStart(puint32 const pu32Arg)
 	}	
 #endif
 
-#if USERDIAG_nEnableENET	
+#if defined(USERDIAG_nEnableENET)
 	if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)
 	{		
 		/* Setup the USERDIAG ENET resources */
@@ -179,7 +199,7 @@ void USERDIAG_vStart(puint32 const pu32Arg)
 	}
 #endif
 
-#if USERDIAG_nEnableUSB
+#if defined(USERDIAG_nEnableUSB)
 if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)
 {
 	/* Setup the USERDIAG USB resources */
@@ -207,14 +227,152 @@ if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)
 			USER_vSVC(SYSAPI_enSetDiagCallback, (void*)&enCallBackType, (void*)USERDIAG_boWriteDataCallBack, NULL);
 		}
 	}
+
+	USERDIAG_pu8Mode1Data = NULL;
+	USERDIAG_pu8Mode2Data = NULL;
+	USERDIAG_pu8Mode3Data = NULL;
+	USERDIAG_pu8Mode4Data = NULL;
+	USERDIAG_pu8Mode6Data = NULL;
+	USERDIAG_pu8Mode7Data = NULL;
+
+	USER_vSVC(SYSAPI_enGetMode1Buffer, NULL, NULL, NULL);
+	USERDIAG_pu8Mode1Data = pstSVCDataStruct->pvArg1;
+
+	if (NULL != USERDIAG_pu8Mode1Data)
+	{
+		USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_Supported1]] = 0xff;
+		USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_Supported1] + 1] = 0xff;
+		USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_Supported1] + 2] = 0xff;
+		USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_Supported1] + 3] = 0xff;
+		USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_Mode1Supported2]] = 0xff;
+		USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_Mode1Supported2] + 1] = 0xff;
+		USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_Mode1Supported2] + 2] = 0xff;
+		USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_Mode1Supported2] + 3] = 0xff;
+		USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_Mode1Supported3]] = 0xff;
+		USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_Mode1Supported3] + 1] = 0xff;
+		USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_Mode1Supported3] + 2] = 0xff;
+		USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_Mode1Supported3] + 3] = 0xff;
+	}
 }
 #endif
 }
 
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-align"
 void USERDIAG_vRun(puint32 const pu32Arg)
 {
+	static uint32 u32SpreadIDX;
+	SPREADAPI_ttSpreadIDX tSpreadIDX;
+	SPREADAPI_tstSpreadResult* pstSpreadResult;
+
 	USERDIAG_u32GlobalTimeTick++;
+
+	if (DIAG_nSPREADSMAX > u32SpreadIDX)
+	{
+		if (NULL != DIAG_apu8SpreadTableAddresses[u32SpreadIDX])
+		{
+			tSpreadIDX = USERDIAG_stGetSpreadIDX(DIAG_apu8SpreadTableAddresses[u32SpreadIDX]);
+
+			if (-1 != tSpreadIDX)
+			{
+				pstSpreadResult = BOOSTED_pstGetSpread(tSpreadIDX);
+				DIAG_astSpreadResult[u32SpreadIDX].uSpreadData.stSpreadResult.u16SpreadIndex = pstSpreadResult->uSpreadData.stSpreadResult.u16SpreadIndex;
+				DIAG_astSpreadResult[u32SpreadIDX].uSpreadData.stSpreadResult.u16SpreadOffset = pstSpreadResult->uSpreadData.stSpreadResult.u16SpreadOffset;
+			}
+			else
+			{
+				/* Just copy the raw uint32 data because this is not a spread */
+				DIAG_astSpreadResult[u32SpreadIDX].uSpreadData.u32Data = *(uint32*)DIAG_apu8SpreadTableAddresses[u32SpreadIDX];
+			}
+		}
+
+		u32SpreadIDX++;
+	}
+	else
+	{
+		u32SpreadIDX = 0;
+	}
+
+	if (NULL != USERDIAG_pu8Mode1Data)
+	{
+		switch (USERDIAG_u32GlobalTimeTick % 10)
+		{
+			case 0:
+			{
+
+
+				break;
+			}
+
+
+			case 1:
+			{
+				USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_RPM]] = (4 * CAM_u32RPMRaw) / 0x100;
+				USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_RPM] + 1] = (4 * CAM_u32RPMRaw) & 0xff;
+
+				USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_IAT]] = (uint8)(((sint32)40000 + ATS_tTempCFiltered) / 1000);
+				USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_ECT]] = (uint8)(((sint32)40000 + CTS_tTempCFiltered) / 1000);
+
+				USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_TPS]] = (uint8)(TPS_tThetaFiltered / 352);
+
+				USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_MAP]] = (uint8)(MAP_tKiloPaFiltered / 1000);
+
+				USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_IgnAdvance]] = (uint8)((EST_tIgnitionAdvanceMtheta / 500) + 128);
+
+				USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_CalcEngineLoad]] = (uint8)(((MAP_tKiloPaFiltered / 1000) * CAM_u32RPMRaw) / 10000);
+
+				USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_STT_Bank1]] = (uint8)(3 + (CLO2_u32STT[0] / 8));
+
+				USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_STT_Bank2]] = (uint8)(3 + (CLO2_u32STT[1] / 8));
+
+				USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_LTT_Bank1]] = 0x80;
+
+				USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_LTT_Bank2]] = 0x80;
+
+				USERDIAG_pu8Mode1Data[USERDIAG_rau16Mode1DataOffsets[MODE1_FuelPressure]] = (uint8)(USERCAL_stRAMCAL.u16ReturnlessPressureKPa / 33);
+
+				break;
+			}
+		}
+
+	}
 }
+#pragma GCC diagnostic pop
+
+
+static SPREADAPI_ttSpreadIDX USERDIAG_stGetSpreadIDX(puint8 pu8Data)
+{
+	SPREADAPI_ttSpreadIDX tSpreadIDX = -1;
+	uint32 u32AddressPairIDX;
+
+	for (u32AddressPairIDX = 0; u32AddressPairIDX < DIAG_nSPREADSRECORDSMAX; u32AddressPairIDX++)
+	{
+		if (pu8Data == DIAG_astIDXAddressPairs[u32AddressPairIDX].pData)
+		{
+			tSpreadIDX = DIAG_astIDXAddressPairs[u32AddressPairIDX].tSpreadIDX;
+			break;
+		}
+	}
+
+	return tSpreadIDX;
+}
+
+void USERDIAG_vAddIDXAddressPair(USERDIAG_tstSpreadIDXAddressPair* pstSpreadIDXAddressPair)
+{
+    uint32 u32DiagSpreadsIDX;
+
+	for (u32DiagSpreadsIDX = 0; u32DiagSpreadsIDX < DIAG_nSPREADSRECORDSMAX; u32DiagSpreadsIDX++)
+	{
+		if (NULL == DIAG_astIDXAddressPairs[u32DiagSpreadsIDX].pData)
+		{
+			DIAG_astIDXAddressPairs[u32DiagSpreadsIDX].pData = pstSpreadIDXAddressPair->pData;
+			DIAG_astIDXAddressPairs[u32DiagSpreadsIDX].tSpreadIDX = pstSpreadIDXAddressPair->tSpreadIDX;
+			break;
+		}
+	}
+}
+
 
 void USERDIAG_vTerminate(puint32 const pu32Arg)
 {

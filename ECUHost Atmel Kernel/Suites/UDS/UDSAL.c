@@ -13,13 +13,13 @@
 
 #include "UDSAL.h"
 
-#if BUILD_PBL
+#if defined(BUILD_PBL)
 	#include "ECUHostA_PBL.h"
 #endif
 
 unsigned char UDSAL_ucActiveSession;
 uint8 UDSAL_u8TransferBlock;
-UDSAL_tenDiagSession UDSAL_enDiagSession;
+DIAGAPI_tenSession UDSAL_enDiagSession;
 DIAGAPI_tstDataTransferCB UDSAL_stReadDataTransferCB;
 DIAGAPI_tstDataTransferCB UDSAL_stWriteDataTransferCB;
 uint8 UDSAL_au8ReadTransferData[UDSAL_READ_TRANSFER_SIZE];
@@ -32,7 +32,12 @@ uint16 UDSAL_au16DDDICacheSIDs[UDSAL_nDDDICacheCount];
 uint8 UDSAL_au8DDDICache[UDSAL_nDDDICacheCount][UDSAL_nDDDICacheSize];
 Bool UDSAL_boRDBICaching;
 
-
+static uint8 UDSAL_u8MODE1(puint8, uint32, puint8, puint32, uint32);
+static uint8 UDSAL_u8MODE2(puint8, uint32, puint8, puint32, uint32);
+static uint8 UDSAL_u8MODE3(puint8, uint32, puint8, puint32, uint32);
+static uint8 UDSAL_u8MODE4(puint8, uint32, puint8, puint32, uint32);
+static uint8 UDSAL_u8MODE6(puint8, uint32, puint8, puint32, uint32);
+static uint8 UDSAL_u8MODE7(puint8, uint32, puint8, puint32, uint32);
 static uint8 UDSAL_u8RESET(puint8, uint32, puint8, puint32, uint32);
 static uint8 UDSAL_u8RDBI(puint8, uint32, puint8, puint32, uint32);
 static uint8 UDSAL_u8RMBA(puint8, uint32, puint8, puint32, uint32);
@@ -48,31 +53,36 @@ static uint8 UDSAL_u8TFEXREQ(puint8, uint32, puint8, puint32, uint32);
 static void UDSAL_vResponse(puint8, uint8, uint8, puint32, uint32);
 static void UDSAL_vConfigureDDDICache(uint16, uint8);
 static sint32 UDSAL_i32GetDDDICacheIndex(uint16);
-#if (BUILD_SBL)
+#if defined(BUILD_SBL)
 static Bool UDSAL_boWriteDLBlock(COMMONNL_tstRXLargeBuffer* const, 
 															 uint8* const, 
 															 uint32);
 #endif				
-#if (BUILD_SBL) || (BUILD_PBL)
+#if defined(BUILD_SBL) || defined(BUILD_PBL)
 static Bool UDSAL_boUpdateDLBlock(uint32);
 #endif
 
+uint8 UDSAL_au8Mode1DataBuffer[256];
+uint8 UDSAL_au8Mode2DataBuffer[256];
+uint8 UDSAL_au8Mode3DataBuffer[256];
+uint8 UDSAL_au8Mode4DataBuffer[256];
 const UDSAL_tstALProcessInfo UDSAL_rastALProcessInfo[UDSAL_SID_COUNT] = UDSAL_nALProcessInfo;
+const uint16 UDSAL_ru16Mode1DataOffsets[] = UDSAL_nMode1InfoByteOffset;
 
 void UDSAL_vProcessBufferCB(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8TXBuffer, puint32 pu32TXByteCount, uint32 u32TXCap)
 {		
 	uint8 u8ServiceIDX;
 	uint8 u8Response = UDSAL_RSP_SNSIAS;
-#if BUILD_PBL	
+#if defined(BUILD_PBL	)
 	UDSAL_tenContext enContext = UDSAL_enPBLContext;
 #endif
-#if BUILD_SBL	
+#if defined(BUILD_SBL	)
 	UDSAL_tenContext enContext = UDSAL_enSBLContext;
 #endif
-#if BUILD_KERNEL	
+#if defined(BUILD_KERNEL)
 	UDSAL_tenContext enContext = UDSAL_enAppContext;
 #endif
-#if BUILD_KERNEL_APP	
+#if defined(BUILD_KERNEL_APP)
 	UDSAL_tenContext enContext = UDSAL_enAppContext;
 #endif	
 	
@@ -88,14 +98,14 @@ void UDSAL_vProcessBufferCB(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu
 				memcpy(pu8TXBuffer, pu8RXBuffer, u32RXDataCount + 2);	
 				//u32RXDataCount = 0x100 * *(pu8RXBuffer + UDSAL_IDX_LEN)	+ *(pu8RXBuffer + UDSAL_IDX_LEN + 1)			
 				u8Response = (*UDSAL_rastALProcessInfo[u8ServiceIDX].pfProcess)(pu8RXBuffer, u32RXDataCount, pu8TXBuffer, pu32TXByteCount, u32TXCap);
-#if BUILD_PBL
+#if defined(BUILD_PBL)
 				ECUHOSTAPBL_boLatchDiag = true;
 #endif				
 				break;	
 			}	
 			else
 			{
-#if BUILD_PBL
+#if defined(BUILD_PBL)
 				ECUHOSTAPBL_boLatchDiag = true;
 #endif				
 				u8Response = UDSAL_RSP_CNC;
@@ -108,12 +118,156 @@ void UDSAL_vProcessBufferCB(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu
 	
 }
 
+static uint8 UDSAL_u8MODE1(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8TXBuffer, puint32 pu32TXByteCount, uint32 u32TXCap)
+{
+	uint8 u8DataBytes = 0;
+
+	//switch (*(pu8RXBuffer + 3))
+	//{
+		//case 0:
+		//{
+	//		*(pu8TXBuffer + 1) = 0x06;
+	//		*(pu8TXBuffer + 4) = 0xff;
+	//		*(pu8TXBuffer + 5) = 0xff;
+	//		*(pu8TXBuffer + 6) = 0xff;
+	//		*(pu8TXBuffer + 7) = 0xff;
+	//		*pu32TXByteCount += 8;			
+	//		break;
+	//	}
+	//	default:
+	//	{
+			u8DataBytes = UDSAL_ru16Mode1DataOffsets[*(pu8RXBuffer + 3) + 1] -  UDSAL_ru16Mode1DataOffsets[*(pu8RXBuffer + 3)];
+			*(pu8TXBuffer + 1) = u8DataBytes + 2;
+			memcpy(pu8TXBuffer + 4, &UDSAL_au8Mode1DataBuffer[UDSAL_ru16Mode1DataOffsets[*(pu8RXBuffer + 3)]], u8DataBytes);
+			*pu32TXByteCount += 8;
+			//break;
+	//	}
+	//}
+
+	return UDSAL_RSP_OK;
+}
+
+static uint8 UDSAL_u8MODE2(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8TXBuffer, puint32 pu32TXByteCount, uint32 u32TXCap)
+{
+	switch (*(pu8RXBuffer + 3))
+	{
+		case 0:
+		{
+			*(pu8TXBuffer + 1) = 0x06;
+			*(pu8TXBuffer + 4) = 0x0;
+			*(pu8TXBuffer + 5) = 0x0;
+			*(pu8TXBuffer + 6) = 0x0;
+			*(pu8TXBuffer + 7) = 0x0;
+			*pu32TXByteCount += 8;			
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
+
+	return UDSAL_RSP_OK;
+}
+
+static uint8 UDSAL_u8MODE3(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8TXBuffer, puint32 pu32TXByteCount, uint32 u32TXCap)
+{
+	switch (*(pu8RXBuffer + 3))
+	{
+		case 0:
+		{
+			*(pu8TXBuffer + 1) = 0x06;
+			*(pu8TXBuffer + 4) = 0x0;
+			*(pu8TXBuffer + 5) = 0x0;
+			*(pu8TXBuffer + 6) = 0x0;
+			*(pu8TXBuffer + 7) = 0x0;
+			*pu32TXByteCount += 8;			
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
+
+	return UDSAL_RSP_OK;
+}
+
+static uint8 UDSAL_u8MODE4(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8TXBuffer, puint32 pu32TXByteCount, uint32 u32TXCap)
+{
+	switch (*(pu8RXBuffer + 3))
+	{
+		case 0:
+		{
+			*(pu8TXBuffer + 1) = 0x06;
+			*(pu8TXBuffer + 4) = 0x0;
+			*(pu8TXBuffer + 5) = 0x0;
+			*(pu8TXBuffer + 6) = 0x0;
+			*(pu8TXBuffer + 7) = 0x0;
+			*pu32TXByteCount += 8;			
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
+
+	return UDSAL_RSP_OK;
+}
+
+static uint8 UDSAL_u8MODE6(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8TXBuffer, puint32 pu32TXByteCount, uint32 u32TXCap)
+{
+	switch (*(pu8RXBuffer + 3))
+	{
+		case 0:
+		{
+			*(pu8TXBuffer + 1) = 0x06;
+			*(pu8TXBuffer + 4) = 0x0;
+			*(pu8TXBuffer + 5) = 0x0;
+			*(pu8TXBuffer + 6) = 0x0;
+			*(pu8TXBuffer + 7) = 0x0;
+			*pu32TXByteCount += 8;			
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
+
+	return UDSAL_RSP_OK;
+}
+
+static uint8 UDSAL_u8MODE7(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8TXBuffer, puint32 pu32TXByteCount, uint32 u32TXCap)
+{
+	switch (*(pu8RXBuffer + 3))
+	{
+		case 0:
+		{
+			*(pu8TXBuffer + 1) = 0x06;
+			*(pu8TXBuffer + 4) = 0x0;
+			*(pu8TXBuffer + 5) = 0x0;
+			*(pu8TXBuffer + 6) = 0x0;
+			*(pu8TXBuffer + 7) = 0x0;
+			*pu32TXByteCount += 8;			
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
+
+	return UDSAL_RSP_OK;
+}
+
 static uint8 UDSAL_u8RESET(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8TXBuffer, puint32 pu32TXByteCount, uint32 u32TXCap)
 {
 	uint8 u8Response = UDSAL_RSP_NSUPINSESS;
 	
-	if ((UDSAL_enDiagSessionProgramming == UDSSL_enGetSession()) || 
-			(UDSAL_enDiagSessionExtended == UDSSL_enGetSession()))
+	if ((DIAGAPI_enProgrammingSession == UDSSL_enGetSession()) || 
+			(DIAGAPI_enExtendedSession == UDSSL_enGetSession()))
 	{
 		u8Response = UDSAL_RSP_OK;
 	}
@@ -171,11 +325,16 @@ static uint8 UDSAL_u8RDBI(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8T
 							memcpy(&pu8RDBIAddress, pu8DDDIData, 4);
 							pu8DDDIData += 4;
 						}
-						else
+						else if (2 == (DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f))
 						{
 							memcpy(&pu8RDBIAddress, pu8DDDIData, 2);
 							pu8DDDIData += 2;
-						}					
+						}	
+						else if (1 == (DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f))
+						{
+							memcpy(&pu8RDBIAddress, pu8DDDIData, 1);
+							pu8DDDIData++;
+						}										
 											
 						if (*pu8DDDIData < u32BufferBytesFree)
 						{
@@ -229,6 +388,7 @@ static uint8 UDSAL_u8RMBA(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8T
 	u8AddressAndLength = *(pu8Source++);
 	u32DataMask = 1;
 	
+	/* Grab the address data */
 	for (u8IDX = 0; u8IDX < (u8AddressAndLength & 0x0f); u8IDX++)
 	{
 		u32AddressData += *(pu8Source++) * u32DataMask;		
@@ -281,14 +441,17 @@ static uint8 UDSAL_u8WMBA(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8T
 	uint32 u32BufferBytesRequired;
 	uint8 u8IDX;
 	puint8 pu8Source = pu8RXBuffer + 3;
+	uint8 u8AddressLength = 0;
 	
 	u8AddressAndLength = *(pu8Source++);
 	u32DataMask = 1;
 	
+	/* Grab the address data */
 	for (u8IDX = 0; u8IDX < (u8AddressAndLength & 0x0f); u8IDX++)
 	{
 		u32AddressData += *(pu8Source++) * u32DataMask;		
-		u32DataMask *= 0x100;		
+		u32DataMask *= 0x100;	
+		u8AddressLength++;			
 	}
 	
 	u32DataMask = 1;	
@@ -311,6 +474,12 @@ static uint8 UDSAL_u8WMBA(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8T
 		*pu8TXBuffer = u32BufferBytesRequired / 0x100;
 		*(pu8TXBuffer + 1) = u32BufferBytesRequired % 0x100;
 		*pu32TXByteCount += u32BufferBytesRequired;
+
+		for (u8IDX = 0; u8IDX < u8AddressLength; u8IDX++)
+		{
+			*(pu8TXBuffer + 3 + u8IDX) = u32AddressData & 0xff;
+			u32AddressData = u32AddressData >> 8;
+		}
 	}
 	else
 	{
@@ -374,7 +543,7 @@ static uint8 UDSAL_u8WDBI(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8T
 
 static uint8 UDSAL_u8DLREQ(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8TXBuffer, puint32 pu32TXByteCount, uint32 u32TXCap)
 {
-	uint8 u8Response;	
+	uint8 u8Response = 0;	
 	uint32 u32Data;
 	uint32 u32DataCount;
 	COMMONNL_tstRXLargeBuffer* pstSourceBuffer;			
@@ -399,16 +568,16 @@ static uint8 UDSAL_u8DLREQ(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8
 		pstSourceBuffer = &UDSNL_stRXLargeBuffer;	
 		UDSAL_u8TransferBlock = 0u;	
 
-#if	BUILD_KERNEL
+#if	defined(BUILD_KERNEL)
 		FEE_boWriteControlBlock(pstSourceBuffer, pu8TargetAddr, u32DataCount);	
 		boDLReqErr = FEE_boEraseForDownload(pu8TargetAddr, u32DataCount);
-#elif	BUILD_KERNEL_APP
+#elif defined(BUILD_KERNEL_APP)
 		FEE_boWriteControlBlock(pstSourceBuffer, pu8TargetAddr, u32DataCount);	
 		boDLReqErr = FEE_boEraseForDownload(pu8TargetAddr, u32DataCount);		
-#elif BUILD_SBL
+#elif defined(BUILD_SBL)
 		FEE_boWriteControlBlock(pstSourceBuffer, pu8TargetAddr, u32DataCount);	
 		boDLReqErr = FEE_boEraseForDownload(pu8TargetAddr, u32DataCount);		
-#elif BUILD_UBL		
+#elif defined(BUILD_UBL		)
 		FEE_boWriteControlBlock(pstSourceBuffer, pu8TargetAddr, u32DataCount);	
 		boDLReqErr = FEE_boEraseForDownload(pu8TargetAddr, u32DataCount);		
 #elif BUILD_PBL		
@@ -429,7 +598,7 @@ static uint8 UDSAL_u8TFREQ(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8
 	
 	if (u8BlockPrev != UDSAL_u8TransferBlock)
 	{
-#if	BUILD_KERNEL
+#if	defined(BUILD_KERNEL)
 		FEE_boUpdateControlBlock(0);
 #elif	BUILD_KERNEL_APP
 		FEE_boUpdateControlBlock(0);		
@@ -446,15 +615,15 @@ static uint8 UDSAL_u8TFREQ(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8
 	}
 	else
 	{
-#if	BUILD_KERNEL
+#if	defined(BUILD_KERNEL)
 		FEE_boUpdateControlBlock(UDSNL_stRXLargeBuffer.u16RXRequestedCount - 2);
-#elif	BUILD_KERNEL_APP
+#elif defined(BUILD_KERNEL_APP)
 		FEE_boUpdateControlBlock(UDSNL_stRXLargeBuffer.u16RXRequestedCount - 2);		
-#elif BUILD_SBL
+#elif defined(BUILD_SBL)
 		FEE_boUpdateControlBlock(UDSNL_stRXLargeBuffer.u16RXRequestedCount - 2);
-#elif BUILD_UBL		
+#elif defined(BUILD_UBL)
 		FEE_boUpdateControlBlock(UDSNL_stRXLargeBuffer.u16RXRequestedCount - 2);	
-#elif BUILD_PBL		
+#elif defined(BUILD_PBL)
 		UDSAL_boUpdateDLBlock(UDSNL_stRXLargeBuffer.u16RXRequestedCount - 2);	
 #endif			
 
@@ -500,6 +669,9 @@ static uint8 UDSAL_u8TP(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8TXB
 	return u8Response;
 }
 
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-align"
 static uint8 UDSAL_u8DDDI(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8TXBuffer, puint32 pu32TXByteCount, uint32 u32TXCap)
 {
 	uint8 u8DDDIIDX;
@@ -507,7 +679,6 @@ static uint8 UDSAL_u8DDDI(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8T
 	puint8 pu8Data;
 	uint16 u16DDDISID;
 	uint8 u8ResultByteCount = 0;
-	//sint16 i16RXDataCount = (uint16)u32RXDataCount - 5;
 	sint16 i16RXDataCount = (uint16)u32RXDataCount;
 	uint32 u32Temp;
 	
@@ -528,63 +699,74 @@ static uint8 UDSAL_u8DDDI(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8T
 				DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength = *(pu8RXBuffer++);
 				DIAG_astDDDI[u8DDDIIDX].u8RecsCount = 0;			
 				pu8Data = &DIAG_astDDDI[u8DDDIIDX].u8Data[0];
-				*pu32TXByteCount += 5;		
+				*pu32TXByteCount += 5;	
 				
-				memset((void*)pu8Data, 0, DIAG_DDDI_DATA_COUNT);
+				if ((0 < (DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength >> 4)) &&
+					(0 < (DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f)))
+				{
+					memset((void*)pu8Data, 0, DIAG_DDDI_DATA_COUNT);
 
-				while (0 < i16RXDataCount)
-				{			
-					if (0 != *(pu8RXBuffer + 4))
-					{
-						if ((RAM_START_ADDR < (*(uint32*)pu8RXBuffer)) && (RAM_END_ADDR > (*(uint32*)pu8RXBuffer)))
+					while (0 < i16RXDataCount)
+					{			
+						if (0 != *(pu8RXBuffer + 4))
 						{
-						    memcpy(pu8Data, pu8RXBuffer, DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f);
-						}
+							if ((RAM_START_ADDR < (*(uint32*)pu8RXBuffer)) && (RAM_END_ADDR > (*(uint32*)pu8RXBuffer)))
+							{
+								memcpy(pu8Data, pu8RXBuffer, DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f);
+							}
+							else
+							{
+								memset(pu8Data, 0, DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f);
+							}
+
+
+							u32Temp = DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f;
+							u32Temp += (uint32)pu8RXBuffer;
+							u8ResultByteCount	+= *((puint8)u32Temp);					
+							pu8Data += (DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f);
+							pu8RXBuffer += (DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f);
+							memcpy(pu8Data, pu8RXBuffer, DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength >> 4);
+
+							pu8Data += (DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength >> 4);
+							pu8RXBuffer += (DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength >> 4);
+							i16RXDataCount -= ((DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f) + 
+										(DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength >> 4));		
+							DIAG_astDDDI[u8DDDIIDX].u8RecsCount++;	
+
+						}	
 						else
 						{
-						    memset(pu8Data, 0, DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f);
+							/* Kill the loop because we have found trailing zeros */
+							i16RXDataCount = 0;
 						}
-
-
-						u32Temp = DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f;
-						u32Temp += (uint32)pu8RXBuffer;
-						u8ResultByteCount	+= *((puint8)u32Temp);					
-						pu8Data += (DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f);
-						pu8RXBuffer += (DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f);
-						memcpy(pu8Data, pu8RXBuffer, DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength >> 4);
-
-						pu8Data += (DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength >> 4);
-						pu8RXBuffer += (DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength >> 4);
-						i16RXDataCount -= ((DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength & 0x0f) + 
-									(DIAG_astDDDI[u8DDDIIDX].u8AddressAndLength >> 4));		
-						DIAG_astDDDI[u8DDDIIDX].u8RecsCount++;	
-
-					}	
-					else
-					{
-						/* Kill the loop because we have found trailing zeros */
-						i16RXDataCount = 0;
 					}
+				
+					DIAG_astDDDI[u8DDDIIDX].u8ByteCount = u8ResultByteCount;
+				
+					if (0x9000 == (u16DDDISID & 0xff00))
+					{
+						UDSAL_vConfigureDDDICache(u16DDDISID, u8ResultByteCount);
+					}
+				
+					u8Response = UDSAL_RSP_OK;
+					break;
 				}
-				
-				DIAG_astDDDI[u8DDDIIDX].u8ByteCount = u8ResultByteCount;
-				
-				if (0x9000 == (u16DDDISID & 0xff00))
+				else
 				{
-					UDSAL_vConfigureDDDICache(u16DDDISID, u8ResultByteCount);
+					/* The DDDI install failed */
+					DIAG_astDDDI[u8DDDIIDX].u16DDI = 0;
 				}
-				
-				u8Response = UDSAL_RSP_OK;
-				break;
 			}
 			else
 			{
+
 			}
 		}	
 	}
 	
 	return u8Response;
 }
+#pragma GCC diagnostic pop
 
 static uint8 UDSAL_u8RC(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8TXBuffer, puint32 pu32TXByteCount, uint32 u32TXCap)
 {
@@ -610,7 +792,7 @@ static uint8 UDSAL_u8RC(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8TXB
 				
 				case UDSAL_RCUID_PARTITION:
 				{
-#if BUILD_SBL
+#ifdef BUILD_SBL
 						FEE_boPartition();
 #endif
 				}
@@ -618,11 +800,13 @@ static uint8 UDSAL_u8RC(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8TXB
 				
 				case UDSAL_RCUID_WORK_TO_NVM:
 				{
-#if BUILD_SBL
+#ifdef BUILD_SBL
 					boRetCode = FEE_boNVMWorkingCopy(FALSE, TRUE);
-#elif BUILD_KERNEL			
+#endif
+#ifdef BUILD_KERNEL			
 					boRetCode = FEE_boNVMWorkingCopy(FALSE, TRUE);	
-#elif BUILD_KERNEL_APP				
+#endif
+#ifdef BUILD_KERNEL_APP				
 					boRetCode = FEE_boNVMWorkingCopy(FALSE, TRUE);	
 #endif		
 					if (FALSE == boRetCode)
@@ -635,11 +819,13 @@ static uint8 UDSAL_u8RC(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8TXB
 
 				case UDSAL_RCUID_CLEAR_NVM:
 				{
-#if BUILD_SBL
+#ifdef BUILD_SBL
 					boRetCode = FEE_boNVMClear();
-#elif BUILD_KERNEL			
+#endif
+#ifdef BUILD_KERNEL			
 					boRetCode = FEE_boNVMClear();	
-#elif BUILD_KERNEL_APP				
+#endif
+#ifdef BUILD_KERNEL_APP				
 					boRetCode = FEE_boNVMClear();	
 #endif		
 					if (FALSE == boRetCode)
@@ -652,16 +838,9 @@ static uint8 UDSAL_u8RC(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 pu8TXB
 				
 				case UDSAL_RCUID_BCKP_ADCCAL:
 				{
-#if BUILD_SBL					
+#if 0
 					boRetCode = ADC_boBackupCalibrations();
-#endif					
-#if BUILD_KERNEL					
-					boRetCode = ADC_boBackupCalibrations();		
-#endif
-#if BUILD_KERNEL_APP				
-					boRetCode = ADC_boBackupCalibrations();		
-#endif					
-					
+#endif									
 					if (FALSE == boRetCode)
 					{
 						u8Response = UDSAL_RSP_CNC;	
@@ -708,6 +887,10 @@ static void UDSAL_vResponse(puint8 pu8TXBuffer, uint8 u8ResponseCode, uint8 u8Se
 					*(pu8TXBuffer + 5) = (COMMONNL_RX_BUFF_LARGE_SIZE - 2) % 0x100;
 					break;
 				}
+				case UDSAL_SID_MODE1:
+				{
+					break;
+				}
 				default:
 				{
 					if (0xff != u8BytesResp)
@@ -751,19 +934,19 @@ static void UDSAL_vResponse(puint8 pu8TXBuffer, uint8 u8ResponseCode, uint8 u8Se
 
 static sint32 UDSAL_i32GetDDDICacheIndex(uint16 u16CacheDDDISID)
 {
-	uint32 u32DDDICacheIDX = 0;
 	sint32 s32DDDICacheIndex = -1;
-	
+#if 0
+	uint32 u32DDDICacheIDX = 0;	
 	while (UDSAL_nDDDICacheCount > u32DDDICacheIDX)
 	{
 		if (u16CacheDDDISID == UDSAL_au16DDDICacheSIDs[u32DDDICacheIDX])
 		{
-			s32DDDICacheIndex	= u32DDDICacheIDX;
+			s32DDDICacheIndex = u32DDDICacheIDX;
 			break;
 		}
 		u32DDDICacheIDX++;
 	}	
-
+#endif
 	return s32DDDICacheIndex;	
 }
 
@@ -803,6 +986,10 @@ void UDSAL_vStart(uint32* const u32Stat)
 		UDSAL_au16DDDICacheSIDs[u32DDDICacheIDX] = 0;	
 	}
 	
+	UDSAL_au8Mode1DataBuffer[28] = 1;
+	UDSAL_au8Mode1DataBuffer[29] = 1;
+
+	
 	OS_xModuleStartOK(*u32Stat);
 }
 
@@ -820,6 +1007,7 @@ void UDSAL_vRun(uint32* const u32Stat)
 	
 	for (u8DDDIIDX = 0; u8DDDIIDX < DIAG_DDDI_COUNT; u8DDDIIDX++)
 	{
+
 		if (0x9000 == (DIAG_astDDDI[u8DDDIIDX].u16DDI & 0xff00))
 		/* If DDDI active and rate = 1 ms */
 		{
@@ -850,7 +1038,7 @@ void UDSAL_vTerminate(uint32* const u32Stat)
 
 }
 
-#if (BUILD_SBL) || (BUILD_PBL)
+#if defined(BUILD_SBL) || defined(BUILD_PBL)
 static Bool UDSAL_boWriteDLBlock(COMMONNL_tstRXLargeBuffer* const pstSourceBuffer, 
 															 uint8* const pu8TargetAddress, 
 															 uint32 u32DataCount)
@@ -872,7 +1060,7 @@ static Bool UDSAL_boWriteDLBlock(COMMONNL_tstRXLargeBuffer* const pstSourceBuffe
 }
 #endif
 
-#if (BUILD_SBL)
+#if defined(BUILD_SBL)
 static Bool UDSAL_boUpdateDLBlock(uint32 u32BlockWriteCount)
 {		
 	puint8 pu8SourceData;
@@ -918,7 +1106,7 @@ static uint8 UDSAL_u8TFEXREQ(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 p
 	uint8 u8Response = UDSAL_RSP_RSE;
 	uint32 u32EntryAddress;
 	uint16 u16EntryOffset;
-#if (BUILD_PBL)	
+#if defined(BUILD_PBL)	
 	puint32 pu32TargetAddress;
 #endif
 	
@@ -927,7 +1115,7 @@ static uint8 UDSAL_u8TFEXREQ(puint8 pu8RXBuffer, uint32 u32RXDataCount, puint8 p
 		u32EntryAddress = (uint32)(UDSAL_stDLControlBlock.pu8TargetAddress) & 0xffff0000;
 		u16EntryOffset = 0x100 * pu8RXBuffer[5] + pu8RXBuffer[6];	
 		u32EntryAddress += (uint32)u16EntryOffset;
-#if (BUILD_PBL)
+#if defined(BUILD_PBL)
 		pu32TargetAddress = (puint32)((uint32)UDSAL_stDLControlBlock.pu8TargetAddress & 0xffff0000);
 		*pu32TargetAddress = 0;		
 		PBL_vExecuteDL(u32EntryAddress);

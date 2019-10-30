@@ -21,6 +21,7 @@
 #if BUILD_USER
 
 #include "CTS.h"
+#include "RELAYS.h"
 
 
 /* LOCAL VARIABLE DEFINITIONS (STATIC) ****************************************/
@@ -66,8 +67,11 @@ void CTS_vStart(puint32 const pu32Arg)
 	CTS_i32StartEnrichmentScaled = 1000 * 1000;
 	CTS_i32PostStartEnrichmentScaled = 1000 * 1000;	
 	
-	/* Request and initialise the CTS ADC input channel */
-	SETUP_boSetupADSE(CTS_nADInput, IOAPI_enADSE, ADCAPI_en32Samples, &CTS_vADCCallBack, ADCAPI_enTrigger2, pu32Arg);
+	if (FALSE == USERCAL_stRAMCAL.boCTSCANPrimary)	
+	{
+		/* Request and initialise the CTS ADC input channel */
+		SETUP_boSetupADSE(USERCAL_stRAMCAL.u16CTSADResource, IOAPI_enADSE, ADCAPI_en32Samples, &CTS_vADCCallBack, ADCAPI_enTrigger2, pu32Arg);
+	}
 	
 	/* Request and initialise required Kernel managed spread for coolant sensor */
 	CTS_tSpreadSensorIDX = SETUP_tSetupSpread((void*)&CTS_tSensorVolts, (void*)&USERCAL_stRAMCAL.aUserCoolantSensorSpread, TYPE_enUInt32, 17, SPREADAPI_enSpread4ms, NULL);
@@ -111,84 +115,137 @@ void CTS_vRun(puint32 const pu32Arg)
 	static bool boHotMode;
 	static bool boColdMode;
 #endif
+	static uint32 u32CANCTSMsgCount = 0;
+	static uint8 u8CANCTSOld = 0;
+
 	
-	if (TRUE == CTS_boNewSample)
+	if ((TRUE == CTS_boNewSample) || (true == SENSORS_boCANCTSNewSample))
 	{
 		CTS_u32SampleCount++;
-		
-		USER_xEnterCritical();/*CR1_16*/
-		(void)USERMATH_u16SinglePoleLowPassFilter16((uint16)CTS_u32ADCRaw, CTS_nADFiltVal,
-			&CTS_u32ADCFiltered);
-		CTS_boNewSample = FALSE;		
-		USER_xExitCritical();/*CR1_16*/		
 
+		if (FALSE == USERCAL_stRAMCAL.boCTSCANPrimary)	
+		{
+			USER_xEnterCritical();/*CR1_16*/
+			(void)USERMATH_u16SinglePoleLowPassFilter16((uint16)CTS_u32ADCRaw, CTS_nADFiltVal,
+					&CTS_u32ADCFiltered);
+			CTS_boNewSample = FALSE;		
+			USER_xExitCritical();/*CR1_16*/		
 
 #ifdef BUILD_CTS_PULLUP_SENSE
-		if ((FALSE == SENSORS_boCTSACBiasHigh) && ((0x100 * CTS_u32ADCRaw) > CTS_u32ADCFiltered))
-		{
-			u32Temp = 0x100 * CTS_u32ADCRaw - CTS_u32ADCFiltered;
-			u32Delta = (u32Temp + 3 * u32Delta)  / 4;
-		}
-		else if ((TRUE == SENSORS_boCTSACBiasHigh) && ((0x100 * CTS_u32ADCRaw) < CTS_u32ADCFiltered))
-		{
-			u32Temp = CTS_u32ADCFiltered - 0x100 * CTS_u32ADCRaw;
-			u32Delta = (u32Temp + 3 * u32Delta)  / 4;
-		}			
-
-		if (0 == CAM_u32RPMRaw)
-		{
-			if (10000 < u32Delta)
+			if ((FALSE == SENSORS_boCTSACBiasHigh) && ((0x100 * CTS_u32ADCRaw) > CTS_u32ADCFiltered))
 			{
-				u32HighImpModeCount = 40 > u32HighImpModeCount ? u32HighImpModeCount + 1 : u32HighImpModeCount;
-				u32LowImpModeCount = 2 < u32LowImpModeCount ? u32LowImpModeCount - 2 : 0;
+				u32Temp = 0x100 * CTS_u32ADCRaw - CTS_u32ADCFiltered;
+				u32Delta = (u32Temp + 3 * u32Delta)  / 4;
+			}
+			else if ((TRUE == SENSORS_boCTSACBiasHigh) && ((0x100 * CTS_u32ADCRaw) < CTS_u32ADCFiltered))
+			{
+				u32Temp = CTS_u32ADCFiltered - 0x100 * CTS_u32ADCRaw;
+				u32Delta = (u32Temp + 3 * u32Delta)  / 4;
+			}			
+
+			if (0 == CAM_u32RPMRaw)
+			{
+				if (10000 < u32Delta)
+				{
+					u32HighImpModeCount = 40 > u32HighImpModeCount ? u32HighImpModeCount + 1 : u32HighImpModeCount;
+					u32LowImpModeCount = 2 < u32LowImpModeCount ? u32LowImpModeCount - 2 : 0;
+				}
+
+				if (7000 > u32Delta)
+				{
+					u32LowImpModeCount = 40 > u32LowImpModeCount ? u32LowImpModeCount + 1 : u32LowImpModeCount;
+					u32HighImpModeCount = 2 < u32HighImpModeCount ? u32HighImpModeCount - 2 : 0;
+				}
+
+				boColdMode = 35 < u32HighImpModeCount;
+				boHotMode = 35 < u32LowImpModeCount;
+			}
+			else 
+			{
+				if (15000 < u32Delta)
+				{
+					u32HighImpModeCount = 1000 > u32HighImpModeCount ? u32HighImpModeCount + 1 : u32HighImpModeCount;
+					u32LowImpModeCount = 2 < u32LowImpModeCount ? u32LowImpModeCount - 2 : 0;
+				}
+
+				if (10000 > u32Delta)
+				{
+					u32LowImpModeCount = 1000 > u32LowImpModeCount ? u32LowImpModeCount + 1 : u32LowImpModeCount;
+					u32HighImpModeCount = 2 < u32HighImpModeCount ? u32HighImpModeCount - 2 : 0;
+				}
+
+				boColdMode = 500 < u32HighImpModeCount;
+				boHotMode = 500 < u32LowImpModeCount;
 			}
 
-			if (7000 > u32Delta)
+
+			if (((FALSE == boHotMode) && (FALSE == boColdMode)) ||
+				((TRUE == boHotMode) && (TRUE == boColdMode)))
 			{
-				u32LowImpModeCount = 40 > u32LowImpModeCount ? u32LowImpModeCount + 1 : u32LowImpModeCount;
-				u32HighImpModeCount = 2 < u32HighImpModeCount ? u32HighImpModeCount - 2 : 0;
+				return;
 			}
 
-			boColdMode = 35 < u32HighImpModeCount;
-			boHotMode = 35 < u32LowImpModeCount;
-		}
-		else 
-		{
-			if (15000 < u32Delta)
-			{
-				u32HighImpModeCount = 1000 > u32HighImpModeCount ? u32HighImpModeCount + 1 : u32HighImpModeCount;
-				u32LowImpModeCount = 2 < u32LowImpModeCount ? u32LowImpModeCount - 2 : 0;
-			}
+#endif //BUILD_BSP_CTS_PULLUP_SENSE	
 
-			if (10000 > u32Delta)
-			{
-				u32LowImpModeCount = 1000 > u32LowImpModeCount ? u32LowImpModeCount + 1 : u32LowImpModeCount;
-				u32HighImpModeCount = 2 < u32HighImpModeCount ? u32HighImpModeCount - 2 : 0;
-			}
-
-			boColdMode = 500 < u32HighImpModeCount;
-			boHotMode = 500 < u32LowImpModeCount;
-		}
-
-
-		if (((FALSE == boHotMode) && (FALSE == boColdMode)) ||
-			((TRUE == boHotMode) && (TRUE == boColdMode)))
-		{
-			return;
-		}
-#endif		
-		u32Temp = CTS_u32ADCFiltered * SENSORS_nADRefVolts;
-		u32Temp /= SENSORS_nADScaleMax;
-		u32Temp /= SENSORS_nVDivRatio;		
-		CTS_tSensorVolts = u32Temp;		
+			u32Temp = CTS_u32ADCFiltered * SENSORS_nADRefVolts;
+			u32Temp /= SENSORS_nADScaleMax;
+			u32Temp /= SENSORS_nVDivRatio;		
+			CTS_tSensorVolts = u32Temp;		
 		
-		/* Calculate the current spread for coolant sensor */
-		USER_vSVC(SYSAPI_enCalculateSpread, (void*)&CTS_tSpreadSensorIDX,
-				NULL, NULL);		
+			/* Calculate the current spread for coolant sensor */
+			USER_vSVC(SYSAPI_enCalculateSpread, (void*)&CTS_tSpreadSensorIDX,
+					NULL, NULL);		
 		
-		/* Lookup the current spread for coolant sensor */
-		USER_vSVC(SYSAPI_enCalculateTable, (void*)&CTS_tTableSensorIDX,
-			NULL, NULL);			
+			/* Lookup the current spread for coolant sensor */
+			USER_vSVC(SYSAPI_enCalculateTable, (void*)&CTS_tTableSensorIDX,
+				NULL, NULL);
+		}
+		else
+		{
+			if (0xff != SENSORS_u8CANCTS)
+			{
+				CTS_tTempCRaw = 1000 * (sint32)(SENSORS_u8CANCTS - 40);
+				SENSORS_boCANCTSNewSample = FALSE;
+
+				u32CANCTSMsgCount++;
+
+				if ((3 < u32CANCTSMsgCount) && 
+				   (u8CANCTSOld == SENSORS_u8CANCTS) &&
+				   (0 != SENSORS_u8CANCTS))
+				{
+					CTS_boCTSReady = TRUE;
+				}
+				else if (10 < u32CANCTSMsgCount)
+				{
+					CTS_boCTSReady = TRUE;
+				}
+			}
+			else
+			{
+				CTS_tTempCRaw = 0;
+			}
+
+			u8CANCTSOld = SENSORS_u8CANCTS;
+		}
+
+
+		if ((0 == CAM_u32RPMRaw) || (TRUE == USERCAL_stRAMCAL.boCTSCANPrimary))
+		{
+			CTS_tTempCFiltered = CTS_tTempCRaw;	
+		}
+		else
+		{
+			if (CTS_tTempCRaw < CTS_tTempCFiltered)
+			{
+				CTS_tTempCFiltered -= 500;
+			}
+			else if (CTS_tTempCRaw > CTS_tTempCFiltered)
+			{
+				CTS_tTempCFiltered += 500;
+				CTS_tTempCFiltered = CTS_MAXVAL <= CTS_tTempCFiltered ? CTS_MAXVAL : CTS_tTempCFiltered;
+			}
+		}
+						
 		
 		/* Calculate the current spread for coolant enrichment */
 		USER_vSVC(SYSAPI_enCalculateSpread, (void*)&CTS_tSpreadEnrichmentIDX,
@@ -201,21 +258,6 @@ void CTS_vRun(puint32 const pu32Arg)
 		
 		(void)BOOSTED_boIndexAndCalculateTable(CTS_tSpreadPrimerIDX, CTS_tTablePrimerIDX);			
 			
-		if (0 == CAM_u32RPMRaw)
-		{
-			CTS_tTempCFiltered = CTS_tTempCRaw;	
-		}
-		else
-		{
-			if (CTS_tTempCRaw < CTS_tTempCFiltered)
-			{
-				CTS_tTempCFiltered -= 3;
-			}
-			else if (CTS_tTempCRaw > CTS_tTempCFiltered)
-			{
-				CTS_tTempCFiltered += 3;
-			}
-		}
 		
 #ifdef BUILD_CTS_PULLUP_SENSE	
 		if (TRUE == boHotMode)
@@ -266,6 +308,15 @@ void CTS_vRun(puint32 const pu32Arg)
 			CTS_i32PostStartEnrichmentScaled = 1000	* CTS_i32PostStartEnrichment;					
 		}
 	}
+
+	CTS_boRadFanOn = USERCAL_stRAMCAL.s32RadFanOnTemp < CTS_tTempCFiltered ? TRUE : CTS_boRadFanOn;
+	CTS_boRadFanOn = USERCAL_stRAMCAL.s32RadFanOffTemp > CTS_tTempCFiltered ? FALSE : CTS_boRadFanOn;
+
+
+	if (EH_IO_Invalid != USERCAL_stRAMCAL.enThermoFanRelay)
+	{
+		RELAYS_vOutputBit(USERCAL_stRAMCAL.enThermoFanRelay, CTS_boRadFanOn);
+	}
 }
 
 void CTS_vTerminate(puint32 const pu32Arg)
@@ -283,5 +334,6 @@ static void CTS_vADCCallBack(IOAPI_tenEHIOResource enEHIOResource, uint32 u32ADC
 	CTS_u32ADCRaw = u32ADCResult;
 	CTS_boNewSample = TRUE;
 }
+
 
 #endif //BUILD_USER

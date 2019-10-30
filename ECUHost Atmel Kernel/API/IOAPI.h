@@ -211,11 +211,12 @@ typedef enum
 	EH_IO_TMR10 = 67,
 	EH_IO_TMR11 = 68,
 	EH_IO_TMR12 = 69,
-	EH_IO_IIC2_SDA = 70,
-	EH_IO_IIC2_SCL = 71,
-	EH_IO_SPI1_MOSI = 72,
-	EH_IO_SPI1_MISO = 73,
-	EH_IO_SPI1_SCK = 74,
+	EH_IO_EXTINT = 70,
+	EH_IO_IIC2_SDA = 71,
+	EH_IO_IIC2_SCL = 72,
+	EH_IO_SPI1_MOSI = 73,
+	EH_IO_SPI1_MISO = 74,
+	EH_IO_SPI1_SCK = 75,
 	IO_Total_Discrete_Count,
 	EH_VIO_TC0,
 	EH_VIO_TC1,
@@ -281,7 +282,7 @@ typedef enum
 	IOAPI_enCANBus,
 	IOAPI_enENETChannel,
 	IOAPI_enUSBChannel,
-	IOAPI_enTEPM
+	IOAPI_enTEPM,
 } IOAPI_tenEHIOType;
 
 typedef enum
@@ -366,7 +367,8 @@ typedef struct
 	IOAPI_tenEHIOResource enSCKPin;
 	Bool boCaptureRising;
 	Bool boShiftRising;
-	Bool boIdleHigh;
+	Bool boClockIdleHigh;
+	Bool boDataIdleHigh;
 } IOAPI_tstSPIPinInfo;
 
 typedef struct
@@ -403,6 +405,7 @@ typedef struct
 	IOAPI_tpfTransferCB pfCB;
 	void* pvData;
 	uint32 u32ByteCount;
+	Bool boBlockingMode;
 } IOAPI_tstTransferCB;
 
 #endif //IOAPI_H

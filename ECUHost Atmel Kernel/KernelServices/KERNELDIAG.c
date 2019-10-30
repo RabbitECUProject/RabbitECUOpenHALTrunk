@@ -58,7 +58,7 @@ void DIAG_vSetCallBack(DIAGAPI_tenCallBackType enCallBackType, void* pfFunction)
 // 		}
 // 	}
 // #endif
-#if BUILD_KERNEL
+#if defined(BUILD_KERNEL)
 	OS_stSVCDataStruct.enSVCResult = SYSAPI_enOK;
 	
 	switch (enCallBackType)

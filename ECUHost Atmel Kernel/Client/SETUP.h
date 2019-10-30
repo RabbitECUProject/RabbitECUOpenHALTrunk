@@ -38,6 +38,7 @@ void SETUP_vSetupDigitalIO(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tenEHIOTy
 void SETUP_vSetDigitalIOHigh(IOAPI_tenEHIOResource);
 void SETUP_vSetDigitalIOLow(IOAPI_tenEHIOResource);
 Bool SETUP_vGetDigitalIO(IOAPI_tenEHIOResource);
+void SETUP_vSetupSimpleCamSync(IOAPI_tenEHIOResource, Bool, uint32);
 
 #endif // SETUP_H
 

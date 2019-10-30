@@ -40,8 +40,6 @@ sint32 ADC_i32CyclicQueueIDX;
 ADCHA_tenQueue ADC_astADCActiveQueue[ADCHA_enADCModuleCount];
 
 static Bool ADC_boInitiateConversion(ADCHA_tstADCConversion*, ADCHA_tenQueue, uint32);
-static void ADC_vCalibrate(tstADCModule*, uint32, uint32);
-static void ADC_vInitInterrupts(IRQn_Type);
 static void ADC_vRunConversionQueues(void);
 
 
@@ -80,6 +78,8 @@ void ADC_vStart(uint32* const pu32Stat)
 void ADC_vRun(uint32* const pu32Stat)
 {
 	uint32 u32CyclicQueueIDX;
+	static uint32 u32ADCQueueStuckCount;
+	ADCHA_tenQueue enQueue;
 	
 	if ((ADC_astConversionQueue[ADCHA_enQueueCyclic].u32Tail > ADC_astConversionQueue[ADCHA_enQueueCyclic].u32Head) && (-1 == ADC_i32CyclicQueueIDX))
 	{				
@@ -103,19 +103,30 @@ void ADC_vRun(uint32* const pu32Stat)
 			if (0 == ADC_astADCConversions[ADCHA_enQueueCyclic][u32CyclicQueueIDX].u32ControlCount)
 			{
 				ADC_i32CyclicQueueIDX = u32CyclicQueueIDX;
-				ADC_boCyclicQueuePending = ADC_boInitiateConversion(&ADC_astADCConversions[ADCHA_enQueueCyclic][ADC_astConversionQueue[ADCHA_enQueueCyclic].u32Head], ADCHA_enQueueCyclic, ADC_astConversionQueue[0].u32Tail); 				
+				//ADC_boCyclicQueuePending = ADC_boInitiateConversion(&ADC_astADCConversions[ADCHA_enQueueCyclic][ADC_astConversionQueue[ADCHA_enQueueCyclic].u32Head], ADCHA_enQueueCyclic, ADC_astConversionQueue[0].u32Tail); 				
 				break;
 			}
 		}
 	
 		CPU_xExitCritical();
 	}
+
+	/* Check if the ADC queues are stuck */
+	for (enQueue = ADCHA_enQueueCyclic; enQueue < ADCHA_enQueueCount; enQueue++)
+	{
+		if (ADC_astConversionQueue[enQueue].u32Head != ADC_astConversionQueue[enQueue].u32Tail)
+		{
+			u32ADCQueueStuckCount++;
+		}
+	}
+
+	if (5 < u32ADCQueueStuckCount)
+	{
+		ADCHA_vReset(ADCHA_enADC0);
+		u32ADCQueueStuckCount = 0;
+	}
 }
 
-Bool ADC_boBackupCalibrations(void)
-{
-	return ADCHA_boBackupCalibrations();
-}
 
 SYSAPI_tenSVCResult ADC_vInitADCResource(IOAPI_tenEHIOResource enIOResource, IOAPI_tenEHIOType enEHIOType, ADCAPI_tstADCCB* pstADCCB)
 {
@@ -224,7 +235,7 @@ void ADC_vInterruptHandler(IOAPI_tenEHIOResource enEHIOResource, void* pvData)
 		{
 			while (-1 != ADC_i32CyclicQueueIDX)
 			{
-				ADC_i32CyclicQueueIDX = ((ADC_astConversionQueue[ADCHA_enQueueCyclic].u32Tail - 1) > ADC_i32CyclicQueueIDX) ? ADC_i32CyclicQueueIDX + 1 : -1;
+				ADC_i32CyclicQueueIDX = ((sint32)(ADC_astConversionQueue[ADCHA_enQueueCyclic].u32Tail - 1) > ADC_i32CyclicQueueIDX) ? ADC_i32CyclicQueueIDX + 1 : -1;
 				if (-1 != ADC_i32CyclicQueueIDX)
 				{
 					if (0 == ADC_astADCConversions[ADCHA_enQueueCyclic][ADC_i32CyclicQueueIDX].u32ControlCount)
@@ -260,9 +271,13 @@ Bool ADC_vTriggerQueue(ADCAPI_tenTrigger enTrigger)
 	if ((ADCAPI_enTrigger1 <= enTrigger) && (ADCAPI_enTriggerCount > enTrigger))
 	{
 		enQueue = (ADCHA_tenQueue)(enTrigger - ADCAPI_enTrigger1 + 1);	
-		ADC_astConversionQueue[enQueue].u32Head = 0;
-		ADC_vRunConversionQueues();
-		boResult = TRUE;
+
+		if (false == ADCHA_boGetModuleBusy(ADCHA_enADC0))
+		{
+			ADC_astConversionQueue[enQueue].u32Head = 0;
+			ADC_vRunConversionQueues();
+			boResult = TRUE;
+		}
 	}
 	
 	return boResult;
@@ -275,7 +290,7 @@ static Bool ADC_boInitiateConversion(ADCHA_tstADCConversion* pstADCConversion, A
 	MSG_tenMBXErr enMBXErr = MSG_enOK;
 	uint32 u32ConversionIDX;
 
-	u32QueueIDX = (ADCHA_enQueueCyclic == enQueue) ? ADC_i32CyclicQueueIDX :
+	u32QueueIDX = (ADCHA_enQueueCyclic == enQueue) ? (uint32)ADC_i32CyclicQueueIDX :
 	ADC_astConversionQueue[enQueue].u32Head;
 
 	for (u32ConversionIDX = u32QueueIDX; u32ConversionIDX < u32QueueTail; u32ConversionIDX++)
@@ -300,23 +315,11 @@ static Bool ADC_boInitiateConversion(ADCHA_tstADCConversion* pstADCConversion, A
 }
 
 
-static void ADC_vCalibrate(tstADCModule* pstADC, uint32 u32ADCIDX, uint32 u32CalFlag)
-{
-    ADCHA_vCalibrate(pstADC, u32ADCIDX, u32CalFlag);
-}
-
-
-static void ADC_vInitInterrupts(IRQn_Type enIrq)
-{
-	IRQ_vEnableIRQ(enIrq, IRQ_enPRIO_8,NULL, NULL);
-}
-
 static void ADC_vRunConversionQueues(void)
 {
 	ADCHA_tenQueue enQueue;
 	Bool boModuleBusy[ADCHA_enADCModuleCount];
 	ADCHA_tenADCModule enADCModule;
-	tstADCModule* pstADC;
 	Bool boConversionPending;
 	ADCHA_tstADCConversion* pstConversion;
 	uint32 u32QueueIDX;
@@ -369,6 +372,10 @@ static void ADC_vRunConversionQueues(void)
 						}
 					}
 				}
+				break;
+			}
+			default:
+			{
 				break;
 			}
 		}

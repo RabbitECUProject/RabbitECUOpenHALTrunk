@@ -22,11 +22,13 @@
 					<CVendor>Atmel</CVendor>
 					<CVersion>1.0.0</CVersion>
 					<DefaultRepoPath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs</DefaultRepoPath>
-					<DependentComponents />
+					<DependentComponents>
+						<d4p1:anyType z:Ref="i1" />
+					</DependentComponents>
 					<Description></Description>
 					<Files>
 						<d4p1:anyType i:type="FileInfo">
-							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.41\include</AbsolutePath>
+							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.50\include</AbsolutePath>
 							<Attribute></Attribute>
 							<Category>include</Category>
 							<Condition>C</Condition>
@@ -37,7 +39,7 @@
 							<SourcePath></SourcePath>
 						</d4p1:anyType>
 						<d4p1:anyType i:type="FileInfo">
-							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.41\include\sam.h</AbsolutePath>
+							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.50\include\sam.h</AbsolutePath>
 							<Attribute></Attribute>
 							<Category>header</Category>
 							<Condition>C</Condition>
@@ -48,18 +50,18 @@
 							<SourcePath></SourcePath>
 						</d4p1:anyType>
 						<d4p1:anyType i:type="FileInfo">
-							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.41\templates\main.c</AbsolutePath>
+							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.50\templates\main.c</AbsolutePath>
 							<Attribute>template</Attribute>
 							<Category>source</Category>
 							<Condition>C Exe</Condition>
-							<FileContentHash>/lZf4eR34NzFEDau+Sav+w==</FileContentHash>
+							<FileContentHash>o0ncidL5gR0Z0YwWJ1YroQ==</FileContentHash>
 							<FileVersion></FileVersion>
 							<Name>templates/main.c</Name>
 							<SelectString>Main file (.c)</SelectString>
 							<SourcePath></SourcePath>
 						</d4p1:anyType>
 						<d4p1:anyType i:type="FileInfo">
-							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.41\templates\main.cpp</AbsolutePath>
+							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.50\templates\main.cpp</AbsolutePath>
 							<Attribute>template</Attribute>
 							<Category>source</Category>
 							<Condition>C Exe</Condition>
@@ -70,7 +72,7 @@
 							<SourcePath></SourcePath>
 						</d4p1:anyType>
 						<d4p1:anyType i:type="FileInfo">
-							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.41\gcc\system_sam3xa.c</AbsolutePath>
+							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.50\gcc\system_sam3xa.c</AbsolutePath>
 							<Attribute>config</Attribute>
 							<Category>source</Category>
 							<Condition>GCC Exe</Condition>
@@ -81,7 +83,7 @@
 							<SourcePath></SourcePath>
 						</d4p1:anyType>
 						<d4p1:anyType i:type="FileInfo">
-							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.41\gcc\gcc\startup_sam3xa.c</AbsolutePath>
+							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.50\gcc\gcc\startup_sam3xa.c</AbsolutePath>
 							<Attribute>config</Attribute>
 							<Category>source</Category>
 							<Condition>GCC Exe</Condition>
@@ -92,7 +94,7 @@
 							<SourcePath></SourcePath>
 						</d4p1:anyType>
 						<d4p1:anyType i:type="FileInfo">
-							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.41\gcc\gcc\sam3x8e_flash.ld</AbsolutePath>
+							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.50\gcc\gcc\sam3x8e_flash.ld</AbsolutePath>
 							<Attribute>config</Attribute>
 							<Category>linkerScript</Category>
 							<Condition>GCC Exe</Condition>
@@ -103,7 +105,7 @@
 							<SourcePath></SourcePath>
 						</d4p1:anyType>
 						<d4p1:anyType i:type="FileInfo">
-							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.41\gcc\gcc\sam3x8e_sram.ld</AbsolutePath>
+							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.50\gcc\gcc\sam3x8e_sram.ld</AbsolutePath>
 							<Attribute>config</Attribute>
 							<Category>other</Category>
 							<Condition>GCC Exe</Condition>
@@ -114,7 +116,7 @@
 							<SourcePath></SourcePath>
 						</d4p1:anyType>
 						<d4p1:anyType i:type="FileInfo">
-							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.41\gcc\gcc\sam3xa_flash.ld</AbsolutePath>
+							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.50\gcc\gcc\sam3xa_flash.ld</AbsolutePath>
 							<Attribute>config</Attribute>
 							<Category>other</Category>
 							<Condition>GCC Exe</Condition>
@@ -125,7 +127,7 @@
 							<SourcePath></SourcePath>
 						</d4p1:anyType>
 						<d4p1:anyType i:type="FileInfo">
-							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.41\gcc\gcc\sam3xa_sram.ld</AbsolutePath>
+							<AbsolutePath>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM3X_DFP\1.0.50\gcc\gcc\sam3xa_sram.ld</AbsolutePath>
 							<Attribute>config</Attribute>
 							<Category>other</Category>
 							<Condition>GCC Exe</Condition>
@@ -137,8 +139,8 @@
 						</d4p1:anyType>
 					</Files>
 					<PackName>SAM3X_DFP</PackName>
-					<PackPath>C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/SAM3X_DFP/1.0.41/Atmel.SAM3X_DFP.pdsc</PackPath>
-					<PackVersion>1.0.41</PackVersion>
+					<PackPath>C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/SAM3X_DFP/1.0.50/Atmel.SAM3X_DFP.pdsc</PackPath>
+					<PackVersion>1.0.50</PackVersion>
 					<PresentInProject>true</PresentInProject>
 					<ReferenceConditionId>ATSAM3X8E</ReferenceConditionId>
 					<RteComponents>

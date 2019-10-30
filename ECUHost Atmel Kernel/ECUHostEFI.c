@@ -25,6 +25,7 @@ Bool boGlobalTickFlag;
 extern void SystemCoreClockUpdate(void);
 volatile uint32_t msTicks;                            /* counts 1ms timeTicks */
 extern uint32 OS_u32SysTickInterval;
+int EFIMain(void);
 
 /*----------------------------------------------------------------------------
   MAIN function

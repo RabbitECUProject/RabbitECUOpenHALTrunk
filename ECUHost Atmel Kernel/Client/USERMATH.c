@@ -25,6 +25,8 @@
 
 uint8 USERMATH_au8TimeConstantData[] = USERMATH_nTimeConstantData;
 uint32 USERMATH_rau32SquareRoot[] = USERMATH_nSQRT_DATA;
+uint16 USERMATH_rau16CRCData[] = CRC16_DATA;
+
 
 /* GLOBAL FUNCTION DEFINITIONS ************************************************/
 uint8 USERMATH_u8GetFilterFromTimeConstant(uint32 u32CalcPeriodMs, uint32 u32TimeConstantMs)
@@ -105,7 +107,7 @@ uint32 USERMATH_u32DiscardAndAverage32(puint32 pu32Samples, uint32 u32SampleCoun
 	uint32 u32DiscardedCount = 0;
 	uint32 u32PreviousWorstDelta;
 	uint32 u32WorstDelta;
-	uint32 u32WorstDeltaIndex;
+	uint32 u32WorstDeltaIndex = 0;
 	uint32 u32Average = 0;/*CR1_80*/
 	uint32 u32Delta;
 	
@@ -153,7 +155,7 @@ sint32 USERMATH_s32DiscardAndAverage32(psint32 ps32Samples, uint32 u32SampleCoun
 	uint32 u32DiscardedCount = 0;
 	sint32 s32PreviousWorstDelta;
 	sint32 s32WorstDelta;
-	uint32 u32WorstDeltaIndex;
+	uint32 u32WorstDeltaIndex = 0;
 	sint32 s32Average;
 	sint32 s32Delta;
 	
@@ -201,6 +203,17 @@ uint32 USERMATH_u32GetSquareRoot(uint32 u32Fraction)
 	}
 
 	return u32Sqrt;
+}
+
+
+uint16 USERMATH_U16GetCRC(uint16 CRCSeed, puint8 pu8Data, uint32 u32Len)
+{
+	while (u32Len--)
+	{
+		CRCSeed = (CRCSeed << 8) ^ USERMATH_rau16CRCData[((CRCSeed >> 8) ^ *pu8Data++)];
+	}
+
+	return CRCSeed;
 }
 
 #endif //BUILD_USER

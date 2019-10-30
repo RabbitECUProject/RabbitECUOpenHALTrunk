@@ -43,11 +43,14 @@ EXTERN GPM6_ttHertz AFM_tSensorHertz;/*CR1_88*/
 //ASAM mode=readvalue name="AFM Sensor Frequency" type=uint32 offset=0 min=0 max=65535 m=1 b=0 units="Hz" format=5.3 help="AFM Sensor Flow"
 EXTERN GPM6_ttVolts AFM_tSensorVolts;/*CR1_88*/
 //ASAM mode=readvalue name="AFM Sensor Voltage" type=uint32 offset=0 min=0 max=5 m=0.001 b=0 units="V" format=5.3 help="AFM Sensor Flow"
-EXTERN GPM6_ttUg AFM_tAirFlowUg;
+EXTERN GPM6_ttUg AFM_tAirFlowAFMUg;
 //ASAM mode=readvalue name="AFM Sensor Mass Flow" type=uint32 offset=0 min=0 max=5 m=0.001 b=0 units="V" format=5.3 help="AFM Sensor Flow"
 EXTERN GPM6_ttUg AFM_tAirFlowBackupUg;
 //ASAM mode=readvalue name="AFM Sensor Mass Filtered Backup" type=uint32 offset=0 min=0 max=5 m=0.001 b=0 units="V" format=5.3 help="AFM Sensor Flow Filtered"
 EXTERN GPM6_ttUg AFM_tAirFlowBackupRawUg;
+EXTERN GPM6_ttUg AFM_tAirFlowVEUg;
+EXTERN uint16 AFM_u16LearnVE;
+//ASAM mode=readvalue name="AFM VE Learn" type=uint16 offset=0 min=0 max=2 m=0.001 b=0 units="dl" format=5.3 help="AFM VE Learn"
 		
 /* GLOBAL FUNCTION DECLARATIONS ***********************************************/
 void AFM_vStart(uint32 * const pu32Arg);

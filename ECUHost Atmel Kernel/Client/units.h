@@ -38,6 +38,7 @@ typedef uint32 GPM6_ttMicroWatts;
 typedef uint32 GPM6_ttKiloPa;
 typedef uint32 GPM6_ttPa;
 typedef uint32 GPM6_ttTheta;
+typedef sint32 GPM6_ttThetaDT;
 typedef uint32 GPM6_ttMTheta;
 typedef sint32 GPM6_ttTempC;
 typedef uint32 GPM6_ttPulseUs;

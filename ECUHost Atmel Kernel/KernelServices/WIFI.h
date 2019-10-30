@@ -39,9 +39,9 @@
 	(IOAPI_tpfTransferCB)NULL																		\
 } 
 
-#if BUILD_KERNEL
+#if defined(BUILD_KERNEL)
 	#define WIFI_nReportCount				100u
-#elif BUILD_KERNEL_APP
+#elif defined(BUILD_KERNEL_APP)
 	#define WIFI_nReportCount				100u
 #else
 	#define WIFI_nReportCount				1u
@@ -51,13 +51,13 @@
 #define WIFI_nPromptStringSize		25u
 #define WIFI_nSSIDECUHOSTWLAN 		"ECUHOSTWLAN"
 
-#if BUILD_PBL
+#if defined(BUILD_PBL)
 	#define WIFI_xGetClientHandle()	0xf0000000
-#elif BUILD_SBL
+#elif defined(BUILD_SBL)
 	#define WIFI_xGetClientHandle()	0xf0000000
-#elif BUILD_KERNEL
+#elif defined(BUILD_KERNEL)
 	#define WIFI_xGetClientHandle()	OS_stSVCDataStruct.tClientHandle | 0xf0000000
-#elif BUILD_KERNEL_APP
+#elif defined(BUILD_KERNEL_APP)
 	#define WIFI_xGetClientHandle()	OS_stSVCDataStruct.tClientHandle | 0xf0000000
 #endif
 

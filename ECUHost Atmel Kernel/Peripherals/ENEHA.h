@@ -55,8 +55,8 @@
 #endif
 
 #ifdef BUILD_SAM3X8E	
-#define ENEHA_nReg32Set             \	
-{	                                \	
+#define ENEHA_nReg32Set             \
+{	                                \
     { NULL, 0, REGSET_enOverwrite } \
 };
 #endif

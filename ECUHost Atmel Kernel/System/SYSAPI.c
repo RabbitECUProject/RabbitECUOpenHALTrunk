@@ -12,6 +12,8 @@
 /******************************************************************************/
 
 #include "sys.h"
+#include "IOAPI.h"
+#include "CEMAPI.h"
 
 #include "PERADC.h"
 #include "ADCAPI.h"
@@ -45,6 +47,15 @@
 #include "TEPM.h"
 #include "types.h"
 
+extern uint8 UDSAL_au8Mode1DataBuffer[];
+extern uint8 UDSAL_au8Mode2DataBuffer[];
+extern uint8 UDSAL_au8Mode3DataBuffer[];
+extern uint8 UDSAL_au8Mode4DataBuffer[];
+void SYS_vAPISVC(void*);
+
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wswitch"
 void SYS_vAPISVC(void* svc_args)
 {
 	static uint32 u32Temp;
@@ -215,7 +226,7 @@ void SYS_vAPISVC(void* svc_args)
 
 		case SYSAPI_enAppendTEPMQueue:
 		{
-			TEPM_vAppendTEPMQueue(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, (TEPMAPI_tstTimedUserEvent*)OS_stSVCDataStruct.pvArg2, (TEPMAPI_ttEventCount*)OS_stSVCDataStruct.pvArg3);	
+			TEPM_vAppendTEPMQueue(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, (TEPMAPI_tstTimedUserEvent*)OS_stSVCDataStruct.pvArg2, *(TEPMAPI_ttEventCount*)OS_stSVCDataStruct.pvArg3);	
 			break;
 		}
 		
@@ -233,7 +244,7 @@ void SYS_vAPISVC(void* svc_args)
 		
 		case SYSAPI_enWriteDACQueue:
 		{
-			DAC_vWriteDACQueue(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, *(DACAPI_ttOutputVoltage*)OS_stSVCDataStruct.pvArg2);	
+			DAC_vWriteDACQueue(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, (DACAPI_ttOutputVoltage*)OS_stSVCDataStruct.pvArg2);	
 			break;
 		}
 		
@@ -269,14 +280,14 @@ void SYS_vAPISVC(void* svc_args)
 			if ((EH_FIRST_TMR <= *(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1) &&
 			(EH_LAST_TMR >= *(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1))
 			{
-				TEPM_u32GetTimerVal(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, OS_stSVCDataStruct.pvArg2);
+				TEPM_vGetTimerVal(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, OS_stSVCDataStruct.pvArg2);
 			}		
 			break;			
 		}
 		
 		case SYSAPI_enGetCRC16:
 		{
-			pu16Temp = (puint16)CRC16_pu16CalcCRC((uint16*)OS_stSVCDataStruct.pvArg1, (puint8*)OS_stSVCDataStruct.pvArg2, (uint16*)OS_stSVCDataStruct.pvArg3);
+			pu16Temp = (puint16)CRC16_pu16CalcCRC(*(uint16*)OS_stSVCDataStruct.pvArg1, (puint8)OS_stSVCDataStruct.pvArg2, *(uint16*)OS_stSVCDataStruct.pvArg3);
 			OS_stSVCDataStruct.pvData = (void*)pu16Temp;
 			OS_stSVCDataStruct.enSVCResult = SYSAPI_enOK;
 			break;
@@ -298,7 +309,7 @@ void SYS_vAPISVC(void* svc_args)
 		
 		case SYSAPI_enSetupWorkingPage:
 		{		
-			boResult = FEE_boSetWorkingData((puint8*)*(uint32*)OS_stSVCDataStruct.pvArg1, *(uint16*)OS_stSVCDataStruct.pvArg2);	
+			boResult = FEE_boSetWorkingData((puint8)*(uint32*)OS_stSVCDataStruct.pvArg1, *(uint16*)OS_stSVCDataStruct.pvArg2);	
 			OS_stSVCDataStruct.enSVCResult = (TRUE == boResult) ? SYSAPI_enOK : SYSAPI_enBadArgument;
 			break;
 		}
@@ -311,13 +322,21 @@ void SYS_vAPISVC(void* svc_args)
 
 		case SYSAPI_enSetupCrankTriggerEdgePattern:
 		{
-			boResult = CEM_boPopulateCrankEdgeArrays((puint16)OS_stSVCDataStruct.pvArg1, *(Bool*)OS_stSVCDataStruct.pvArg2, *(IOAPI_tenEdgePolarity*)OS_stSVCDataStruct.pvArg3);
+
+			CEM_tstPatternSetupCB* pstPatternSetupCB =  (CEM_tstPatternSetupCB*)OS_stSVCDataStruct.pvArg2;
+
+			IOAPI_tenEdgePolarity enEdgePolarity = pstPatternSetupCB->enEdgePolarity;
+			Bool boFirstEdgeRising = pstPatternSetupCB->boFirstEdgeRising;
+			uint32 u32TriggerType = pstPatternSetupCB->u32TriggerType;
+
+			boResult = CEM_boPopulateCrankEdgeArrays((puint16)OS_stSVCDataStruct.pvArg1, boFirstEdgeRising, enEdgePolarity, u32TriggerType);
 			OS_stSVCDataStruct.enSVCResult = (TRUE == boResult) ? SYSAPI_enOK : SYSAPI_enBadArgument;			
 			break;
 		}
 
 		case SYSAPI_enSetupSyncPointsPattern:
 		{
+		    CEM_vSetSyncPhaseRepeats(*(uint32*)OS_stSVCDataStruct.pvArg2);
 			boResult = CEM_boPopulateSyncPointsArray((puint16)OS_stSVCDataStruct.pvArg1);
 			OS_stSVCDataStruct.enSVCResult = (TRUE == boResult) ? SYSAPI_enOK : SYSAPI_enBadArgument;			
 			break;
@@ -337,8 +356,67 @@ void SYS_vAPISVC(void* svc_args)
 			OS_stSVCDataStruct.pvArg1 = (void*)pstSpreadResult;
 			break;
 		}
+
+		case SYSAPI_enGetRawCommsBuffer:
+		{
+			OS_stSVCDataStruct.enSVCResult = SYSAPI_enOK;
+			OS_stSVCDataStruct.pvArg1 = DLL_pvGetBuffered(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1);
+			break;
+		}
+
+		case SYSAPI_enTEPMAsyncRequest:
+		{
+			TEPM_vAsyncRequest();
+			OS_stSVCDataStruct.enSVCResult = SYSAPI_enOK;
+			break;
+		}
+
+		case SYSAPI_enSetupSimpleCamSync:
+		{
+			CEM_vSetupSimpleCamSync(*(IOAPI_tenEHIOResource*)OS_stSVCDataStruct.pvArg1, *(Bool*)OS_stSVCDataStruct.pvArg2, *(uint32*)OS_stSVCDataStruct.pvArg3);
+		}
+
+		case SYSAPI_enSetupWatchdog:
+		{
+			WDT_vStart(*(uint16*)OS_stSVCDataStruct.pvArg1, *(uint16*)OS_stSVCDataStruct.pvArg2);
+		}
+
+		case SYSAPI_enGetMode1Buffer:
+		{
+			OS_stSVCDataStruct.enSVCResult = SYSAPI_enOK;
+			OS_stSVCDataStruct.pvArg1 = UDSAL_au8Mode1DataBuffer;
+			break;
+		}
+
+		case SYSAPI_enGetMode2Buffer:
+		{
+			OS_stSVCDataStruct.enSVCResult = SYSAPI_enOK;
+			OS_stSVCDataStruct.pvArg1 = UDSAL_au8Mode2DataBuffer;
+			break;
+		}
+
+		case SYSAPI_enGetMode3Buffer:
+		{
+			OS_stSVCDataStruct.enSVCResult = SYSAPI_enOK;
+			OS_stSVCDataStruct.pvArg1 = UDSAL_au8Mode3DataBuffer;
+			break;
+		}
+
+		case SYSAPI_enGetMode4Buffer:
+		{
+			OS_stSVCDataStruct.enSVCResult = SYSAPI_enOK;
+			OS_stSVCDataStruct.pvArg1 = UDSAL_au8Mode4DataBuffer;
+			break;
+		}
+		
+		default:
+		{
+			OS_stSVCDataStruct.enSVCResult = SYSAPI_enBadArgument;
+			break;
+		}
 	}
 }
+#pragma GCC diagnostic pop
 
 
 

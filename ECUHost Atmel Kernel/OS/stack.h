@@ -15,7 +15,7 @@
 
 #include "types.h"
 
-typedef BUILDPACKEDKEIL struct
+typedef struct
 {
 	uint32 u32R0;
 	uint32 u32R1;

@@ -20,7 +20,7 @@
 #include "time.h"
 
 
-typedef BUILDPACKEDKEIL struct
+typedef struct
 {
 	uint32 biYear:7;
 	uint32 biMonth:4;

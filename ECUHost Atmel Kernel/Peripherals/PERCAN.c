@@ -45,7 +45,7 @@ Bool CAN_boReadMB(tstCANModule* pstCAN, CANHA_tstCANMB* pstCANMB)
     return CANHA_boReadMB(pstCAN, pstCANMB);
 }
 
-void CAN_vInterrupt(IOAPI_tenEHIOResource enEHIOResource)
+void CAN_vInterrupt(IOAPI_tenEHIOResource enEHIOResource, void* pvData)
 {
     CANHA_vInterrupt(enEHIOResource);
 }

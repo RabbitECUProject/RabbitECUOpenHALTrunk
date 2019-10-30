@@ -21,7 +21,7 @@ void SPI_vRun(puint32 const);
 void SPI_vTerminate(puint32 const);
 uint32 SPI_u32InitBus(IOAPI_tenEHIOResource, IOAPI_tstPortConfigCB*);
 void SPI_vInitTransfer(IOAPI_tstTransferCB*);
-void SPI_vInterrupt(IOAPI_tenEHIOResource);
+void SPI_vInterrupt(IOAPI_tenEHIOResource, void*);
 
 #endif //SPI_H
 

@@ -39,6 +39,8 @@ void CAM_vStart(puint32 const pu32Arg)
 
 void CAM_vRun(puint32 const pu32Arg)
 {	
+	uint32_t u32SeqIDX;
+
 	if ((CAM_nPeriodRPMTimeout / CAM_nPeriodMs) > CAM_u32RPMTimeout)
 	{
 		CAM_u32RPMTimeout++;
@@ -46,8 +48,19 @@ void CAM_vRun(puint32 const pu32Arg)
 	else
 	{
 		CAM_u32RPMRaw = 0;
-		FUEL_boFuelPrimed = FALSE;
-		FUEL_u32PrimeCBCount = 0;
+		CAM_u32RPMRawOld = 0;
+	}
+
+	for (u32SeqIDX = 0; u32SeqIDX < 8; u32SeqIDX++)
+	{
+		if (USERCAL_stRAMCAL.au16SeqRPMLimit[u32SeqIDX] < (uint16)CAM_u32RPMRaw)
+		{
+			FUEL_aboSeqRevCutFlag[u32SeqIDX] = TRUE;
+		}
+		else if ((USERCAL_stRAMCAL.au16SeqRPMLimit[u32SeqIDX] - USERCAL_stRAMCAL.u16SeqRPMLimitHyst) > (uint16)CAM_u32RPMRaw)
+		{
+			FUEL_aboSeqRevCutFlag[u32SeqIDX] = FALSE;
+		}
 	}
 }
 
@@ -65,16 +78,32 @@ void CAM_vCallBack(puint32 const pu32Arg)
 void CAM_vEngineSpeedCB(TEPMAPI_ttEventTime tEventTime)
 {
 	uint32 u32Temp;
+	sint32 s32Temp;
 	
-	CAM_u32RPMRaw = CAM_xTicksToRPM(tEventTime);	
+	CAM_u32RPMRawOld = CAM_u32RPMRaw;
+	CAM_u32RPMRaw = CAM_xTicksToRPM(tEventTime);
+	
+	s32Temp = CAM_u32RPMRaw - CAM_u32RPMFiltered;
+	s32Temp = ABS(s32Temp);
 
-	if (50 > (ABS(CAM_u32RPMRaw - CAM_u32RPMFiltered)))
+	if (150 > s32Temp)
 	{
-		CAM_u32RPMFiltered = (CAM_u32RPMRaw + 3 * CAM_u32RPMFiltered) / 4;
+		if (TRUE == TPS_boThrottleClosed)
+		{
+			CAM_u32RPMFiltered = (CAM_u32RPMRaw + 7 * CAM_u32RPMFiltered) / 8;
+		}
+		else
+		{
+			CAM_u32RPMFiltered = (CAM_u32RPMRaw + CAM_u32RPMFiltered) / 2;
+			
+		}
+
+		CAM_u32RPMTransitionCounter = 0 < CAM_u32RPMTransitionCounter ? CAM_u32RPMTransitionCounter - 1 : 0;
 	}
 	else
 	{
-		CAM_u32RPMFiltered = CAM_u32RPMRaw;
+		CAM_u32RPMFiltered = (CAM_u32RPMRaw + CAM_u32RPMFiltered) / 2;
+		CAM_u32RPMTransitionCounter = CAM_nRPMTransitionCount;
 	}
 
 	FUEL_vCalculateFuellingValues();
@@ -83,7 +112,7 @@ void CAM_vEngineSpeedCB(TEPMAPI_ttEventTime tEventTime)
 	if (1000000 < CTS_i32StartEnrichmentScaled)
 	{
 		u32Temp = 1000 * (CTS_i32StartEnrichmentScaled - 1000000);
-		u32Temp /= 1020u;
+		u32Temp /= 1050u;
 		u32Temp += 1000000;
 		CTS_i32StartEnrichmentScaled = u32Temp;		
 	}
@@ -94,6 +123,15 @@ void CAM_vEngineSpeedCB(TEPMAPI_ttEventTime tEventTime)
 		u32Temp /= 1003u;
 		u32Temp += 1000000;
 		CTS_i32PostStartEnrichmentScaled = u32Temp;		
+	}
+
+	if (TPS_u32TipInEnrichment > 1000)
+	{
+		TPS_u32TipInEnrichment -= 1;
+	}
+	else
+	{
+		TPS_u32TipInEnrichment = 1000;
 	}
 }
 

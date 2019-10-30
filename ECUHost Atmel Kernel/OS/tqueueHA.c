@@ -13,6 +13,7 @@
 #include <string.h>
 #include "CPUAbstract.h"
 #include "tqueue.h"
+#include "tqueueHA.h"
 #include "types.h"
 #include "task.h"
 

@@ -17,7 +17,7 @@
 #include "types.h"
 #include "CQUEUE.h"
 
-#define SRLTFR_nTransfersMax 5u
+#define SRLTFR_nTransfersMax 256u
 
 #ifdef _SRLTFR_C
 	#define EXTERN

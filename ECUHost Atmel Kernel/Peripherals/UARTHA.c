@@ -163,11 +163,10 @@ static tstUARTModule* UARTHA_pstGetUART(IOAPI_tenEHIOResource enEHIOResource)
 		case EH_VIO_UART6:
 			pstUART = UART5;			
 			break;
-		
+#endif //BUILD_MK60		
 		default:
 			pstUART = NULL;
 			break;
-#endif //BUILD_MK60
 	}
 	
 	return pstUART;
@@ -180,37 +179,33 @@ static sint32 UARTHA_u32GetUARTIndex(IOAPI_tenEHIOResource enEHIOResource)
 
 
 void UARTHA_vDisableTXInterrupt(IOAPI_tenEHIOResource enEHIOResource)
-{
-	tstUARTModule* pstUART = UARTHA_pstGetUART(enEHIOResource);
-	
+{	
 #ifdef BUILD_MK60
+	tstUARTModule* pstUART = UARTHA_pstGetUART(enEHIOResource);
 	pstUART -> C2 &= ~UART_C2_TIE_MASK;			/* Clear UART TIE bit  */
 #endif		
 }
 
 void UARTHA_vEnableTXInterrupt(IOAPI_tenEHIOResource enEHIOResource)
 {
-	tstUARTModule* pstUART = UARTHA_pstGetUART(enEHIOResource);
-	
 #ifdef BUILD_MK60
+	tstUARTModule* pstUART = UARTHA_pstGetUART(enEHIOResource);
 	pstUART -> C2 &= UART_C2_TIE_MASK;			/* Set UART TIE bit  */	
 #endif
 }
 
 void UARTHA_vDisableRXInterrupt(IOAPI_tenEHIOResource enEHIOResource)
-{
-	tstUARTModule* pstUART = UARTHA_pstGetUART(enEHIOResource);
-	
+{	
 #ifdef BUILD_MK60
+	tstUARTModule* pstUART = UARTHA_pstGetUART(enEHIOResource);
 	pstUART -> C2 &= ~UART_C2_RIE_MASK;			/* Clear UART RIE bit  */	
 #endif
 }
 
 void UARTHA_vEnableRXInterrupt(IOAPI_tenEHIOResource enEHIOResource)
-{
-	tstUARTModule* pstUART = UARTHA_pstGetUART(enEHIOResource);
-	
+{	
 #ifdef BUILD_MK60
+	tstUARTModule* pstUART = UARTHA_pstGetUART(enEHIOResource);
 	pstUART -> C2 &= UART_C2_RIE_MASK;			/* Set UART RIE bit  */	
 #endif
 }

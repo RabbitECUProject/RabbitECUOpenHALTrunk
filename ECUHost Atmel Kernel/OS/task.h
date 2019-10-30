@@ -44,8 +44,10 @@ typedef void* TASK_tProgramCounter;
 typedef void* TASK_tStackPointer;
 typedef	void (*TASK_pfTaskFunction)(uint32* const);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
 
-typedef BUILDPACKEDKEIL struct TASK_tstTask
+typedef struct TASK_tstTask
 {
 	TASK_tID tTaskID;                           //0
 	TASK_tenType enTaskType;                    //2
@@ -60,7 +62,9 @@ typedef BUILDPACKEDKEIL struct TASK_tstTask
 	TASK_tsTime tsTaskFinished;                 //26
 	TASK_tsTime tsTaskAccumulated;              //30
 	TASK_tenPrivilege enPrivilege;              //34
-} BUILDPACKEDATMEL;// TASK_tstTask;
+} BUILDPACKEDATMEL BUILDTASK_tstTask;
+
+#pragma GCC diagnostic pop
 
 TASK_tsTime TASK_vReportRunTime(struct TASK_tstTask* const);
 	

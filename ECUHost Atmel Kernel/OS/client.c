@@ -26,16 +26,16 @@ CQUEUE_tstQueue stCBQueue;
 struct TASK_tstTask CLIENT_rastTaskCyclic[SYS_CLIENT_MODULES_MAX];
 
 void CLIENT_vStart(uint32 * const pu32Arg)
-{
-	tpfUserStart pfUserStart = NULL;
+{	
+	CQUEUE_xInit(&stCBQueue, CLIENT_nUserCBMax, astCBInfo);	
+	
+	
+#ifdef BUILD_KERNEL
 	uint32 u32UserAppImageEntry;
 	puint32 pu32UserEntry = (puint32)CLIENT_nUserAppImageBase;
 	
-	CQUEUE_xInit(&stCBQueue, CLIENT_nUserCBMax, astCBInfo);	
-	
 	u32UserAppImageEntry = *pu32UserEntry;
 	
-#ifdef BUILD_KERNEL
 	if ((CLIENT_nUserAppImageBase & 0xffff0000) == (0xffff0000 & u32UserAppImageEntry))	
 	{
 		pfUserStart = (tpfUserStart)u32UserAppImageEntry;
@@ -54,7 +54,7 @@ void CLIENT_vRunUserCBQueue(void)
 	TEPM_tstTEPMResult* pstTEPMEvent;
 	DIAGAPI_tstDataTransferCB* pstDataTransferCB;	
 	ADCAPI_tpfResultCB pfADCResultCB;
-	TEPMAPI_tpfEventCB pfTEPMEventCB;
+	TEPMAPI_tpfEventCB pfTEPMEventCB = NULL;
 	DIAGAPI_tDataWriteCB pfDataWriteCB;
 	DIAGAPI_tenCBResult enCBResult;
 

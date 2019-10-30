@@ -25,7 +25,9 @@ uint32 ADCHA_u32PortClockRequested;
 uint32 ADCHA_u32Calibrated;
 Bool ADCHA_aboModuleBusy[ADCHA_enChannelCount];
 
+#if defined(BUILD_MK60) || defined(BUILD_MK64)
 static void ADCHA_vBackupCalibration(tstADCModule* pstADC, ADCHA_tstADCCalStruct* pstADCCalStruct);
+#endif //BUILD_MK6X
 
 void ADCHA_vStart(uint32* const pu32Stat)
 {
@@ -53,10 +55,11 @@ void ADCHA_vStart(uint32* const pu32Stat)
 #endif
 }
 
+#if defined(BUILD_MK60	) || defined (BUILD_MK64)
 Bool ADCHA_boBackupCalibrations(void)
 {
 	Bool boRetCode = FALSE;
-#ifdef BUILD_MK60	
+
 	ADCHA_tstADCCalStruct* pstADCCalStruct = (ADCHA_tstADCCalStruct*)FEE_ADCREC_ADDRESS;
 	
 	if (TRUE == FEE_boCheckPartition())
@@ -67,9 +70,10 @@ Bool ADCHA_boBackupCalibrations(void)
 		ADCHA_vBackupCalibration(ADC3, pstADCCalStruct++);
 		boRetCode = TRUE;
 	}
-#endif	
+
 	return boRetCode;
 }
+#endif	
 
 void ADCHA_vInitChannel(IOAPI_tenEHIOResource enIOResource)
 {
@@ -297,9 +301,10 @@ void ADCHA_vCalibrate(tstADCModule* pstADC, uint32 u32ADCIDX, uint32 u32CalFlag)
 #endif //BUILD_MK60
 }
 
+#if defined(BUILD_MK60) || defined(BUILD_MK64)
 static void ADCHA_vBackupCalibration(tstADCModule* pstADC, ADCHA_tstADCCalStruct* pstADCCalStruct)
 {	
-#ifdef BUILD_MK60
+
 	puint8 pu8ADCCalStruct = (puint8)pstADCCalStruct;
 	ADCHA_tstADCCalStruct stADCCalStruct;
 	uint16 u16CRC;
@@ -311,9 +316,9 @@ static void ADCHA_vBackupCalibration(tstADCModule* pstADC, ADCHA_tstADCCalStruct
 	stADCCalStruct.u32CRC = (uint32)(u16CRC);
 	
 	FEE_boWriteNVM((puint8)&stADCCalStruct, (puint8)pstADCCalStruct, sizeof(ADCHA_tstADCCalStruct));
-#endif //BUILD_MK60
-}
 
+}
+#endif //BUILD_MK60	
 
 IOAPI_tenEHIOResource ADCHA_enGetResourceAndResult(ADCHA_tenADCModule enADCModule, tstADCModule* pstADC, uint32 u32ADCChannel, puint32 pu32ADCResult)
 {
@@ -363,15 +368,14 @@ void ADCHA_vInitConversion(IOAPI_tenEHIOResource enIOResource, ADCHA_tstADCConve
 Bool ADCHA_boGetModuleBusy(ADCHA_tenADCModule enADCModule)
 {
     Bool boModuleBusy;
-	tstADCModule* pstADC = ADCHA_pstGetADCModule(enADCModule);
 
 #ifdef BUILD_MK60
+	tstADCModule* pstADC;
     pstADC = ADCHA_pstGetADCModule(enADCModule);
 	boModuleBusy = (ADC_SC1_ADCH_MASK == (ADC_SC1_ADCH_MASK & pstADC->SC1[0])) ? FALSE : TRUE;
 #endif //BUILD_MK60
 
 #ifdef BUILD_SAM3X8E
-	pstADC = ADCHA_pstGetADCModule(enADCModule);
 	boModuleBusy = ADCHA_aboModuleBusy[0];
 #endif //BUILD_SAM3X8E
 
@@ -382,4 +386,9 @@ void ADCHA_vClearModuleBusy(ADCHA_tenADCModule enADCModule)
 {
     ADCHA_aboModuleBusy[enADCModule] = false;
 }	
+
+void ADCHA_vReset(ADCHA_tenADCModule enADCModule)
+{
+	ADCHA_aboModuleBusy[enADCModule] = false;
+}
 			

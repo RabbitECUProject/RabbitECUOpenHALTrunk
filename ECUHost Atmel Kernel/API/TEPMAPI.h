@@ -15,7 +15,7 @@
 #ifndef TEPMAPI_H
 #define TEPMAPI_H
 
-#if (KERNEL_WARNINGS)
+#ifdef KERNEL_WARNINGS
 	#warning define must match kernel value!!!!
 #endif
 #define TEPMAPI_nKernelEventsMax 4
@@ -92,6 +92,7 @@ typedef struct
 	TEPMAPI_tenMethod enMethod;
 	TEPMAPI_ttEventTime* ptEventTime;
 	TEPMAPI_tpfEventCB pfEventCB;	
+	IOAPI_tenEHIOResource enEHIOBitMirrorResource;
 } TEPMAPI_tstTimedKernelEvent;/*CR1_122*/
 
 typedef struct
@@ -106,6 +107,8 @@ typedef struct
 	TEPMAPI_tenAction enAction;
 	TEPMAPI_tenPreScalar enPreScalar;	
 	Bool boInterruptEnable;
+	Bool boAsyncRequestEnable;
+	uint32 u32Sequence;
 } TEPMAPI_tstTEPMChannelCB;
 
 typedef struct
@@ -116,6 +119,13 @@ typedef struct
 	uint32 u32FallingTime;
 	uint32 u32Delay;
 } TEPMAPI_tstTimerMeasurements;
+
+typedef struct 
+{
+	IOAPI_tenEHIOResource enEHIOResource;
+	Bool boCamSyncHighLate;
+	uint32 u32CamSyncSampleToothCount;
+} TEPMAPI_tstSimpleCamSync;
 
 
 #endif //TEPMAPI_H

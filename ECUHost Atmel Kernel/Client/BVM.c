@@ -61,7 +61,7 @@ void BVM_vStart(uint32 * const pu32Arg)
 	enEHIOType = IOAPI_enADSE;
 	stADCCB.enSamplesAv = ADCAPI_en32Samples;
 	stADCCB.pfResultCB = &BVM_vADCCallBack;
-	stADCCB.enTrigger = ADCAPI_enTrigger2;				
+	stADCCB.enTrigger = ADCAPI_enTrigger4;				
 		
 	USER_vSVC(SYSAPI_enRequestIOResource, (void*)&enEHIOResource,	(void*)NULL, (void*)NULL);/*CR1_12*/
 
@@ -84,48 +84,66 @@ void BVM_vStart(uint32 * const pu32Arg)
 
 void BVM_vRun(uint32* const pu32Arg)
 {
-	static sint32 s32SecondDerivativeLimitNeg = 0;
-	static sint32 s32SecondDerivativeLimitPos = 0;
+	static uint32 u32SecondDerivativeLimitNeg = 0;
+	static uint32 u32SecondDerivativeLimitPos = 0;
 	
 	if (TRUE == BVM_boNewSample)
 	{	
 		/* User can add filtering */
-		BVM_u32ADCPreFiltered = USERMATH_u32SinglePoleLowPassFilter32(BVM_u32ADCRaw, 0x80, &BVM_u32ADCPreFiltered);
+		BVM_u32ADCPreFiltered = USERMATH_u32SinglePoleLowPassFilter32(BVM_u32ADCRaw, 0x40, &BVM_u32ADCPreFiltered);
 
 		if (BVM_u32ADCPreFiltered > BVM_u32ADCFiltered)
 		{
 		/* New sample higher than pre-filter */
-			if (s32SecondDerivativeLimitPos < (sint32)(BVM_u32ADCPreFiltered - BVM_u32ADCFiltered))
+			if (u32SecondDerivativeLimitPos < (BVM_u32ADCPreFiltered - BVM_u32ADCFiltered))
 			{
-				s32SecondDerivativeLimitPos += 2;
-				BVM_u32ADCFiltered += s32SecondDerivativeLimitPos;
+				u32SecondDerivativeLimitPos += BVM_nSecondDerivativeChangeLimit;
+
+				if (u32SecondDerivativeLimitPos < (BVM_u32ADCPreFiltered - BVM_u32ADCFiltered))
+				{
+					BVM_u32ADCFiltered += u32SecondDerivativeLimitPos;
+				}
+				else
+				{
+					BVM_u32ADCFiltered = BVM_u32ADCPreFiltered;
+				}
 			}
 			else
 			{
 				BVM_u32ADCFiltered = BVM_u32ADCPreFiltered;
 			}
 
-			s32SecondDerivativeLimitNeg = 0 > s32SecondDerivativeLimitNeg ? s32SecondDerivativeLimitNeg + 2 : 0;
+			u32SecondDerivativeLimitNeg = BVM_nSecondDerivativeChangeLimit <= u32SecondDerivativeLimitNeg ? u32SecondDerivativeLimitNeg - BVM_nSecondDerivativeChangeLimit : 0;
+			u32SecondDerivativeLimitNeg = BVM_nSecondDerivativeChangeLimit <= u32SecondDerivativeLimitNeg ? u32SecondDerivativeLimitNeg - BVM_nSecondDerivativeChangeLimit : 0;
 		}
 		else if (BVM_u32ADCPreFiltered < BVM_u32ADCFiltered)
 		/* New sample lower than pre-filter */
 		{
-			if (s32SecondDerivativeLimitNeg > (sint32)(BVM_u32ADCPreFiltered - BVM_u32ADCFiltered))
+			if (u32SecondDerivativeLimitNeg < (BVM_u32ADCFiltered - BVM_u32ADCPreFiltered))
 			{
-				s32SecondDerivativeLimitNeg -= 2;
-				BVM_u32ADCFiltered += s32SecondDerivativeLimitNeg;
+				u32SecondDerivativeLimitNeg += BVM_nSecondDerivativeChangeLimit;
+
+				if (u32SecondDerivativeLimitNeg < (BVM_u32ADCFiltered - BVM_u32ADCPreFiltered))
+				{
+					BVM_u32ADCFiltered -= u32SecondDerivativeLimitNeg;
+				}
+				else
+				{
+					BVM_u32ADCFiltered = BVM_u32ADCPreFiltered;
+				}
 			}
 			else
 			{
-				BVM_u32ADCPreFiltered = BVM_u32ADCPreFiltered;
+				BVM_u32ADCFiltered = BVM_u32ADCPreFiltered;
 			}
 
-			s32SecondDerivativeLimitPos = 0 < s32SecondDerivativeLimitPos ? s32SecondDerivativeLimitPos - 2 : 0;
+			u32SecondDerivativeLimitPos = BVM_nSecondDerivativeChangeLimit <= u32SecondDerivativeLimitPos ? u32SecondDerivativeLimitPos - BVM_nSecondDerivativeChangeLimit : 0;
+			u32SecondDerivativeLimitPos = BVM_nSecondDerivativeChangeLimit <= u32SecondDerivativeLimitPos ? u32SecondDerivativeLimitPos - BVM_nSecondDerivativeChangeLimit : 0;
 		}
 		else
 		{
-			s32SecondDerivativeLimitPos = 0 < s32SecondDerivativeLimitPos ? s32SecondDerivativeLimitPos - 2 : 0;
-			s32SecondDerivativeLimitNeg = 0 > s32SecondDerivativeLimitNeg ? s32SecondDerivativeLimitNeg + 2 : 0;
+			u32SecondDerivativeLimitPos = BVM_nSecondDerivativeChangeLimit <= u32SecondDerivativeLimitPos ? u32SecondDerivativeLimitPos - BVM_nSecondDerivativeChangeLimit : 0;
+			u32SecondDerivativeLimitNeg = BVM_nSecondDerivativeChangeLimit <= u32SecondDerivativeLimitNeg ? u32SecondDerivativeLimitNeg - BVM_nSecondDerivativeChangeLimit : 0;
 		}
 
 		BVM_u32ADCFiltered = (uint32)0x7fffffff < BVM_u32ADCFiltered ? 0 : BVM_u32ADCFiltered;
@@ -151,7 +169,7 @@ static void BVM_vADCCallBack(IOAPI_tenEHIOResource enEHIOResource, uint32 u32ADC
 	BVM_boNewSample = TRUE;
 }
 
-#endif //BUILD_USER
+#endif //BUILD_USER matthew
 
 
 

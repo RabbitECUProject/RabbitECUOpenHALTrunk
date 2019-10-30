@@ -25,21 +25,20 @@
 
 const REGSET_tstReg32Val PIMHA_rastPIMReg32Val[] = PIMHA_nReg32Set;
 
-#ifdef BUILD_MK60
+#if defined(BUILD_MK60)
 const tstPortModule* const PIMHA_rapstPIMPortTypeMap[] = PIMHA_nPortPointerMap;
 #endif //BUILD_MK60
 
-#ifdef BUILD_SAM3X8E
+#if defined(BUILD_SAM3X8E)
 const tstGPIOModule* const PIMHA_rapstPIMGPIOTypeMap[] = PIMHA_nGPIOPointerMap;
 #endif //SAM3X8E
 
-#if defined BUILD_MK60
+#if defined(BUILD_MK60)
 #include "mk60f12.h"
 typedef GPIO_Type tstGPIOModule;
 #endif
-#ifdef defined BUILD_SAM3X8E
+#if defined(BUILD_SAM3X8E)
 #include "sam3x8e.h"
-typedef struct Pio tstGPIOModule;
 #endif
 
 const uint32 PIMHA_rau32PIMClockMasks[] = PIMHA_nPortClockMasks;
@@ -140,6 +139,10 @@ void PIMHA_vAssertPortBit(PIMAPI_tenPort enPort, uint32 u32PortBit, IOAPI_tenTri
 			pstGPIO->PCOR = u32PortBit;
 #endif //BUILD_MK60	
 			break;					
+		}
+		default:
+		{
+			break;
 		}				
 	}
 }

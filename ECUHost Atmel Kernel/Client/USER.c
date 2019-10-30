@@ -29,7 +29,7 @@
 
 /* LOCAL CONSTANT DEFINITIONS (STATIC) ****************************************/
 const SYSAPI_tstUserModuleFunctions USER_rastUserModuleFunctions[USER_enUserCount] = USER_nUserModuleFunctions;
-static void USER_vSVCFunction(SYSAPI_tenSVCID, void*, void*, void*);
+//static void USER_vSVCFunction(SYSAPI_tenSVCID, void*, void*, void*);
 
 /* GLOBAL FUNCTION DEFINITIONS ************************************************/
 Bool USER_vStart(SYSAPI_tstSVCDataStruct* pstSVCDataStructArg)
@@ -40,7 +40,7 @@ Bool USER_vStart(SYSAPI_tstSVCDataStruct* pstSVCDataStructArg)
 	uint32 u32ModuleIDX;
 	bool boRetVal = false;
 
-#if BUILD_USER_APP	
+#if defined(BUILD_USER_APP	)
 	memset((void*)USER_nVarsRAMBase, 0, USER_nVarsRAMSize);/*CR1_77*/
 #endif
 	

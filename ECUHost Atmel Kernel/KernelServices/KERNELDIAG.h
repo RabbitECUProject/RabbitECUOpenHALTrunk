@@ -17,10 +17,10 @@
 #include "OS.h"
 #include "DIAGAPI.h"
 
-#define DIAG_DDDI_COUNT			5
+#define DIAG_DDDI_COUNT			20
 #define DIAG_DDDI_DATA_COUNT	200
 
-typedef BUILDPACKEDKEIL struct
+typedef struct
 {
 	uint16 u16DDI;
 	uint8 u8AddressAndLength;

@@ -36,7 +36,7 @@ void run_cooperative_task_queue(task_queue* list, pfInterTaskFunction pfInterTas
 	while (p != NULL) 
 	{
 		f      = p -> stTask.pfTaskFunction;		// copy the task function pointer
-	  p -> stTask.tsTaskStarted = CPUA_OS_u32GetSysTimeStamp();		
+	    p -> stTask.tsTaskStarted = CPUA_OS_u32GetSysTimeStamp();		
 		save_p = p;															// save the tq_struct
 		p      = (tq_struct*)p -> next;					// point to next node		
 		(*f)(pu32Stat);													// run the task function

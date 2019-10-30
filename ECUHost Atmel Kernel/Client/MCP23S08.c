@@ -43,7 +43,7 @@ MCP23S08_tpfCB MCP23S08_pfCallBack;
 *
 * Return Value     : NIL
 *******************************************************************************/
-static void MCP23S08_vNotifyCB(IOAPI_tenEHIOResource enEHIOResource, void* pvData, uint32 u32ByteCount, IOAPI_enTransferType enTransferType);/*CR1_74*/
+static void MCP23S08_vNotifyCB(IOAPI_tenEHIOResource enEHIOResource, uint8* pu8Data, uint32 u32ByteCount, IOAPI_enTransferType enTransferType);/*CR1_74*/
 
 /* GLOBAL FUNCTION DEFINITIONS ************************************************/
 void MCP23S08_vStart(puint32 const pu32Arg)
@@ -72,6 +72,8 @@ Bool MCP23S08_boSetCallback(MCP23S08_tpfCB pfCB)
 	    MCP23S08_pfCallBack = pfCB;
 		boRetVal = TRUE;
 	}
+
+	return boRetVal;
 }
 
 Bool MCP23S08_boTransferData(IOAPI_enTransferType enTransferType, void* pvData, uint32 u32DataCount)
@@ -96,6 +98,7 @@ Bool MCP23S08_boTransferData(IOAPI_enTransferType enTransferType, void* pvData, 
 		stTransferCB.pfCB = &MCP23S08_vNotifyCB;
 		stTransferCB.pvData	= (void*)&MCP23S08_au8TXData[0];
 		stTransferCB.u32ByteCount = u32DataCount + 2;
+		stTransferCB.boBlockingMode = FALSE;
 		
 		USER_vSVC(SYSAPI_enRequestIOBusTransfer, (void*)EH_VIO_SPI1, (void*)&stTransferCB, NULL);	
 	    MCP23S08_boBusy = TRUE;					
@@ -111,7 +114,6 @@ Bool MCP23S08_boTransferData(IOAPI_enTransferType enTransferType, void* pvData, 
 void MCP23S08_vSetDataDirection(uint8 u8DirMask1)
 {
 	IOAPI_tstTransferCB stTransferCB;
-	bool boRetVal = true;
 	
 	if (FALSE == MCP23S08_boBusy)
 	{
@@ -140,7 +142,7 @@ void MCP23S08_vCallBack(puint32 const pu32Arg)
 
 }
 
-static void MCP23S08_vNotifyCB(IOAPI_tenEHIOResource enEHIOResource, void* pvData, uint32 u32ByteCount, IOAPI_enTransferType enTransferType)
+static void MCP23S08_vNotifyCB(IOAPI_tenEHIOResource enEHIOResource, uint8* pu8Data, uint32 u32ByteCount, IOAPI_enTransferType enTransferType)
 {
     uint32 u32Flags;
 

@@ -3,12 +3,12 @@
 /*    License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher   */
 /******************************************************************************/
 /* CONTEXT:USER_APP                                                           */
-/* API TITLE:      		 DiagAPI              																	*/
-/* DESCRIPTION:        This API provides type definitions for objects and  		*/
-/*                     functions required by Kernel managed diagnostics 			*/
-/*									   initialisation, functions and events										*/
-/*									  																												*/
-/* FILE NAME:          DiagAPI.h                                           		*/
+/* API TITLE:          DiagAPI                                                */
+/* DESCRIPTION:        This API provides type definitions for objects and     */
+/*                     functions required by Kernel managed diagnostics       */
+/*                     initialisation, functions and events                   */
+/*                                                                            */
+/* FILE NAME:          DiagAPI.h                                              */
 /* REVISION HISTORY:   07-03-2016 | 1.0 | Initial revision                    */
 /*                                                                            */
 /******************************************************************************/
@@ -22,8 +22,9 @@
 typedef enum
 {
 	DIAGAPI_enNoSession,
+	DIAGAPI_enDefaultSession,
 	DIAGAPI_enExtendedSession,
-	DIAGAPI_enProgramming
+	DIAGAPI_enProgrammingSession
 } DIAGAPI_tenSession;
 
 typedef enum

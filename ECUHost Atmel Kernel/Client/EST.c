@@ -21,6 +21,7 @@
 #if BUILD_USER
 
 #include "EST.h"
+#include "CEMAPI.h"
 
 
 /* LOCAL VARIABLE DEFINITIONS (STATIC) ****************************************/
@@ -43,102 +44,177 @@ void EST_vStart(puint32 const pu32Arg)
 	IOAPI_tenEHIOType enEHIOType;	
 	IOAPI_tenDriveStrength enDriveStrength;
 	TEPMAPI_tstTEPMChannelCB stTEPMChannelCB;	
-	TEPMAPI_tstTEPMResourceCB stTEPMResourceCB;
+	Bool boCamSyncLate;
+	uint32 u32CamSyncSampleToothCount;
+	CEM_tstPatternSetupCB stPatternSetupCB;
 
-	//uint16 u16TriggerArray[71] = {0, 0x38E, 0x71C, 0xAAA, 0xE38, 0x11C7, 0x1555, 0x18E3, 0x1C71, 0x2000, 0x238E, 0x271C, 0x2AAA, 0x2E38, 0x31C7, 0x3555, 0x38E3, 0x3C71, 0x4000, 0x438E, 0x471C, 0x4AAA, 0x4E38, 0x51C7, 0x5555, 0x58E3, 0x5C71, 0x6000, 0x638E, 0x671C, 0x6AAA, 0x6E38, 0x71C7, 0x7555, 0x8000, 0x838E, 0x871C, 0x8AAA, 0x8E38, 0x91C7, 0x9555, 0x98E3, 0x9C71, 0xA000, 0xA38E, 0xA71C, 0xAAAA, 0xAE38, 0xB1C7, 0xB555, 0xB8E3, 0xBC71, 0xC000, 0xC38E, 0xC71C, 0xCAAA, 0xCE38, 0xD1C7, 0xD555, 0xD8E3, 0xDC71, 0xE000, 0xE38E, 0xE71C, 0xEAAA, 0xEE38, 0xF1C7, 0xF555, 0, 0};
-	IOAPI_tenEdgePolarity enEdgePolarity = IOAPI_enEdgeRising;
-	bool boFirstRising = FALSE;
+	IOAPI_tenEdgePolarity enEdgePolarity = USERCAL_stRAMCAL.u8UserPrimaryEdgeSetup;
+	Bool boFirstRising = 0 != USERCAL_stRAMCAL.u8UserFirstEdgeRisingPrimary;
+	uint32 u32TriggerType = USERCAL_stRAMCAL.u8TriggerType;
 	
 	/* Both peak and hold have a switch on and switch off event per cycle */
 	TEPMAPI_ttEventCount tEventCount = 2;
 	EST_tIgnitionAdvanceMtheta = 0;
 		
 	/* Set dwell to 10 degrees - 360 degrees */
-	EST_tStartFractionA = (0x10000 * 300) / EST_nDegreesPerCycle;
-	EST_tStartFractionB = (0x10000 * 120) / EST_nDegreesPerCycle;		
+	EST_tStartFractionA = (0x10000 * 120) / EST_nDegreesPerCycle;
+	EST_tStartFractionB = (0x10000 * 120) / EST_nDegreesPerCycle;	
+	EST_tStartFractionC = (0x10000 * 120) / EST_nDegreesPerCycle;	
+	EST_tStartFractionD = (0x10000 * 120) / EST_nDegreesPerCycle;				
 	EST_tDwellUs = 5000u;		
-
-	/* Request and initialise PWM for EST_nESTOutput*/
-	enEHIOResource = EH_VIO_TC2;
-	enEHIOType = IOAPI_enTEPM;
-	USER_vSVC(SYSAPI_enRequestIOResource, (void*)&enEHIOResource,	(void*)NULL, (void*)NULL);
 	
-	/* ONLY CONFIGURE THE TC2 MODULE ONCE PER PROJECT! */
-	if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)
+	/* Request and initialise EST_nESTOutput A ***************************/
+	if ((0xffff > USERCAL_stRAMCAL.au32IgnitionSequence[0]) && (EH_IO_Invalid > USERCAL_stRAMCAL.aESTIOResource[0]))
 	{
-		stTEPMResourceCB.enEHIOResource = EH_VIO_TC2;
-		stTEPMResourceCB.enPreScalar = 1 << EST_nSlowFTMDivisor;
-		stTEPMResourceCB.enCountType = TEPMAPI_enCountUp;
+		enEHIOResource = USERCAL_stRAMCAL.aESTIOResource[0];     //EST_nESTOutputA;
+		enEHIOType = IOAPI_enCaptureCompare;	
+		USER_vSVC(SYSAPI_enRequestIOResource, (void*)&enEHIOResource,	
+			(void*)NULL, (void*)NULL);			
+	
+		/* Initialise the TEPM channel EST_nESTOutput the dwell timer*/
+		if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)	
+		{	
+			stTEPMChannelCB.enAction = TEPMAPI_enSetLow;
+			stTEPMChannelCB.boInterruptEnable = TRUE;	
+			stTEPMChannelCB.enPreScalar =  0;
+			stTEPMChannelCB.u32Sequence = USERCAL_stRAMCAL.au32IgnitionSequence[0];
+	
+			USER_vSVC(SYSAPI_enInitialiseIOResource, (void*)&enEHIOResource,
+				(void*)&enEHIOType,	(void*)&stTEPMChannelCB);
+		}			
 		
-		USER_vSVC(SYSAPI_enInitialiseIOResource, (void*)&enEHIOResource,
-		(void*)&enEHIOType,	(void*)&stTEPMResourceCB);
+		/* Switch igniter on at a fraction of global time */
+		EST_astTimedKernelEvents[0].enAction = TEPMAPI_enSetHigh;
+		EST_astTimedKernelEvents[0].enMethod = TEPMAPI_enGlobalLinkedFraction;
+		EST_astTimedKernelEvents[0].ptEventTime = &EST_tStartFractionA;
+		EST_astTimedKernelEvents[0].enEHIOBitMirrorResource = USERCAL_stRAMCAL.aESTIOMuxResource[0];
+	
+		/* Switch igniter off at timer ms */
+		EST_astTimedKernelEvents[1].enAction = TEPMAPI_enSetLow;
+		EST_astTimedKernelEvents[1].enMethod = TEPMAPI_enHardLinkedTimeStep;
+		EST_astTimedKernelEvents[1].ptEventTime = &EST_tDwellUs;	
+		EST_astTimedKernelEvents[1].enEHIOBitMirrorResource = USERCAL_stRAMCAL.aESTIOMuxResource[0];
+	
+		USER_vSVC(SYSAPI_enConfigureKernelTEPMOutput, (void*)&enEHIOResource, 
+			(void*)&EST_astTimedKernelEvents[0], (void*)&tEventCount);	
 	}
-	
-	/* Request and initialise EST_nESTOutput 1 */
-	enEHIOResource = EST_nESTOutput1;
-	enEHIOType = IOAPI_enCaptureCompare;	
-	USER_vSVC(SYSAPI_enRequestIOResource, (void*)&enEHIOResource,	(void*)NULL, (void*)NULL);			
-	
-	/* Initialise the TEPM channel EST_nESTOutput the dwell timer*/
-	if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)	
-	{	
-		stTEPMChannelCB.enAction = TEPMAPI_enSetLow;
-		stTEPMChannelCB.boInterruptEnable = TRUE;	
-		stTEPMChannelCB.enPreScalar =  0;
-	
-		USER_vSVC(SYSAPI_enInitialiseIOResource, (void*)&enEHIOResource,
-			(void*)&enEHIOType,	(void*)&stTEPMChannelCB);
-	}			
-		
-	/* Switch igniter on at a fraction of global time */
-	EST_astTimedKernelEvents[0].enAction = TEPMAPI_enSetHigh;
-	EST_astTimedKernelEvents[0].enMethod = TEPMAPI_enGlobalLinkedFraction;
-	EST_astTimedKernelEvents[0].ptEventTime = &EST_tStartFractionA;
-	
-	/* Switch igniter off at timer ms */
-	EST_astTimedKernelEvents[1].enAction = TEPMAPI_enSetLow;
-	EST_astTimedKernelEvents[1].enMethod = TEPMAPI_enHardLinkedTimeStep;
-	EST_astTimedKernelEvents[1].ptEventTime = &EST_tDwellUs;	
-	
-	USER_vSVC(SYSAPI_enConfigureKernelTEPMOutput, (void*)&enEHIOResource, 
-		(void*)&EST_astTimedKernelEvents[0], (void*)&tEventCount);	
 
-	/* Request and initialise EST_nESTOutput 2 */
-	enEHIOResource = EST_nESTOutput2;
-	enEHIOType = IOAPI_enCaptureCompare;	
-	USER_vSVC(SYSAPI_enRequestIOResource, (void*)&enEHIOResource,	(void*)NULL, (void*)NULL);			
+	/* Request and initialise EST_nESTOutput B ***************************/
+	if ((0xffff > USERCAL_stRAMCAL.au32IgnitionSequence[1]) && (EH_IO_Invalid > USERCAL_stRAMCAL.aESTIOResource[1]))
+	{
+		enEHIOResource = USERCAL_stRAMCAL.aESTIOResource[1];     //EST_nESTOutputB;
+		enEHIOType = IOAPI_enCaptureCompare;	
+		USER_vSVC(SYSAPI_enRequestIOResource, (void*)&enEHIOResource,	
+			(void*)NULL, (void*)NULL);			
 	
-	/* Initialise the TEPM channel EST_nESTOutput the dwell timer*/
-	if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)	
-	{	
-		stTEPMChannelCB.enAction = TEPMAPI_enSetLow;
-		stTEPMChannelCB.boInterruptEnable = TRUE;	
-		stTEPMChannelCB.enPreScalar =  0;
+		/* Initialise the TEPM channel EST_nESTOutput the dwell timer*/
+		if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)	
+		{	
+			stTEPMChannelCB.enAction = TEPMAPI_enSetLow;
+			stTEPMChannelCB.boInterruptEnable = TRUE;	
+			stTEPMChannelCB.enPreScalar = 0;
+			stTEPMChannelCB.u32Sequence = USERCAL_stRAMCAL.au32IgnitionSequence[1];
 	
-		USER_vSVC(SYSAPI_enInitialiseIOResource, (void*)&enEHIOResource,
-			(void*)&enEHIOType,	(void*)&stTEPMChannelCB);
-	}			
+			USER_vSVC(SYSAPI_enInitialiseIOResource, (void*)&enEHIOResource,
+				(void*)&enEHIOType,	(void*)&stTEPMChannelCB);
+		}			
 		
-	/* Switch igniter on at a fraction of global time */
-	EST_astTimedKernelEvents[0].enAction = TEPMAPI_enSetHigh;
-	EST_astTimedKernelEvents[0].enMethod = TEPMAPI_enGlobalLinkedFraction;
-	EST_astTimedKernelEvents[0].ptEventTime = &EST_tStartFractionB;
+		/* Switch igniter on at a fraction of global time */
+		EST_astTimedKernelEvents[0].enAction = TEPMAPI_enSetHigh;
+		EST_astTimedKernelEvents[0].enMethod = TEPMAPI_enGlobalLinkedFraction;
+		EST_astTimedKernelEvents[0].ptEventTime = &EST_tStartFractionB;
+		EST_astTimedKernelEvents[0].enEHIOBitMirrorResource = USERCAL_stRAMCAL.aESTIOMuxResource[1];
 	
-	/* Switch igniter off at timer ms */
-	EST_astTimedKernelEvents[1].enAction = TEPMAPI_enSetLow;
-	EST_astTimedKernelEvents[1].enMethod = TEPMAPI_enHardLinkedTimeStep;
-	EST_astTimedKernelEvents[1].ptEventTime = &EST_tDwellUs;	
+		/* Switch igniter off at timer ms */
+		EST_astTimedKernelEvents[1].enAction = TEPMAPI_enSetLow;
+		EST_astTimedKernelEvents[1].enMethod = TEPMAPI_enHardLinkedTimeStep;
+		EST_astTimedKernelEvents[1].ptEventTime = &EST_tDwellUs;	
+		EST_astTimedKernelEvents[1].enEHIOBitMirrorResource = USERCAL_stRAMCAL.aESTIOMuxResource[1];
 	
-	USER_vSVC(SYSAPI_enConfigureKernelTEPMOutput, (void*)&enEHIOResource, 
-		(void*)&EST_astTimedKernelEvents[0], (void*)&tEventCount);	
+		USER_vSVC(SYSAPI_enConfigureKernelTEPMOutput, (void*)&enEHIOResource, 
+			(void*)&EST_astTimedKernelEvents[0], (void*)&tEventCount);	
+	}
+
+	/* Request and initialise EST_nESTOutput C ***************************/
+	if ((0xffff > USERCAL_stRAMCAL.au32IgnitionSequence[2]) && (EH_IO_Invalid > USERCAL_stRAMCAL.aESTIOResource[2]))
+	{
+		enEHIOResource = USERCAL_stRAMCAL.aESTIOResource[2];     //EST_nESTOutputC;
+		enEHIOType = IOAPI_enCaptureCompare;
+		USER_vSVC(SYSAPI_enRequestIOResource, (void*)&enEHIOResource,	
+			(void*)NULL, (void*)NULL);
 	
+		/* Initialise the TEPM channel EST_nESTOutput the dwell timer*/
+		if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)
+		{
+			stTEPMChannelCB.enAction = TEPMAPI_enSetLow;
+			stTEPMChannelCB.boInterruptEnable = TRUE;
+			stTEPMChannelCB.enPreScalar = 0;
+			stTEPMChannelCB.u32Sequence = USERCAL_stRAMCAL.au32IgnitionSequence[2];
+		
+			USER_vSVC(SYSAPI_enInitialiseIOResource, (void*)&enEHIOResource,
+			(void*)&enEHIOType,	(void*)&stTEPMChannelCB);
+		}
+	
+		/* Switch igniter on at a fraction of global time */
+		EST_astTimedKernelEvents[0].enAction = TEPMAPI_enSetHigh;
+		EST_astTimedKernelEvents[0].enMethod = TEPMAPI_enGlobalLinkedFraction;
+		EST_astTimedKernelEvents[0].ptEventTime = &EST_tStartFractionC;
+		EST_astTimedKernelEvents[0].enEHIOBitMirrorResource = USERCAL_stRAMCAL.aESTIOMuxResource[2];
+	
+		/* Switch igniter off at timer ms */
+		EST_astTimedKernelEvents[1].enAction = TEPMAPI_enSetLow;
+		EST_astTimedKernelEvents[1].enMethod = TEPMAPI_enHardLinkedTimeStep;
+		EST_astTimedKernelEvents[1].ptEventTime = &EST_tDwellUs;
+		EST_astTimedKernelEvents[1].enEHIOBitMirrorResource = USERCAL_stRAMCAL.aESTIOMuxResource[2];
+	
+		USER_vSVC(SYSAPI_enConfigureKernelTEPMOutput, (void*)&enEHIOResource,
+		(void*)&EST_astTimedKernelEvents[0], (void*)&tEventCount);
+	}
+
+
+	/* Request and initialise EST_nESTOutput D ***************************/
+	if ((0xffff > USERCAL_stRAMCAL.au32IgnitionSequence[3]) && (EH_IO_Invalid > USERCAL_stRAMCAL.aESTIOResource[3]))
+	{
+		enEHIOResource = USERCAL_stRAMCAL.aESTIOResource[3];     //EST_nESTOutputD;
+		enEHIOType = IOAPI_enCaptureCompare;
+		USER_vSVC(SYSAPI_enRequestIOResource, (void*)&enEHIOResource,	
+			(void*)NULL, (void*)NULL);
+	
+		/* Initialise the TEPM channel EST_nESTOutput the dwell timer*/
+		if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)
+		{
+			stTEPMChannelCB.enAction = TEPMAPI_enSetLow;
+			stTEPMChannelCB.boInterruptEnable = TRUE;
+			stTEPMChannelCB.enPreScalar = 0;
+			stTEPMChannelCB.u32Sequence = USERCAL_stRAMCAL.au32IgnitionSequence[3];
+		
+			USER_vSVC(SYSAPI_enInitialiseIOResource, (void*)&enEHIOResource,
+			(void*)&enEHIOType,	(void*)&stTEPMChannelCB);
+		}
+	
+		/* Switch igniter on at a fraction of global time */
+		EST_astTimedKernelEvents[0].enAction = TEPMAPI_enSetHigh;
+		EST_astTimedKernelEvents[0].enMethod = TEPMAPI_enGlobalLinkedFraction;
+		EST_astTimedKernelEvents[0].ptEventTime = &EST_tStartFractionD;
+		EST_astTimedKernelEvents[0].enEHIOBitMirrorResource = USERCAL_stRAMCAL.aESTIOMuxResource[3];
+	
+		/* Switch igniter off at timer ms */
+		EST_astTimedKernelEvents[1].enAction = TEPMAPI_enSetLow;
+		EST_astTimedKernelEvents[1].enMethod = TEPMAPI_enHardLinkedTimeStep;
+		EST_astTimedKernelEvents[1].ptEventTime = &EST_tDwellUs;
+		EST_astTimedKernelEvents[1].enEHIOBitMirrorResource = USERCAL_stRAMCAL.aESTIOMuxResource[3];
+	
+		USER_vSVC(SYSAPI_enConfigureKernelTEPMOutput, (void*)&enEHIOResource,
+		(void*)&EST_astTimedKernelEvents[0], (void*)&tEventCount);
+	}
+
 	/* Request and initialise required Kernel managed spread for Timingx */
-	EST_tSpreadTimingxIDX = SETUP_tSetupSpread((void*)&CAM_u32RPMRaw, (void*)&USERCAL_stRAMCAL.aUserTimingxSpread, TYPE_enUInt32, 17, SPREADAPI_enSpread4ms, NULL);
+	EST_tSpreadTimingxIDX = SETUP_tSetupSpread((void*)&CAM_u32RPMFiltered, (void*)&USERCAL_stRAMCAL.aUserTimingxSpread, TYPE_enUInt32, 17, SPREADAPI_enSpread4ms, NULL);
 
 	/* Request and initialise required Kernel managed spread for Timingy */
-	EST_tSpreadTimingyIDX = SETUP_tSetupSpread((void*)&TPS_tThetaFiltered, (void*)&USERCAL_stRAMCAL.aUserTimingySpread, TYPE_enUInt32, 17, SPREADAPI_enSpread4ms, NULL);
+	EST_tSpreadTimingyIDX = SETUP_tSetupSpread((void*)&MAP_tKiloPaFiltered, (void*)&USERCAL_stRAMCAL.aUserTimingySpread, TYPE_enUInt32, 17, SPREADAPI_enSpread4ms, NULL);
 
-	/* Request and initialise required Kernel managed table for Timingx*/
+	/* Request and initialise required Kernel managed table for Timing*/
 	EST_tMapTimingIDX = SETUP_tSetupMap((void*)&USERCAL_stRAMCAL.aUserTimingMap, (void*)&EST_u16Timing, TYPE_enUInt16, 17, 17, EST_tSpreadTimingxIDX, EST_tSpreadTimingyIDX, NULL);		
 
 	/* Request and initialise required Kernel managed spread for Dwell */
@@ -147,9 +223,13 @@ void EST_vStart(puint32 const pu32Arg)
 	/* Request and initialise required Kernel managed table for Dwell*/
 	EST_tTableDwellIDX = SETUP_tSetupTable((void*)&USERCAL_stRAMCAL.aUserDwellTable, (void*)&EST_u16Dwell, TYPE_enUInt16, 17, EST_tSpreadDwellIDX, NULL);
 
-	USER_vSVC(SYSAPI_enSetupCrankTriggerEdgePattern, (void*)&USERCAL_stRAMCAL.aUserPrimaryTriggerTable[0], (void*)&boFirstRising, (void*)&enEdgePolarity);
+	stPatternSetupCB.enEdgePolarity = enEdgePolarity;
+	stPatternSetupCB.u32TriggerType = u32TriggerType;
+	stPatternSetupCB.boFirstEdgeRising = boFirstRising;
 
-	USER_vSVC(SYSAPI_enSetupSyncPointsPattern, (void*)&USERCAL_stRAMCAL.aUserSyncPointsTable[0], NULL, NULL);
+	USER_vSVC(SYSAPI_enSetupCrankTriggerEdgePattern, (void*)&USERCAL_stRAMCAL.aUserPrimaryTriggerTable[0], (void*)&stPatternSetupCB, NULL);
+
+	USER_vSVC(SYSAPI_enSetupSyncPointsPattern, (void*)&USERCAL_stRAMCAL.aUserSyncPointsTable[0], (void*)&USERCAL_stRAMCAL.u32SyncPhaseRepeats, NULL);
 
 	/* Enable the Motor driver enables */
 	enEHIOResource = EST_nMotor1EnablePin;
@@ -164,6 +244,27 @@ void EST_vStart(puint32 const pu32Arg)
 
 	SETUP_vSetDigitalIOHigh(EST_nMotor1EnablePin);
 	SETUP_vSetDigitalIOHigh(EST_nMotor2EnablePin);
+
+	/* Setup the simple CAM sync */
+	enEHIOResource = USERCAL_stRAMCAL.enSimpleCamSyncSource;
+	boCamSyncLate = USERCAL_stRAMCAL.boCamSyncHighLate;
+	u32CamSyncSampleToothCount = USERCAL_stRAMCAL.u32CamSyncSampleToothCount;
+
+	SETUP_vSetupSimpleCamSync(enEHIOResource, boCamSyncLate, u32CamSyncSampleToothCount);
+
+	/* Set up EST active output */
+	if (EH_IO_Invalid != USERCAL_stRAMCAL.enESTBypass)
+	{
+		enEHIOResource = USERCAL_stRAMCAL.enESTBypass;
+		enEHIOType = IOAPI_enDIOOutput;
+		enDriveStrength = IOAPI_enStrong;
+		
+		SETUP_vSetupDigitalIO(enEHIOResource, enEHIOType, enDriveStrength, pu32Arg);
+	}
+
+	/* Matthew testing ADD the rest later!!! */
+	enEHIOResource = USERCAL_stRAMCAL.aESTIOMuxResource[0];
+	SETUP_vSetupDigitalIO(enEHIOResource, enEHIOType, enDriveStrength, pu32Arg);
 }
 
 void EST_vRun(puint32 const pu32Arg)
@@ -171,11 +272,14 @@ void EST_vRun(puint32 const pu32Arg)
 	uint32 u32DwellDegrees;		
 	uint32 u32DelayDegrees;	
 	uint32 u32DwellUsMax;
-	uint32 u32DwellUsMin;
 	uint32 u32DwellUs;
 	uint32 u32Temp;
-	uint16 u16Temp;
-	static Bool boLowRpmFlag;
+	sint32 s32ESTTrims[2];
+	static uint32 u32CrankDwell;
+	static uint32 u32BypassCount;
+	uint32 u32Dwell;
+	IOAPI_tenTriState enTriState;
+	IOAPI_tenEHIOResource enEHIOResource;
 	
 	/* Calculate the current spread for Timingx */
 	USER_vSVC(SYSAPI_enCalculateSpread, (void*)&EST_tSpreadTimingxIDX,
@@ -193,39 +297,148 @@ void EST_vRun(puint32 const pu32Arg)
 	USER_vSVC(SYSAPI_enCalculateSpread, (void*)&EST_tSpreadDwellIDX,
 	NULL, NULL);
 
-	/* Lookup the current timingy value for dwell */
+	/* Lookup the current dwell value for dwell */
 	USER_vSVC(SYSAPI_enCalculateTable, (void*)&EST_tTableDwellIDX,
-	NULL, NULL);			
+	NULL, NULL);	
 	
-	EST_tIgnitionAdvanceMtheta = 100 * EST_u16Timing + 20000;
+	CPU_xEnterCritical();
 
 	u32DwellUsMax = (60000000 / CAM_u32RPMRaw) - EST_nDwellOffMinUs;
-	u32DwellUs = MIN(u32DwellUsMax, (uint32)EST_u16Dwell);
+
+	if (300 > CAM_u32RPMFiltered)
+	{
+		u32CrankDwell = USERCAL_stRAMCAL.aUserDwellTable[0];
+	}
+	else
+	{
+		u32CrankDwell = 50 < u32CrankDwell ? u32CrankDwell - 50 : 0;
+	}
+
+	u32Dwell = MAX(u32CrankDwell, EST_u16Dwell);
+		
+	if (TRUE == USERCAL_stRAMCAL.boOBDISCADV)
+	{	
+		if (0 < IAC_s32ISCESTTrim[0])						
+		{
+			EST_tIgnitionAdvanceMtheta = IAC_s32ISCESTTrim[0] + USERCAL_stRAMCAL.u16TimingMainOffset;
+		}
+		else
+		{
+			EST_tIgnitionAdvanceMtheta = 100 * EST_u16Timing + USERCAL_stRAMCAL.u16TimingMainOffset;
+		}
+	}
+	else
+	{
+		s32ESTTrims[0] = CLO2_s32ISCESTTrim[0] + IAC_s32ISCESTTrim[0];
+		s32ESTTrims[1] = CLO2_s32ISCESTTrim[1] + IAC_s32ISCESTTrim[1];
+
+		if (0 <= s32ESTTrims[1])
+		{
+			EST_tIgnitionAdvanceMtheta = 100 * EST_u16Timing + USERCAL_stRAMCAL.u16TimingMainOffset + (uint16)s32ESTTrims[1];
+		}
+		else
+		{
+			EST_tIgnitionAdvanceMtheta = 100 * EST_u16Timing + USERCAL_stRAMCAL.u16TimingMainOffset;
+
+			if (0 < (s32ESTTrims[1] + (sint32)EST_tIgnitionAdvanceMtheta))
+			{
+				EST_tIgnitionAdvanceMtheta = (uint16)(s32ESTTrims[1] + (sint32)EST_tIgnitionAdvanceMtheta);
+			}
+			else
+			{
+				EST_tIgnitionAdvanceMtheta = 0;
+			}
+		}
+	}
+
+	CPU_xExitCritical();
+
+	u32DwellUs = MIN(u32DwellUsMax, (uint32)u32Dwell);
 			
-	//if (1300 > CAM_u32RPMRaw)
-	//{		
-	//    boLowRpmFlag = TRUE;		
-	//}
-	//else if (1500 < CAM_u32RPMRaw)
-	//{
-	//    boLowRpmFlag = FALSE;	
-	//}
-
-	//if (TRUE == boLowRpmFlag)
-	//{
-	//	u32DwellUsMin = 10000 - CAM_u32RPMRaw * 5;
-	//	u32DwellUs = MAX(u32DwellUsMin, u32DwellUs);
-	//}
-
 	u32Temp = 600000 / CAM_u32RPMRaw;
 	u32DwellDegrees = (u32DwellUs * EST_nDegreesPerCycle) / u32Temp;	
 		
 	u32DelayDegrees = 10 * EST_nDegreesPerCycle - u32DwellDegrees / 10 - (EST_tIgnitionAdvanceMtheta / 100);
 	
 	/* Calculate EST start and end angles */
-	EST_tStartFractionA = (6554 * u32DelayDegrees) / EST_nDegreesPerCycle;
-	EST_tStartFractionB = ((6554 * u32DelayDegrees) / EST_nDegreesPerCycle) - 0x8000;
+	switch (USERCAL_stRAMCAL.u8CylCount)
+	{
+		case 4:
+		{
+			if (0 == USERCAL_stRAMCAL.u8WastedSparkEnable)
+			{
+				EST_tStartFractionA = (6554 * u32DelayDegrees) / EST_nDegreesPerCycle;
+				EST_tStartFractionB = ((6554 * u32DelayDegrees) / EST_nDegreesPerCycle);
+				EST_tStartFractionC = ((6554 * u32DelayDegrees) / EST_nDegreesPerCycle);
+				EST_tStartFractionD = ((6554 * u32DelayDegrees) / EST_nDegreesPerCycle);
+			}
+			else
+			{
+				EST_tStartFractionA = (6554 * u32DelayDegrees) / EST_nDegreesPerCycle;
+				EST_tStartFractionB = ((6554 * u32DelayDegrees) / EST_nDegreesPerCycle);
+				EST_tStartFractionC = (6554 * u32DelayDegrees) / EST_nDegreesPerCycle;
+				EST_tStartFractionD = ((6554 * u32DelayDegrees) / EST_nDegreesPerCycle);
+			}
+
+			break;
+		}
+		case 8:
+		{
+			CPU_xEnterCritical();
+			if (1850 < u32DelayDegrees)
+			{
+				//EST_tStartFractionA = (6554 * (u32DelayDegrees - 1800)) / EST_nDegreesPerCycle;
+				//EST_tStartFractionB = (6554 * (u32DelayDegrees - 1800)) / EST_nDegreesPerCycle;
+				//EST_tStartFractionC = (6554 * (u32DelayDegrees - 1800)) / EST_nDegreesPerCycle;
+				//EST_tStartFractionD = (6554 * (u32DelayDegrees - 1800)) / EST_nDegreesPerCycle;
+				EST_tStartFractionA = (6554 * (u32DelayDegrees)) / EST_nDegreesPerCycle;
+				EST_tStartFractionB = (6554 * (u32DelayDegrees)) / EST_nDegreesPerCycle;
+				EST_tStartFractionC = (6554 * (u32DelayDegrees)) / EST_nDegreesPerCycle;
+				EST_tStartFractionD = (6554 * (u32DelayDegrees)) / EST_nDegreesPerCycle;
+			}
+			else
+			{
+				EST_tStartFractionA = (6554 * 50) / EST_nDegreesPerCycle;
+				EST_tStartFractionB = (6554 * 50) / EST_nDegreesPerCycle;
+				EST_tStartFractionC = (6554 * 50) / EST_nDegreesPerCycle;
+				EST_tStartFractionD = (6554 * 50) / EST_nDegreesPerCycle;
+			}
+			CPU_xExitCritical();
+
+			break;
+		}
+		default:
+		{
+			EST_tStartFractionA = (6554 * u32DelayDegrees) / EST_nDegreesPerCycle;
+			EST_tStartFractionB = ((6554 * u32DelayDegrees) / EST_nDegreesPerCycle);
+			EST_tStartFractionC = ((6554 * u32DelayDegrees) / EST_nDegreesPerCycle);
+			EST_tStartFractionD = ((6554 * u32DelayDegrees) / EST_nDegreesPerCycle);
+		}
+	}
+
 	EST_tDwellUs = EST_xUsToSlowTicks(u32DwellUs);
+
+	/* Set the EST active output */
+	if (EH_IO_Invalid != USERCAL_stRAMCAL.enESTBypass)
+	{
+		u32BypassCount = (500U < CAM_u32RPMRaw) && (~0U != u32BypassCount) ? u32BypassCount + 1 : u32BypassCount;
+		u32BypassCount = 0U == CAM_u32RPMRaw ? 0U : u32BypassCount;
+
+		if (500 < u32BypassCount)
+		{
+			enEHIOResource = USERCAL_stRAMCAL.enESTBypass;
+			enTriState = IOAPI_enLow;
+			USER_vSVC(SYSAPI_enAssertDIOResource, (void*)&enEHIOResource,
+			(void*)&enTriState,	(void*)NULL);
+		}
+		else
+		{
+			enEHIOResource = USERCAL_stRAMCAL.enESTBypass;
+			enTriState = IOAPI_enHigh;
+			USER_vSVC(SYSAPI_enAssertDIOResource, (void*)&enEHIOResource,
+			(void*)&enTriState,	(void*)NULL);
+		}
+	}
 }
 
 void EST_vTerminate(puint32 const pu32Arg)

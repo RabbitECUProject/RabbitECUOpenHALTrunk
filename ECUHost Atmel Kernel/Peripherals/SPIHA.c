@@ -46,14 +46,15 @@ void SPIHA_vTerminate(puint32 const pu32Stat)
 uint32 SPIHA_u32InitBus(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tstPortConfigCB* pstPortConfigCB)
 {
     uint32 u32MuxSel = ~0;
-	tstSPIModule* pstSPI;
-	IRQn_Type enIRQType;
-	REGSET_tstReg32Val SPI_astSPIReg32Val[3];
+
 	sint32 i32IDX = SPIHA_u32GetSPIIndex(enEHIOResource);	
 	
 	if ((-1 != i32IDX) && (TRUE == DLL_boInitDLLChannel(enEHIOResource, pstPortConfigCB)))	
 	{
 #ifdef BUILD_MK60
+	REGSET_tstReg32Val SPI_astSPIReg32Val[3];
+		IRQn_Type enIRQType;
+		tstSPIModule* pstSPI;
 		uint32 u32Mul;
 		uint32 u32DivCalc;
 		uint32 u32Div;
@@ -149,11 +150,11 @@ uint32 SPIHA_u32InitBus(IOAPI_tenEHIOResource enEHIOResource, IOAPI_tstPortConfi
 			spi_set_baudrate_div(pstSPIModule, SPIHA_nDeviceID, SPIHA_xSPIBaudRateDivider(pstPortConfigCB->u32BaudRateHz));
 			spi_configure_cs_behavior(pstSPIModule, SPIHA_nDeviceID, SPI_CS_KEEP_LOW);
 
-			spi_set_clock_polarity(pstSPIModule, SPIHA_nDeviceID, pstPortConfigCB->stPinConfig.uPinInfo.stSPIPinInfo.boShiftRising);
-			spi_set_clock_phase(pstSPIModule, SPIHA_nDeviceID, pstPortConfigCB->stPinConfig.uPinInfo.stSPIPinInfo.boCaptureRising);
+			spi_set_clock_polarity(pstSPIModule, SPIHA_nDeviceID, pstPortConfigCB->stPinConfig.uPinInfo.stSPIPinInfo.boClockIdleHigh);
+			spi_set_clock_phase(pstSPIModule, SPIHA_nDeviceID, pstPortConfigCB->stPinConfig.uPinInfo.stSPIPinInfo.boShiftRising);
 			spi_enable(pstSPIModule);
             spi_enable_interrupt(pstSPIModule, SPI_IER_TDRE);
-		    IRQ_vEnableIRQ(SPI0_IRQn, IRQ_enPRIO_15, SPI_vInterrupt, NULL);//matthew this could be moved out of HAL is generic CMx!
+		    IRQ_vEnableIRQ(SPI0_IRQn, IRQ_enPRIO_15, &SPI_vInterrupt, NULL);//matthew this could be moved out of HAL is generic CMx!
 		}
 #endif //BUILD_SAM3X8E
 	}	
@@ -164,6 +165,7 @@ void SPIHA_vInitTransfer(IOAPI_tstTransferCB* pstTransferCB)
 {
 	SPIHA_pstTransferCB = pstTransferCB;
 	tstSPIModule* pstSPIModule = NULL;
+	volatile uint32 u32Count;
 
 #ifdef BUILD_MK60
 	switch (pstTransferCB->enEHIOResource)
@@ -204,9 +206,41 @@ void SPIHA_vInitTransfer(IOAPI_tstTransferCB* pstTransferCB)
 		SPIHA_u32BytesToTransfer = pstTransferCB->u32ByteCount - 1;
 		SPIHA_pfCB = pstTransferCB->pfCB;
 		SPIHA_pvData = pstTransferCB->pvData;
-		SPIHA_pvData = (void*)((uint32)SPIHA_pvData + 1);
+
+		if (TRUE == pstTransferCB->boBlockingMode)
+		{
+			for (u32Count = 0; u32Count < 250; u32Count++)
+			{
+				__asm("nop");
+			}
+		}
+
         spi_write(pstSPIModule, (uint16)*(puint8)pstTransferCB->pvData, 0, 0);
-		spi_enable_interrupt(pstSPIModule, SPI_SR_TDRE);
+
+		if (TRUE == pstTransferCB->boBlockingMode)
+		{
+			while (0 < SPIHA_u32BytesToTransfer)
+			{
+				for (u32Count = 0; u32Count < 250; u32Count++)
+				{
+					__asm("nop");
+				}
+
+				SPIHA_pvData = (void*)((uint32)SPIHA_pvData + 1);
+				spi_write(pstSPIModule, (uint16)*(puint8)SPIHA_pvData, 0, 0);
+				SPIHA_u32BytesToTransfer--;
+			}
+
+			for (u32Count = 0; u32Count < 250; u32Count++)
+			{
+				__asm("nop");
+			}
+		}
+		else
+		{
+			SPIHA_pvData = (void*)((uint32)SPIHA_pvData + 1);
+			spi_enable_interrupt(pstSPIModule, SPI_SR_TDRE);
+		}
     }
 #endif //BUILD_SAM3X8E
 }
@@ -215,6 +249,7 @@ void SPIHA_vInterruptHandler(IOAPI_tenEHIOResource enEHIOResource)
 {
 	IOAPI_tenPortMode enMode;
 	tstSPIModule* pstSPI = NULL;	
+	volatile uint32 u32Counter;
 
 #ifdef BUILD_MK60
 	SPIHA_pstSPI->S |= I2C_S_SPIIF_MASK;
@@ -238,7 +273,7 @@ void SPIHA_vInterruptHandler(IOAPI_tenEHIOResource enEHIOResource)
 		else if (IOAPI_enPortComms == enMode)
 		{			
 			//DLL_vFrameRXCB(enEHIOResource, &CAN_stRXDLLData);						
-		}				
+		}		
 	}
 #endif  //BUILD_MK60
 
@@ -267,6 +302,11 @@ void SPIHA_vInterruptHandler(IOAPI_tenEHIOResource enEHIOResource)
 			spi_write(SPIHA_pstSPI, u16Data, 0, 0);
 			SPIHA_pvData = (void*)((uint32)SPIHA_pvData + 1);
 			SPIHA_u32BytesToTransfer -= 1;
+
+			for (u32Counter = 0; u32Counter < 199; u32Counter++)
+			{
+				__asm("nop");
+			}
 		}
 		else
 		{
@@ -281,7 +321,7 @@ void SPIHA_vInterruptHandler(IOAPI_tenEHIOResource enEHIOResource)
 				//DLL_vFrameRXCB(enEHIOResource, &CAN_stRXDLLData);
 			}
 
-           spi_disable_interrupt(pstSPI, SPI_SR_TDRE);
+            spi_disable_interrupt(pstSPI, SPI_SR_TDRE);
         }
     }
 	else if (NULL != pstSPI)

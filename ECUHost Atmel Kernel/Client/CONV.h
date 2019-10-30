@@ -3,10 +3,10 @@
 /*    License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher   */
 /******************************************************************************/
 /* CONTEXT:USER_APP                                                           */
-/* PACKAGE TITLE:      Conversion Header File                    							*/
-/* DESCRIPTION:        This code module provides data conversion functions  	*/
-/*                     functions for the user application   									*/
-/* FILE NAME:          CONV.h                                             		*/
+/* PACKAGE TITLE:      Conversion Header File                                 */
+/* DESCRIPTION:        This code module provides data conversion functions    */
+/*                     functions for the user application                     */
+/* FILE NAME:          CONV.h                                                 */
 /* REVISION HISTORY:   07-03-2016 | 1.0 | Initial revision                    */
 /*                                                                            */
 /*                                                                            */

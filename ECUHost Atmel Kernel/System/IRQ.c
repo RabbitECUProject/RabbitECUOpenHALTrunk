@@ -38,15 +38,14 @@ extern uint32 OS_u32SysTickInterval;
 extern uint32 OS_u32SysRunTimeHigh;
 extern uint32 OS_u32SysRunTimeLow;
 extern tq_struct* OS_pstBackgroundDispatcherTask;
-extern void OS_vBackgroundDispatcher(void);
 #endif
 
-extern void NVIC_EnableIRQ(IRQn_Type);
 extern void SYS_vAPISVC(void*);
 DLL_tstRXDLLData CAN_stRXDLLData;
+Bool IRQ_boEnableRTOS = TRUE;
 
-static void IRQ_vCommonUART(tstUARTModule*, IOAPI_tenEHIOResource, IRQn_Type enIRQType);
 static void IRQ_vCommonCAN(tstCANModule*, IOAPI_tenEHIOResource, IRQn_Type enIRQType);
+void SVC_Handler_Main(void* svc_args);
 
 #if defined(BUILD_MK60) || defined(BUILD_SAM3X8E)
 void IRQ_vEnableIRQ(IRQn_Type enIRQType, IRQ_tenPRIO enPRIO, IRQRXCallBack pfRXCallBack, IRQTXCallBack pfTXCallBack)
@@ -158,6 +157,7 @@ ThreadSwapAbort
 
 #ifdef BUILD_SAM3X8E
 #if (BUILD_KERNEL_OR_KERNEL_APP == 1)
+task_queue IRQ_vSuspendThread(task_queue*);
 task_queue IRQ_vSuspendThread(task_queue* stTaskQueueToSuspend)
 {
 	__asm(".EQU TASK_PC_OFFSET,	22");
@@ -323,7 +323,7 @@ void SVC_Handler(void)
 #endif //BUILD_SAM3X8E
 
 #if (BUILD_KERNEL_OR_KERNEL_APP == 1)
-SVC_Handler_Main(void* svc_args)
+void SVC_Handler_Main(void* svc_args)
 {
 	SYS_vAPISVC(svc_args);
 }
@@ -334,13 +334,13 @@ SVC_Handler_Main(void* svc_args)
  *----------------------------------------------------------------------------*/
 void SysTick_Handler(void) 
 {
-#if (BUILD_PBL == 1)
+#if defined(BUILD_PBL)
 	PBL_vCyclicTask();
 #endif	
-#if (BUILD_SBL == 1)
+#if defined(BUILD_SBL)
 	SBL_vCyclicTask();	
 #endif
-#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
+#if defined(BUILD_KERNEL_OR_KERNEL_APP)
 	/* declare data static because are usually consuming
 		 a thread stack here for temp data! */
 	static uint32 u32SysRunTimeLowOld;
@@ -350,6 +350,7 @@ void SysTick_Handler(void)
 	static task_queue* pstTaskQueueToSuspend;
 	static task_queue stTaskQueue;	
 	//static TASK_tStackPointer pStackPointer;
+
 	
 	stTaskQueue = NULL;
 	pstTaskQueueToSuspend = NULL;	
@@ -365,7 +366,8 @@ void SysTick_Handler(void)
 
  	enOSState = OS_enGetState();
 	
-	if (OS_enOSStateOSStarted == enOSState)
+	if ((OS_enOSStateOSStarted == enOSState) &&
+		(TRUE == IRQ_boEnableRTOS))
 	{		
 		/* check if kernel cyclic queue is active */
 		if(NULL == stTaskQueue)
@@ -376,7 +378,7 @@ void SysTick_Handler(void)
 			{			
 				OS_vOverrunTaskReport(OS_enKERNELQueueCyclic);
 				/* call schedule - no thread to swap out we are still co-op tasking */				
-				OS_vSchedule(OS_enOSSchedulerTick);
+				//OS_vSchedule(OS_enOSSchedulerTick);
 			}
 		}	
 		
@@ -389,7 +391,7 @@ void SysTick_Handler(void)
 			{			
 				OS_vOverrunTaskReport(OS_enKERNELQueueCyclic);
 				/* call schedule - no thread to swap out we are still co-op tasking */				
-				OS_vSchedule(OS_enOSSchedulerTick);
+				//OS_vSchedule(OS_enOSSchedulerTick);
 			}
 		}			
 
@@ -670,63 +672,72 @@ void FTM3_IRQHandler(void)
 void TC0_Handler(void)
 {
 #if (BUILD_KERNEL_OR_KERNEL_APP == 1)
-	IRQ_apfRXCallBack[TC0_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC0, NULL);
+	uint32 u32Prio = 1;
+	IRQ_apfRXCallBack[TC0_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC0, (void*)&u32Prio);
 #endif	
 }
 
 void TC1_Handler(void)
 {
 #if (BUILD_KERNEL_OR_KERNEL_APP == 1)
-	IRQ_apfRXCallBack[TC1_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC1, NULL);
+	uint32 u32Prio = 0;
+	IRQ_apfRXCallBack[TC1_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC1, (void*)&u32Prio);
 #endif
 }
 
 void TC2_Handler(void)
 {
 #if (BUILD_KERNEL_OR_KERNEL_APP == 1)
-	IRQ_apfRXCallBack[TC2_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC2, NULL);
+	uint32 u32Prio = 0;
+	IRQ_apfRXCallBack[TC2_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC2, (void*)&u32Prio);
 #endif
 }
 
 void TC3_Handler(void)
 {
 #if (BUILD_KERNEL_OR_KERNEL_APP == 1)
-	IRQ_apfRXCallBack[TC3_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC3, NULL);
+	uint32 u32Prio = 0;
+	IRQ_apfRXCallBack[TC3_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC3, (void*)&u32Prio);
 #endif
 }
 
 void TC4_Handler(void)
 {
 #if (BUILD_KERNEL_OR_KERNEL_APP == 1)
-	IRQ_apfRXCallBack[TC4_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC4, NULL);
+	uint32 u32Prio = 0;
+	IRQ_apfRXCallBack[TC4_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC4, (void*)&u32Prio);
 #endif
 }
 
 void TC5_Handler(void)
 {
 #if (BUILD_KERNEL_OR_KERNEL_APP == 1)
-	IRQ_apfRXCallBack[TC5_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC5, NULL);
+	uint32 u32Prio = 0;
+	IRQ_apfRXCallBack[TC5_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC5, (void*)&u32Prio);
 #endif
 }
 
 void TC6_Handler(void)
 {
 #if (BUILD_KERNEL_OR_KERNEL_APP == 1)
-	IRQ_apfRXCallBack[TC6_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC6, NULL);
+	uint32 u32Prio = 0;
+	IRQ_apfRXCallBack[TC6_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC6, (void*)&u32Prio);
 #endif
 }
 
 void TC7_Handler(void)
 {
 #if (BUILD_KERNEL_OR_KERNEL_APP == 1)
-	IRQ_apfRXCallBack[TC7_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC7, NULL);
+	uint32 u32Prio = 1;
+	IRQ_apfRXCallBack[TC7_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC7, (void*)&u32Prio);
 #endif
 }
 
 void TC8_Handler(void)
 {
 	#if (BUILD_KERNEL_OR_KERNEL_APP == 1)
-	IRQ_apfRXCallBack[TC8_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC8, NULL);
+	uint32 u32Prio = 0;
+	IRQ_apfRXCallBack[TC8_IRQn]((IOAPI_tenEHIOResource)EH_VIO_TCC8, (void*)&u32Prio);
 	#endif
 }
 #endif //BUILD_SAM3X8E
@@ -785,21 +796,22 @@ void CAN1_ORed_Message_buffer_IRQHandler(void)
 #ifdef BUILD_SAM3X8E
 void CAN0_Handler(void)
 {
-	tstCANModule* pstCAN = CAN0;
-
-	IRQ_apfRXCallBack[CAN0_IRQn]((IOAPI_tenEHIOResource)EH_VIO_CAN1, NULL);
+	IRQ_vCommonCAN(CAN0, (IOAPI_tenEHIOResource)EH_VIO_CAN1, CAN0_IRQn);
 }
 
 void CAN1_Handler(void)
 {
-	tstCANModule* pstCAN = CAN1;
-	
-	IRQ_apfRXCallBack[CAN1_IRQn]((IOAPI_tenEHIOResource)EH_VIO_CAN2, NULL);
+	IRQ_vCommonCAN(CAN1, (IOAPI_tenEHIOResource)EH_VIO_CAN2, CAN1_IRQn);
 }
-#endif //BUILD_MK60
+#endif //BUILD_SAM3X8E
 
 void IRQ_vCommonCAN(tstCANModule* pstCAN, IOAPI_tenEHIOResource enEHIOResource, IRQn_Type enIRQType)
 {
+#if defined(BUILD_SAM3X8E)	
+	IRQ_apfRXCallBack[enIRQType](enEHIOResource, NULL);
+#endif //BUILD_SAM3X8E
+	
+	
 #ifdef BUILD_MK60
 	CANHA_tstCANMB* pstCANMB;
 	uint32 u32IMask = 1;
@@ -830,27 +842,6 @@ void IRQ_vCommonCAN(tstCANModule* pstCAN, IOAPI_tenEHIOResource enEHIOResource, 
 #endif
 }
 
-void IRQ_vCommonUART(tstUARTModule* pstUART, IOAPI_tenEHIOResource enEHIOResource, IRQn_Type enIRQType)
-{
-	DLL_tstRXDLLData stRXDLLData;
-
-#ifdef BUILD_MK60	
-	if(((pstUART -> S1) & UART_S1_TDRE_MASK) == UART_S1_TDRE_MASK)
-	{
-		if(((pstUART -> C2) & UART_C2_TIE_MASK) == UART_C2_TIE_MASK)
-		
-			IRQ_apfTXCallBack[enIRQType](enEHIOResource, NULL);	
-	}
-	
-	if(((pstUART -> S1) & UART_S1_RDRF_MASK) == UART_S1_RDRF_MASK)
-	{
-		stRXDLLData.u8Data[0] = UART_u8GetChar(enEHIOResource);
-		stRXDLLData.u8DataCount = 1;
-		stRXDLLData.u8RXByteIDX = 0;		
-		IRQ_apfRXCallBack[enIRQType](enEHIOResource, (void*)stRXDLLData);	
-	}
-#endif //BUILD_MK60
-}
 
 
 /*----------------------------------------------------------------------------
@@ -861,6 +852,63 @@ void UOTGHS_Handler(void)
 #ifdef BUILD_SAM3X8E
     udd_interrupt();
 #endif //BUILD_SAM3X8E
+}
+
+
+
+void NMI_Handler        ( void ) {while(1) {}}
+void HardFault_Handler  ( void ) {while(1) {}}
+void BusFault_Handler   ( void ) {while(1) {}}
+void UsageFault_Handler ( void ) {while(1) {}}
+void DebugMon_Handler   ( void ) {while(1) {}}
+void PendSV_Handler     ( void ) {while(1) {}}
+
+
+/* Peripherals handlers */
+void SUPC_Handler       ( void ) {while(1) {}}
+void RSTC_Handler       ( void ) {while(1) {}}
+void RTC_Handler        ( void ) {while(1) {}}
+void RTT_Handler        ( void ) {while(1) {}}
+void WDT_Handler        ( void ) {while(1) {}}
+void PMC_Handler        ( void ) {while(1) {}}
+void EFC0_Handler       ( void ) {while(1) {}}
+void EFC1_Handler       ( void ) {while(1) {}}
+void UART_Handler       ( void ) {while(1) {}}
+#ifdef _SAM3XA_SMC_INSTANCE_
+//void SMC_Handler        ( void ) __attribute__ ((weak, alias("Dummy_Handler")));
+#endif /* _SAM3XA_SMC_INSTANCE_ */
+#ifdef _SAM3XA_SDRAMC_INSTANCE_
+//void SDRAMC_Handler     ( void ) __attribute__ ((weak, alias("Dummy_Handler")));
+#endif /* _SAM3XA_SDRAMC_INSTANCE_ */
+
+
+#ifdef _SAM3XA_PIOE_INSTANCE_
+void PIOE_Handler       ( void ) {while(1) {}}
+#endif /* _SAM3XA_PIOE_INSTANCE_ */
+#ifdef _SAM3XA_PIOF_INSTANCE_
+void PIOF_Handler       ( void ) {while(1) {}}
+#endif /* _SAM3XA_PIOF_INSTANCE_ */
+void USART1_Handler     ( void ) {while(1) {}}
+void USART2_Handler     ( void ) {while(1) {}}
+#ifdef _SAM3XA_USART3_INSTANCE_
+void USART3_Handler     ( void ) {while(1) {}}
+#endif /* _SAM3XA_USART3_INSTANCE_ */
+void TWI0_Handler       ( void ) {while(1) {}}
+void TWI1_Handler       ( void ) {while(1) {}}
+#ifdef _SAM3XA_SPI1_INSTANCE_
+void SPI1_Handler       ( void ) {while(1) {}}
+#endif /* _SAM3XA_SPI1_INSTANCE_ */
+void SSC_Handler        ( void ) {while(1) {}}
+void PWM_Handler        ( void ) {while(1) {}}
+void DACC_Handler       ( void ) {while(1) {}}
+void DMAC_Handler       ( void ) {while(1) {}}
+void TRNG_Handler       ( void ) {while(1) {}}
+
+
+
+void IRQ_vEnableRTOS(Bool boEnable)
+{
+	IRQ_boEnableRTOS = boEnable;
 }
 
 

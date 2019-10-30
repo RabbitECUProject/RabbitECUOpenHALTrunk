@@ -102,7 +102,7 @@ void ENE_vTransmitFrame(ENE_tstETHUnionFrame* pstETHUnionFrame)
 {
 	uint16 u16FrameLength = NTOHS(pstETHUnionFrame->uETHData.stIPHeader.u16IPLength) + 14;
 	uint16 u16IDX;
-	puint8 pu8Buff;// = (puint8)TxBuffer;
+	puint8 pu8Buff = NULL;// = (puint8)TxBuffer;
 	
 	pstETHUnionFrame->stETHHeader.u16ETHLengthOrType = HTONS(0x0800);
 	

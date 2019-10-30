@@ -85,6 +85,7 @@ static Bool DLLBYTEQUEUE_vQueueBytes(CBYTEQUEUE_tstQueue*, puint8, uint32);
 static void DLLBYTEQUEUE_vDequeueBytes(CBYTEQUEUE_tstQueue*, puint8, puint32);
 static puint8 DLL_pu8GetTXClientBuffer(IOAPI_tenEHIOResource, puint32 pu32TXBufferCap);	
 static void DLL_vReleaseTXClientBuffer(puint8);
+uint32 DLL_au32CANData[8];
 
 DLL_tstRXDLLData* DLL_pstGetRXBuffer(IOAPI_tenEHIOResource enEHIOResource)
 {
@@ -138,6 +139,8 @@ DLL_tstRXDLLData* DLL_pstGetRXBuffer(IOAPI_tenEHIOResource enEHIOResource)
 	//}
 //}
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-align"
 void DLL_vIPBufferTX(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8TXData, uint32 u32TXByteCount)
 {
 	ENE_tstETHUnionFrame* pstETHUnionFrame = (ENE_tstETHUnionFrame*)pu8TXData;
@@ -274,6 +277,7 @@ void DLL_vFrameRXCB(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8RXData)
 					switch (DLL_astPortConfigCB[DLLVirtualChannelIDX].enLLProtocol)
 					{
 						case PROTAPI_enLLCAN11:
+						case PROTAPI_enLLCAN29:
 						{	
 							/* Get message ID */
 							pstCANMB = (CANHA_tstCANMB*)pu8RXData;
@@ -307,6 +311,31 @@ void DLL_vFrameRXCB(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8RXData)
 										DLL_astPortConfigCB[DLLVirtualChannelIDX].stNetConfig.uNetInfo.stCANNetInfo.u32CANDiagAddress + 8);
 								}								
 							}
+							/* Is this a priority monitored address? */
+							else if (u32Temp == DLL_astPortConfigCB[DLLVirtualChannelIDX].stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityAddress[0])
+							{
+								DLL_au32CANData[0] = pstCANMB -> u32DWH;
+								DLL_au32CANData[1] = pstCANMB -> u32DWL;
+							}
+							/* Is this a priority monitored address? */
+							else if (u32Temp == DLL_astPortConfigCB[DLLVirtualChannelIDX].stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityAddress[1])
+							{
+								DLL_au32CANData[2] = pstCANMB -> u32DWH;
+								DLL_au32CANData[3] = pstCANMB -> u32DWL;
+							}
+							/* Is this a priority monitored address? */
+							else if (u32Temp == DLL_astPortConfigCB[DLLVirtualChannelIDX].stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityAddress[2])
+							{
+								DLL_au32CANData[4] = pstCANMB -> u32DWH;
+								DLL_au32CANData[5] = pstCANMB -> u32DWL;
+							}
+							/* Is this a priority monitored address? */
+							else if (u32Temp == DLL_astPortConfigCB[DLLVirtualChannelIDX].stNetConfig.uNetInfo.stCANNetInfo.u32CANPriorityAddress[3])
+							{
+								DLL_au32CANData[6] = pstCANMB -> u32DWH;
+								DLL_au32CANData[7] = pstCANMB -> u32DWL;
+							}
+							break;
 						}
 
 						case PROTAPI_enUSB2:
@@ -388,6 +417,7 @@ void DLL_vFrameRXCB(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8RXData)
 	/* TODO warning suppressed */
 	(void)boQueuedOK;
 }
+#pragma GCC diagnostic pop
 
 void DLL_vStart(uint32* const u32Stat)
 {
@@ -452,6 +482,15 @@ void DLL_vStart(uint32* const u32Stat)
 	{	
 		DLL_astTXCB[u32IDX].pu8TXData = NULL;
 	}
+
+	DLL_au32CANData[0] = ~0;
+	DLL_au32CANData[1] = ~0;
+	DLL_au32CANData[2] = ~0;
+	DLL_au32CANData[3] = ~0;
+	DLL_au32CANData[4] = ~0;
+	DLL_au32CANData[5] = ~0;
+	DLL_au32CANData[6] = ~0;
+	DLL_au32CANData[7] = ~0;
 	
 	OS_xModuleStartOK(*u32Stat);
 }
@@ -617,7 +656,7 @@ void DLL_vReceiveUARTBytes(IOAPI_tenEHIOResource enEHIOResource, DLL_tstRXDLLDat
 				break;
 				
 			case PROTAPI_enLLUARTSZDelim:	
-				if((NULL != pRXFrame -> u8Data[0])
+				if((NULL != &pRXFrame -> u8Data[0])
 					&& (nASCII_LF != pRXFrame -> u8Data[0]))
 				{
 					DLL_stRXDLLData[DLLVirtualChannelIDX].u8DataCount++;
@@ -658,27 +697,6 @@ void DLL_vReceiveUARTBytes(IOAPI_tenEHIOResource enEHIOResource, DLL_tstRXDLLDat
 	}
 }
 
-void DLL_vTransmitUARTBytesCB(IOAPI_tenEHIOResource enEHIOResource)
-{
- 	DLL_tDLLVirtualChannel DLLVirtualChannelIDX = DLL_tGetVirtualChannel(enEHIOResource);	
-	
-	if (NULL != DLL_astTXCB[DLLVirtualChannelIDX].pu8TXData)
-	{
-		if (0 < DLL_astTXCB[DLLVirtualChannelIDX].u8ByteCount)
-		{	
-			DLL_astTXCB[DLLVirtualChannelIDX].pu8TXData++;	
-			DLL_astTXCB[DLLVirtualChannelIDX].u8ByteCount--;			
-			UART_vSendChar(enEHIOResource,
-				*DLL_astTXCB[DLLVirtualChannelIDX].pu8TXData);
-		}
-		else
-		{
-			UART_vDisableTXInterrupt(enEHIOResource);
-			DLL_vReleaseTXClientBuffer(DLL_astTXCB[DLLVirtualChannelIDX].pu8TXData);	
-			DLL_astTXCB[DLLVirtualChannelIDX].pu8TXData	= NULL;
-		}
-	}
-}
 
 
 static Bool DLL_boSendFrame(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8TXData, uint32 u32TXByteCount)
@@ -951,11 +969,11 @@ static void DLLBYTEQUEUE_vDequeueBytes(CBYTEQUEUE_tstQueue* pstQueue, puint8 pu8
 
 static puint8 DLL_pu8GetTXClientBuffer(IOAPI_tenEHIOResource enEHIOResource, puint32 pu32TXBufferCap)
 {
-	uint8 u8BufferIDXStart;
-	uint8 u8BufferIDXEnd;
+	uint8 u8BufferIDXStart = 0;
+	uint8 u8BufferIDXEnd = 0;
 	uint8 u8BufferIDX;
 	puint8 pu8Buffer = NULL;
-	uint32 u32BufferBytes;
+	uint32 u32BufferBytes = 0;
 	Bool boVacantBuff = false;
 	
 	if ((EH_FIRST_IIC <= enEHIOResource) &&
@@ -1243,5 +1261,26 @@ static void DLL_vReleaseTXClientBuffer(puint8 pu8TXBuffer)
 		}																																								
 		pu8Buffer += u32BufferBytes;	
 	}
+}
+
+void* DLL_pvGetBuffered(IOAPI_tenEHIOResource enEHIOResource)
+{
+	void* pvData = NULL;
+
+	switch (enEHIOResource)
+	{
+	case EH_VIO_CAN1:
+		{
+			pvData = (void*)&DLL_au32CANData;
+			break;
+		}
+	default:
+		{
+
+		break;
+		}
+	}
+
+	return pvData;
 }
 

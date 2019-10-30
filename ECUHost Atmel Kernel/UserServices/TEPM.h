@@ -17,8 +17,17 @@
 #include "TEPMHA.h"
 #include "SYSAPI.h"
 
-#define TEPM_nSoonCounts  50
+#define TEPM_nSoonCounts  250
 #define TEPM_nFarCounts   0xe0000000
+
+#ifdef EXTERN
+#undef EXTERN
+#endif
+#ifdef _TEPM_C
+#define EXTERN
+#else
+#define EXTERN extern
+#endif
 
 
 typedef struct
@@ -48,7 +57,8 @@ typedef struct
 
 void TEPM_vStart(puint32 const pu32Arg);
 void TEPM_vRun(puint32 const pu32Arg);
-void TEMP_vTerminate(puint32 const pu32Arg);
+void TEPM_vAsyncRequest(void);
+void TEPM_vTerminate(puint32 const pu32Arg);
 SYSAPI_tenSVCResult TEPM_vInitTEPMResource(IOAPI_tenEHIOResource, TEPMAPI_tstTEPMResourceCB*);
 uint32 TEPM_u32InitTEPMChannel(IOAPI_tenEHIOResource, TEPMAPI_tstTEPMChannelCB*);
 void TEPM_boGetMasterEHIOResourceList(IOAPI_tenEHIOResource, IOAPI_tenEHIOResource*, puint32);
@@ -57,12 +67,14 @@ void TEPM_vConfigureKernelTEPMInput(IOAPI_tenEHIOResource, TEPMAPI_tstTimedKerne
 void TEPM_vConfigureKernelTEPMOutput(IOAPI_tenEHIOResource, TEPMAPI_tstTimedKernelEvent*, TEPMAPI_ttEventCount);
 void TEPM_vConfigureUserTEPMInput(IOAPI_tenEHIOResource, TEPMAPI_tstTimedUserEvent*);
 void TEPM_vInitiateUserCallBack(IOAPI_tenEHIOResource, TEPMAPI_ttEventTime);
-void TEPM_u32GetTimerVal(IOAPI_tenEHIOResource, puint32);
-void TEPM_vInterruptHandler(IOAPI_tenEHIOResource);
+void TEPM_vGetTimerVal(IOAPI_tenEHIOResource, puint32);
+void TEPM_u32GetFreeVal(IOAPI_tenEHIOResource, puint32);
+void TEPM_vInterruptHandler(IOAPI_tenEHIOResource, void*);
 uint32 TEPM_u32GetFTMTableIndex(IOAPI_tenEHIOResource);
-void TEPM_vStartEventProgramKernelQueues(void);
+void TEPM_vStartEventProgramKernelQueues(Bool, uint32);
 void TEPM_vSynchroniseEventProgramKernelQueues(void);
 IOAPI_tenTriState TEPM_enGetTimerDigitalState(IOAPI_tenEHIOResource);
+void TEPM_vEnableSequences(Bool boEnable);
 
 #endif //TEPM_H
 

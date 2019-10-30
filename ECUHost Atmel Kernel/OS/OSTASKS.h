@@ -25,7 +25,6 @@ extern void UDSAL_vTerminate(puint32);
 #include "CLIENT.h"
 #include "CTRL.h"
 #include "DAC.h"
-#include "DISK.h"
 #include "DLL.h"
 #include "DSCRIO.h"
 #include "ENE.h"
@@ -34,7 +33,6 @@ extern void UDSAL_vTerminate(puint32);
 #include "PIM.h"
 #include "PIT.h"
 #include "RESM.h"
-#include "SDHC.h"
 #include "spreads.h"
 #include "SRLTFR.h"
 #include "tables.h"
@@ -67,8 +65,6 @@ extern void UDSAL_vTerminate(puint32);
 	{ 16u    , enTaskFunction	, (TASKAPI_tenPriority)77u           , enTaskReady, TASKAPI_enTaskCycNot	, &WIFI_vStart			, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
 	{ 17u    , enTaskFunction	, (TASKAPI_tenPriority)77u           , enTaskReady, TASKAPI_enTaskCycNot	, &DSCRIO_vStart		, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
 	{ 18u    , enTaskFunction	, (TASKAPI_tenPriority)77u           , enTaskReady, TASKAPI_enTaskCycNot	, &TIMER_vStart			, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
-	{ 19u    , enTaskFunction	, (TASKAPI_tenPriority)77u           , enTaskReady, TASKAPI_enTaskCycNot	, &SDHC_vStart			, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
-	{ 20u    , enTaskFunction	, (TASKAPI_tenPriority)77u           , enTaskReady, TASKAPI_enTaskCycNot	, &DISK_vStart			, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
 	{ 21u    , enTaskFunction	, (TASKAPI_tenPriority)77u           , enTaskReady, TASKAPI_enTaskCycNot	, &TIME_vStart			, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
 	{ 22u    , enTaskFunction	, (TASKAPI_tenPriority)78u           , enTaskReady, TASKAPI_enTaskCycNot	, &CAN_vStart				, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
 	{ 23u    , enTaskFunction	, (TASKAPI_tenPriority)78u           , enTaskReady, TASKAPI_enTaskCycNot	, &CTRL_vStart			, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
@@ -91,14 +87,12 @@ extern void UDSAL_vTerminate(puint32);
 	{ 35u    , enTaskCyclic		, (TASKAPI_tenPriority)166u          , enTaskReady, TASKAPI_enTask1ms						, &ENE_vRun					, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
 	{ 36u    , enTaskCyclic		, (TASKAPI_tenPriority)166u          , enTaskReady, TASKAPI_enTask250ms					, &WIFI_vRun				, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
 	{ 37u    , enTaskCyclic		, (TASKAPI_tenPriority)166u          , enTaskReady, TASKAPI_enTask250ms					, &DSCRIO_vRun			, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
-	{ 38u    , enTaskCyclic		, (TASKAPI_tenPriority)166u          , enTaskReady, TASKAPI_enTask250ms					, &SDHC_vRun				, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
-	{ 39u    , enTaskCyclic		, (TASKAPI_tenPriority)166u          , enTaskReady, TASKAPI_enTask250ms					, &DISK_vRun				, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
 	{ 40u    , enTaskCyclic		, (TASKAPI_tenPriority)166u          , enTaskReady, TASKAPI_enTask250ms					, &TIME_vRun				, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
 	{ 41u    , enTaskCyclic		, (TASKAPI_tenPriority)19u           , enTaskReady, TASKAPI_enTask1ms						, &CAN_vRun					, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
 	{ 42u    , enTaskCyclic		, (TASKAPI_tenPriority)19u           , enTaskReady, TASKAPI_enTask1ms						, &CTRL_vRun				, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
 	{ 43u    , enTaskCyclic		, (TASKAPI_tenPriority)19u           , enTaskReady, TASKAPI_enTask1ms						, &CRC16_vRun				, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
 	{ 44u    , enTaskCyclic		, (TASKAPI_tenPriority)19u           , enTaskReady, TASKAPI_enTask20ms					, &CEM_vRun					, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
-	{ 45u    , enTaskCyclic		, (TASKAPI_tenPriority)19u           , enTaskReady, TASKAPI_enTask5ms						, &SRLTFR_vRun			, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	} \
+	{ 45u    , enTaskCyclic		, (TASKAPI_tenPriority)19u           , enTaskReady, TASKAPI_enTask1ms						, &SRLTFR_vRun			, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	} \
 }
 
 #define OSTASKS_nTaskTerminate																																																																									\
@@ -115,8 +109,6 @@ extern void UDSAL_vTerminate(puint32);
 	{ 54u    , enTaskFunction	, TASKAPI_enTaskPrMaxAll, enTaskReady, TASKAPI_enTaskCycNot	, &ENE_vTerminate		, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
 	{ 55u    , enTaskFunction	, TASKAPI_enTaskPrMaxAll, enTaskReady, TASKAPI_enTaskCycNot	, &WIFI_vTerminate	, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
 	{ 56u    , enTaskFunction	, TASKAPI_enTaskPrMaxAll, enTaskReady, TASKAPI_enTaskCycNot	, &DSCRIO_vTerminate, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
-	{ 57u    , enTaskFunction	, TASKAPI_enTaskPrMaxAll, enTaskReady, TASKAPI_enTaskCycNot	, &SDHC_vTerminate	, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
-	{ 58u    , enTaskFunction	, TASKAPI_enTaskPrMaxAll, enTaskReady, TASKAPI_enTaskCycNot	, &DISK_vTerminate	, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
 	{ 59u    , enTaskFunction	, TASKAPI_enTaskPrMaxAll, enTaskReady, TASKAPI_enTaskCycNot	, &TIME_vTerminate	, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
 	{ 60u    , enTaskFunction	, TASKAPI_enTaskPrMaxAll, enTaskReady, TASKAPI_enTaskCycNot	, &TIMER_vTerminate	, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\
 	{ 61u    , enTaskFunction	, TASKAPI_enTaskPrMaxAll, enTaskReady, TASKAPI_enTaskCycNot	, &CAN_vTerminate		, NULL,	NULL, 0u   		, 0u     		 , 0u 			 ,	 0u		, enTaskPrivileged	},\

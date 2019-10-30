@@ -51,6 +51,7 @@ typedef enum
 void IRQ_vEnableIRQ(IRQn_Type, IRQ_tenPRIO, IRQRXCallBack, IRQTXCallBack);
 void IRQ_vDisableIRQ(IRQn_Type);
 void IRQ_vReset(void);
+void IRQ_vEnableRTOS(Bool boEnable);
 
 #endif //IRQ_H
 

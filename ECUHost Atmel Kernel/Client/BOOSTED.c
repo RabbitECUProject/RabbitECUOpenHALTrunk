@@ -84,4 +84,10 @@ SPREADAPI_tstSpreadResult* BOOSTED_pstGetSpread(SPREADAPI_ttSpreadIDX tSpreadxID
     return OS_stSVCDataStruct.pvArg1;
 }
 
+void BOOSTED_vEnableWatchdog(uint16 u16ReloadCount, uint16 u16WindowCount)
+{
+    USER_vSVC(SYSAPI_enSetupWatchdog, (void*)&u16ReloadCount,
+    (void*)&u16WindowCount, NULL);
+}
+
 #endif //BUILD_USER

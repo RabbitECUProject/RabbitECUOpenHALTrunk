@@ -1,6 +1,5 @@
 /******************************************************************************/
 /*    Copyright (c) 2016 MD Automotive Controls. Original Work.               */
-/*    License: http://www.gnu.org/licenses/gpl.html GPL version 2 or higher   */
 /******************************************************************************/
 /* CONTEXT:USER_APP                                                           */
 /* PACKAGE TITLE:      Air Flow Meter                                         */
@@ -11,6 +10,7 @@
 /* REVISION HISTORY:   28-03-2016 | 1.0 | Initial revision                    */
 /*                                                                            */
 /******************************************************************************/
+
 #define _AFM_C
 
 /******************************************************************************/
@@ -21,6 +21,7 @@
 #if BUILD_USER
 
 #include "AFM.h"
+#include "MAP.h"
 
 
 /* LOCAL VARIABLE DEFINITIONS (STATIC) ****************************************/
@@ -40,41 +41,25 @@ EXTERN GPM6_ttUg AFM_tManChargeMassOldUg;
 * Return Value     : NIL
 *******************************************************************************/
 static void AFM_vADCCallBack(IOAPI_tenEHIOResource enEHIOResource, uint32 u32ADCResult);
-//SPREADAPI_ttSpreadIDX AFM_tSpreadAfmTFIDX;
 SPREADAPI_ttSpreadIDX AFM_tSpreadBackupAirflowxIDX;
 SPREADAPI_ttSpreadIDX AFM_tSpreadBackupAirflowyIDX;
 MAPSAPI_ttMapIDX AFM_tMapBackupAirflowIDX;
-//TABLEAPI_ttTableIDX AFM_tTableAfmTFIDX;
 
 /* GLOBAL FUNCTION DEFINITIONS ************************************************/
 void AFM_vStart(puint32 const pu32Arg)
 {
-	IOAPI_tenEHIOResource enEHIOResource;
-	IOAPI_tenEHIOType enEHIOType;
-	ADCAPI_tstADCCB stADCCB;
+	AFM_boNewSample = FALSE;	
 	
-	AFM_boNewSample = FALSE;		
-	enEHIOResource = AFM_nADInput;
+#ifdef BUILD_BSP_AFM_ANALOG
+	IOAPI_tenEHIOType enEHIOType;
+	ADCAPI_tstADCCB stADCCB;	
+	IOAPI_tenEHIOResource enEHIOResource;	
+	enEHIOResource = USERCAL_stRAMCAL.u16AFMADResource;
 	enEHIOType = IOAPI_enADSE;
 	stADCCB.enSamplesAv = ADCAPI_en32Samples;
 	stADCCB.pfResultCB = &AFM_vADCCallBack;
 	stADCCB.enTrigger = ADCAPI_enTrigger4;
-	
-	AFM_tSensorHertz = 0;				
-		
 	USER_vSVC(SYSAPI_enRequestIOResource, (void*)&enEHIOResource,	(void*)NULL, (void*)NULL);
-
-	/* Request and initialise required Kernel managed spread for AfmTF */
-	//AFM_tSpreadAfmTFIDX = SETUP_tSetupSpread((void*)&AFM_nXAxisRef, (void*)&USERCAL_stRAMCAL.aUserCURVEAfmTFSpread, TYPE_enUInt32, 17, SPREADAPI_enSpread4ms, NULL);
-
-	/* Request and initialise required Kernel managed spread for backup airflow x */
-	AFM_tSpreadBackupAirflowxIDX = SETUP_tSetupSpread((void*)&CAM_u32RPMRaw, (void*)&USERCAL_stRAMCAL.aUserBackupAirflowxSpread, TYPE_enUInt32, 17, SPREADAPI_enSpread4ms, NULL);
-
-	/* Request and initialise required Kernel managed spread for backup airflow y */
-	AFM_tSpreadBackupAirflowyIDX = SETUP_tSetupSpread((void*)&TPS_tThetaFiltered, (void*)&USERCAL_stRAMCAL.aUserBackupAirflowySpread, TYPE_enUInt32, 11, SPREADAPI_enSpread4ms, NULL);
-
-	/* Request and initialise required Kernel managed map for backup airflow */
-	AFM_tMapBackupAirflowIDX = SETUP_tSetupMap((void*)&USERCAL_stRAMCAL.aUserBackupAirflowMap, (void*)&AFM_tAirFlowBackupRawUg, TYPE_enUInt32, 11, 11, AFM_tSpreadBackupAirflowxIDX, AFM_tSpreadBackupAirflowyIDX, NULL);	
 
 	if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)
 	{											
@@ -90,18 +75,28 @@ void AFM_vStart(puint32 const pu32Arg)
 	{	
 		*pu32Arg |= (uint32)SYSAPI_enResourceInitFailed;/*CR1_13*/
 	}
+#endif
+	
+	AFM_tSensorHertz = 0;				
+
+	/* Request and initialise required Kernel managed spread for backup airflow x */
+	AFM_tSpreadBackupAirflowxIDX = SETUP_tSetupSpread((void*)&CAM_u32RPMRaw, (void*)&USERCAL_stRAMCAL.aUserBackupAirflowxSpread, TYPE_enUInt32, 17, SPREADAPI_enSpread4ms, NULL);
+
+	/* Request and initialise required Kernel managed spread for backup airflow y */
+	AFM_tSpreadBackupAirflowyIDX = SETUP_tSetupSpread((void*)&TPS_tThetaFiltered, (void*)&USERCAL_stRAMCAL.aUserBackupAirflowySpread, TYPE_enUInt32, 11, SPREADAPI_enSpread4ms, NULL);
+
+	/* Request and initialise required Kernel managed map for backup airflow */
+	AFM_tMapBackupAirflowIDX = SETUP_tSetupMap((void*)&USERCAL_stRAMCAL.aUserBackupAirflowMap, (void*)&AFM_tAirFlowBackupRawUg, TYPE_enUInt32, 11, 11, AFM_tSpreadBackupAirflowxIDX, AFM_tSpreadBackupAirflowyIDX, NULL);	
 }
 
 void AFM_vRun(puint32 const pu32Arg)
 {
 	uint32 u32Temp;
-	sint32 s32Temp;
 	uint8 u8ManifoldTimeConstantFilter;
-	static uint32 u32SampleCount;
 	SPREADAPI_tstSpreadResult* pstSpreadResultAirflowBackupX;
 	SPREADAPI_tstSpreadResult* pstSpreadResultAirflowBackupY;
-	uint32 u32TableIDXx = ~0;
-	uint32 u32TableIDXy = ~0;
+	uint16 u16TableIDXx = ~0;
+	uint16 u16TableIDXy = ~0;
 	
 	if (TRUE == AFM_boNewSample)
 	{
@@ -133,19 +128,43 @@ void AFM_vRun(puint32 const pu32Arg)
 			/* Get the current x spread for backup airflow */
             pstSpreadResultAirflowBackupY = BOOSTED_pstGetSpread(AFM_tSpreadBackupAirflowyIDX);
 
-            u32TableIDXx = (0x1000 > pstSpreadResultAirflowBackupX->u16SpreadOffset) ? pstSpreadResultAirflowBackupX->u16SpreadIndex : u32TableIDXx;
-            u32TableIDXx = (0xf000 < pstSpreadResultAirflowBackupX->u16SpreadOffset) ? pstSpreadResultAirflowBackupX->u16SpreadIndex + 1 : u32TableIDXx;
-            u32TableIDXy = (0x1000 > pstSpreadResultAirflowBackupY->u16SpreadOffset) ? pstSpreadResultAirflowBackupY->u16SpreadIndex : u32TableIDXy;
-            u32TableIDXy = (0xf000 < pstSpreadResultAirflowBackupY->u16SpreadOffset) ? pstSpreadResultAirflowBackupY->u16SpreadIndex + 1 : u32TableIDXy;
+            u16TableIDXx = (0x1000u > pstSpreadResultAirflowBackupX->uSpreadData.stSpreadResult.u16SpreadOffset) ? pstSpreadResultAirflowBackupX->uSpreadData.stSpreadResult.u16SpreadIndex : u16TableIDXx;
+            u16TableIDXx = (0xf000u < pstSpreadResultAirflowBackupX->uSpreadData.stSpreadResult.u16SpreadOffset) ? pstSpreadResultAirflowBackupX->uSpreadData.stSpreadResult.u16SpreadIndex + 1 : u16TableIDXx;
+            u16TableIDXy = (0x1000u > pstSpreadResultAirflowBackupY->uSpreadData.stSpreadResult.u16SpreadOffset) ? pstSpreadResultAirflowBackupY->uSpreadData.stSpreadResult.u16SpreadIndex : u16TableIDXy;
+            u16TableIDXy = (0xf000u < pstSpreadResultAirflowBackupY->uSpreadData.stSpreadResult.u16SpreadOffset) ? pstSpreadResultAirflowBackupY->uSpreadData.stSpreadResult.u16SpreadIndex + 1 : u16TableIDXy;
 
 			/* If the indexes are valid then learn the new airflow */
-			if ((~0 != u32TableIDXx) && (~0 != u32TableIDXy))
+			if ((0xffff != u16TableIDXx) && (0xffff != u16TableIDXy))
 			{
-			    u32Temp = AFM_tAirFlowUg / 4 + (3 * USERCAL_stRAMCAL.aUserBackupAirflowMap[u32TableIDXx][u32TableIDXy]) / 4;
-			    USERCAL_stRAMCAL.aUserBackupAirflowMap[u32TableIDXx][u32TableIDXy] = u32Temp;
+			    u32Temp = AFM_tAirFlowAFMUg / 4 + (3 * USERCAL_stRAMCAL.aUserBackupAirflowMap[u16TableIDXx][u16TableIDXy]) / 4;
+			    USERCAL_stRAMCAL.aUserBackupAirflowMap[u16TableIDXx][u16TableIDXy] = u32Temp;
 			}
 		}
 	}
+
+#ifdef BUILD_BSP_AFM_FREQ
+	/* Calculate predicted VE method airflow */
+	u32Temp = MAP_u16VE * USERCAL_stRAMCAL.u16CylinderCC * USERCAL_stRAMCAL.u8CylCount / 120;
+	u32Temp *= CAM_u32RPMRaw;
+	u32Temp /= 10000;
+	u32Temp *= MAP_tKiloPaFiltered;
+	u32Temp /= 10000;
+
+	/* Correct for air temperature */
+	u32Temp = (u32Temp * 2980 ) / ((ATS_tTempCPort / 100) + 2730);
+
+	AFM_tAirFlowVEUg = 1225 * u32Temp;
+
+	/* Calculate current running VE */
+	u32Temp = USERCAL_stRAMCAL.u16CylinderCC * USERCAL_stRAMCAL.u8CylCount / 120;
+	u32Temp *= CAM_u32RPMFiltered;
+	u32Temp /= 10;
+	u32Temp *= MAP_tKiloPaFiltered;
+	u32Temp /= 10000;
+	u32Temp *= 1225;
+	u32Temp /= 1000;
+	AFM_u16LearnVE = AFM_tAirFlowAFMUg / u32Temp;
+#endif
 }
 
 void AFM_vTerminate(puint32 const pu32Arg)
@@ -160,7 +179,7 @@ void AFM_vCallBack(puint32 const pu32Arg)
 }
 
 
-static void AFM_vADCCallBack(IOAPI_tenEHIOResource enEHIOResource, uint32 u32ADCResult)
+static void __attribute__((used)) AFM_vADCCallBack(IOAPI_tenEHIOResource enEHIOResource, uint32 u32ADCResult)
 {
 	AFM_u32ADCRaw = u32ADCResult;
 	AFM_boNewSample = TRUE;
