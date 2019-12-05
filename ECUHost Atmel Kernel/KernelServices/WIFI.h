@@ -13,7 +13,6 @@
 #define WIFI_H
 
 #include "sys.h"
-#include "ENE.h"
 #include "RESM.h"
 
 /*<AUTOGEN START>*/

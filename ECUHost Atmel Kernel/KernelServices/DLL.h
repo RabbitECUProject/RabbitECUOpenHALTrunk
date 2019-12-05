@@ -157,7 +157,6 @@ Bool DLL_boInitDLLChannel(IOAPI_tenEHIOResource, IOAPI_tstPortConfigCB*);
 IOAPI_tenPortMode DLL_enGetChannelMode(IOAPI_tenEHIOResource);
 DLL_tstRXDLLData* DLL_pstGetRXBuffer(IOAPI_tenEHIOResource);
 void* DLL_pvGetBuffered(IOAPI_tenEHIOResource);
-void DLL_vIPBufferTX(IOAPI_tenEHIOResource, puint8, uint32);
 
 #endif //DLL_H
 

@@ -14,7 +14,6 @@
 #include "CBYTEQUEUE.h"
 #include "declarations.h"
 #include "DLL.h"
-#include "ENE.h"
 #include "IOAPI.h"
 #include "macros.h"
 #include "OS.h"
@@ -24,9 +23,7 @@
 #include "peruart.h"
 #include "UDSNL.h"
 
-
-const uint32 ETH_ru32SourceIPAddress = ETH_nSourceIPAddress;
-const uint32 ETH_ru32DestinationIPAddress = ETH_nDestinationIPAddress;		
+	
 const uint16 DLL_rau16TXFrameMaxBytes[] = DLL_nMaxTXFrameBytes;		
 
 IOAPI_tstPortConfigCB DLL_astPortConfigCB[DLL_nVirtualChannelCount]; 
@@ -92,121 +89,6 @@ DLL_tstRXDLLData* DLL_pstGetRXBuffer(IOAPI_tenEHIOResource enEHIOResource)
     return &DLL_stRXDLLData[enEHIOResource - EH_VIO_IIC1];
 }
 
-//void DLL_vIPBufferRXCB(ENE_tstETHUnionFrame* pstETHUnionFrame)
-//{	
-	//uint8 u8ENEChannelIDX;
-	//uint16 u16Temp;
-	//puint8 pu8FrameData;
-	//
-	//IOAPI_tenEHIOResource	enEHIOResource = EH_IO_Invalid;
-	//DLL_tDLLVirtualChannel DLLVirtualChannelIDX = DLL_tGetVirtualChannel(EH_VIO_ENET_CH1);		
-	//
-	//for (u8ENEChannelIDX = 0; u8ENEChannelIDX < (EH_ENET_LAST_CH - EH_ENET_FIRST_CH + 1); u8ENEChannelIDX++)
-	//{
-		//if ((EH_ENET_FIRST_CH <= 
-				//DLL_astPortConfigCB[DLLVirtualChannelIDX + u8ENEChannelIDX].enVIOResource)
-			//&&(EH_ENET_LAST_CH >= 
-				//DLL_astPortConfigCB[DLLVirtualChannelIDX + u8ENEChannelIDX].enVIOResource))
-		//{
-//#if (COMMS_ETH_WIFI)
-			//if(NTOHS(DLL_astPortConfigCB[DLLVirtualChannelIDX + u8ENEChannelIDX].stNetConfig.uNetInfo.stLANNetInfo.u16RPCREQSourcePort) == 
-						//(pstETHUnionFrame -> uIPData.stUDPHeader.u16SourcePort))				
-//#endif			
-			//{
-				//if(NTOHS(DLL_astPortConfigCB[DLLVirtualChannelIDX + u8ENEChannelIDX].stNetConfig.uNetInfo.stLANNetInfo.u16RPCREQDestPort) == 
-							//(pstETHUnionFrame -> uIPData.stUDPHeader.u16DestinationPort))	
-				//{
-					//enEHIOResource = (IOAPI_tenEHIOResource)(EH_VIO_ENET_CH1 + u8ENEChannelIDX);		
-					//break;
-				//}	
-			//}
-		//}
-	//}
-	//
-	//if (EH_IO_Invalid != enEHIOResource)
-	//{
-		//DLLVirtualChannelIDX = DLL_tGetVirtualChannel(enEHIOResource);
-		//DLL_au16PacketSeq[DLLVirtualChannelIDX] = NTOHS(pstETHUnionFrame->uETHData.stIPHeader.u16ID);
-		//u16Temp = NTOHS(pstETHUnionFrame->uIPData.stUDPHeader.u16UDPLength);
-		//u16Temp = MIN(u16Temp, (uint16)RX_BUFF_SIZE);	//matthew	
-		//pu8FrameData = &pstETHUnionFrame->au8UDPData[0];
-		//
-		//DLL_stRXDLLData[DLLVirtualChannelIDX].u8DataCount = u16Temp;			
-		//memcpy((void*)&DLL_stRXDLLData[DLLVirtualChannelIDX].u8Data,
-									 //(void*)pu8FrameData, u16Temp);	
-//
-		//DLL_vFrameRXCB(enEHIOResource, (puint8)&DLL_stRXDLLData[DLLVirtualChannelIDX].u8Data[0]);				
-	//}
-//}
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-align"
-void DLL_vIPBufferTX(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8TXData, uint32 u32TXByteCount)
-{
-	ENE_tstETHUnionFrame* pstETHUnionFrame = (ENE_tstETHUnionFrame*)pu8TXData;
-	DLL_tDLLVirtualChannel DLLVirtualChannelIDX = DLL_tGetVirtualChannel(enEHIOResource);
-	
-	/* Move the transmit data to the UDP payload offset */
-	if (DLL_nENETTXWorkBuffMaxBytes >= (u32TXByteCount + offsetof(ENE_tstETHUnionFrame, au8UDPData)))
-	{		
-		memmove((void*)pstETHUnionFrame->au8UDPData, (void*)pstETHUnionFrame, u32TXByteCount);	
-	}	
-
-	/* Check if we have already descended through the UDS_UDP layer
-     because in that case we need to add the TL header not
-	   added by a TCP/IP stack */	
-	if (PROTAPI_enTLUDS_UDP == DLL_astPortConfigCB[DLLVirtualChannelIDX].enTLProtocol)
-	{
-		pstETHUnionFrame->uIPData.stUDPHeader.u16UDPHeaderChecksum = 0;
-		pstETHUnionFrame->uIPData.stUDPHeader.u16UDPLength = HTONS((uint16)u32TXByteCount + ETH_nUDPHeaderLength);
-		/* RPC response ports are +1 of the RPC request ports */
-		pstETHUnionFrame->uIPData.stUDPHeader.u16SourcePort	= HTONS(DLL_astPortConfigCB[DLLVirtualChannelIDX].stNetConfig.uNetInfo.stLANNetInfo.u16RPCREQSourcePort + 1);
-		pstETHUnionFrame->uIPData.stUDPHeader.u16DestinationPort	= HTONS(DLL_astPortConfigCB[DLLVirtualChannelIDX].stNetConfig.uNetInfo.stLANNetInfo.u16RPCREQDestPort + 1);		
-	}
-	
-	/* Check if we have already descended through the 15765_IP layer
-     because in that case we need to add the NL header not
-	   added by a TCP/IP stack */		
-	if (PROTAPI_enISO15765_IP == DLL_astPortConfigCB[DLLVirtualChannelIDX].enNLProtocol)	
-	{
-			/* Host To Network IP ***********************************/	
-		
-			/* Write the VersionIHL to the buffer */
-			pstETHUnionFrame -> uETHData.stIPHeader.u8IPVersionIHL = 0x45;
-
-			/* Write the DSCPECN to the buffer */
-			pstETHUnionFrame -> uETHData.stIPHeader.u8DSCPECN = 0;
-		
-			/* Write the ID to buffer */					
-			pstETHUnionFrame -> uETHData.stIPHeader.u16ID = HTONS(DLL_au16PacketSeq[DLLVirtualChannelIDX]);	
-		
-			/* Write the flags to the buffer */
-			pstETHUnionFrame -> uETHData.stIPHeader.u16FlagsFragment = 0;
-	
-			/* Write the time to live to the buffer */
-			pstETHUnionFrame -> uETHData.stIPHeader.u8TimeToLive = 0x80;		
-
-			/* Write the protocol to the buffer */
-			pstETHUnionFrame -> uETHData.stIPHeader.u8Protocol = 0x11;	
-			
-			/* Write the IP length to the buffer */
-			pstETHUnionFrame -> uETHData.stIPHeader.u16IPLength = 
-				HTONS(ETH_nIPHeaderLength + ETH_nUDPHeaderLength + (uint16)u32TXByteCount);
-		
-			/* Write the IP source address to the buffer */
-			pstETHUnionFrame -> uETHData.stIPHeader.u32SourceIPAddress = 
-					HTONL(ETH_ru32SourceIPAddress);
-
-			/* Write the IP destination address to the buffer */
-			pstETHUnionFrame -> uETHData.stIPHeader.u32DestinationIPAddress = 
-					HTONL(ETH_ru32DestinationIPAddress);		
-				
-			/* Clear the checksum field ready for the hardware accelerator */
-			pstETHUnionFrame -> uETHData.stIPHeader.u16IPHeaderChecksum = 0;
-	}
-	
-	ENE_vTransmitFrame(pstETHUnionFrame);
-}
 
 /* pu8RXData receive frame could be various frame format, hardware mailbox etc */
 void DLL_vFrameRXCB(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8RXData)
@@ -751,7 +633,6 @@ static Bool DLL_boSendFrame(IOAPI_tenEHIOResource enEHIOResource, puint8 pu8TXDa
 		{				
 			case PROTAPI_enLL802_3:
 			{			
-				DLL_vIPBufferTX(enEHIOResource, pu8TXData, u32TXByteCount);
 				boSyncSent = true;
 				break;
 			}

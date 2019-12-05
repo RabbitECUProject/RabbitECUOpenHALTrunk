@@ -561,13 +561,6 @@ static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelID
 	/* Mask out the sequence index  alternate origin index and windows span */
 	u32SequenceIDX &= 0xff;
 
-//#define DEBUG_TEPM
-
-#ifdef DEBUG_TEPM
-	static volatile uint32 test[15];
-	static uint32 test_idx;
-#endif
-
 	
 	if (FALSE == CQUEUE_xIsEmpty(TEPM_astProgramKernelQueue + u32TableIDX))
 	{
@@ -611,12 +604,7 @@ static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelID
 			{
 				case TEPMAPI_enGlobalLinkedFraction:
 				{				
-#ifdef DEBUG_TEPM
-					//test[test_idx] = CEM_u32GlobalCycleTime;
-					//test_idx = (test_idx + 1) & 0x0f;
-#endif
-
-				    u32ModulePhaseCorrect = (uint32)CEM_ttGetModulePhase(3 * (uint32)TEPMHA_enTimerEnumFromModule(pvModule) + u32ChannelIDX / 2);					
+				    u32ModulePhaseCorrect = (uint32)CEM_ttGetModulePhase(3 * TEPMHA_enTimerEnumFromModule(pvModule) + u32ChannelIDX / 2);					
 
 					if (1 == (TEPM_au32TEPMChannelSequence[u32TableIDX] >> 24))
 					{

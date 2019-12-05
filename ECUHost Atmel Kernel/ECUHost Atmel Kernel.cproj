@@ -906,18 +906,6 @@
     <Compile Include="KernelServices\DLL.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="KernelServices\DSCRIO.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="KernelServices\DSCRIO.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="KernelServices\DSCRIOHA.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="KernelServices\DSCRIOHA.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="KernelServices\KERNELIO.c">
       <SubType>compile</SubType>
     </Compile>
@@ -1098,18 +1086,6 @@
     <Compile Include="Peripherals\DACHA.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="Peripherals\ENE.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Peripherals\ENE.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Peripherals\ENEHA.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Peripherals\ENEHA.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="Peripherals\FEE.c">
       <SubType>compile</SubType>
     </Compile>
@@ -1158,12 +1134,6 @@
     <Compile Include="Peripherals\SRLTFR.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="Peripherals\time.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Peripherals\time.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="Peripherals\PERUART.c">
       <SubType>compile</SubType>
     </Compile>
@@ -1192,12 +1162,6 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="Peripherals\WDTHA.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Peripherals\WIFI.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Peripherals\WIFI.h">
       <SubType>compile</SubType>
     </Compile>
     <None Include="src\ASF\common\services\clock\genclk.h">
