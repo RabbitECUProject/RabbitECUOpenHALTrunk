@@ -15,8 +15,8 @@
 #include "MAPSAPI.h"
 #include "SYSAPI.h"
 
-#define MAP_nKernelMapCount	5u
-#define MAP_nUserMapCount	5u
+#define MAP_nKernelMapCount	10u
+#define MAP_nUserMapCount	10u
 
 void MAPS_vStart(puint32 const pu32Arg);
 void MAPS_vRun(puint32 const pu32Arg);

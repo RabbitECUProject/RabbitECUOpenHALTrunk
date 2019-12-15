@@ -15,8 +15,8 @@
 #include "TABLESAPI.h"
 #include "SYSAPI.h"
 
-#define TABLE_nKernelTableCount	18u
-#define TABLE_nUserTableCount	18u
+#define TABLE_nKernelTableCount	25u
+#define TABLE_nUserTableCount	25u
 
 void TABLES_vStart(puint32 const pu32Arg);
 void TABLES_vRun(puint32 const pu32Arg);

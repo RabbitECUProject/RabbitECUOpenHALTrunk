@@ -45,6 +45,7 @@ void EST_vStart(puint32 const pu32Arg)
 	IOAPI_tenDriveStrength enDriveStrength;
 	TEPMAPI_tstTEPMChannelCB stTEPMChannelCB;	
 	Bool boCamSyncLate;
+	TEPMAPI_tstTimedUserEvent stTimedEvent;
 	uint32 u32CamSyncSampleToothCount;
 	CEM_tstPatternSetupCB stPatternSetupCB;
 
@@ -245,12 +246,48 @@ void EST_vStart(puint32 const pu32Arg)
 	SETUP_vSetDigitalIOHigh(EST_nMotor1EnablePin);
 	SETUP_vSetDigitalIOHigh(EST_nMotor2EnablePin);
 
-	/* Setup the simple CAM sync */
-	enEHIOResource = USERCAL_stRAMCAL.enSimpleCamSyncSource;
-	boCamSyncLate = USERCAL_stRAMCAL.boCamSyncHighLate;
-	u32CamSyncSampleToothCount = USERCAL_stRAMCAL.u32CamSyncSampleToothCount;
+	/* Setup simple cam sync resource */
+	if (EH_IO_Invalid != USERCAL_stRAMCAL.enSimpleCamSyncSource)
+	{
+		enEHIOResource = USERCAL_stRAMCAL.enSimpleCamSyncSource;
+		enEHIOType = IOAPI_enDIOInput;
+		SETUP_vSetupDigitalIO(enEHIOResource, enEHIOType, enDriveStrength, pu32Arg);
 
-	SETUP_vSetupSimpleCamSync(enEHIOResource, boCamSyncLate, u32CamSyncSampleToothCount);
+		/* Setup the simple CAM sync */
+		boCamSyncLate = USERCAL_stRAMCAL.boCamSyncHighLate;
+		u32CamSyncSampleToothCount = USERCAL_stRAMCAL.u32CamSyncSampleToothCount;
+
+		SETUP_vSetupSimpleCamSync(enEHIOResource, boCamSyncLate, u32CamSyncSampleToothCount);
+	}
+
+
+	/* Request and initialise VVT1 Input  ***************************/
+	if (EH_IO_Invalid > USERCAL_stRAMCAL.VVTInputResource)
+	{
+		enEHIOResource = USERCAL_stRAMCAL.VVTInputResource;
+		enEHIOType = IOAPI_enCaptureCompare;
+		USER_vSVC(SYSAPI_enRequestIOResource, (void*)&enEHIOResource,
+			(void*)NULL, (void*)NULL);
+
+		/* Initialise the VVT Input */
+		if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)
+		{
+			stTEPMChannelCB.enAction = TEPMAPI_enCapAny;
+			stTEPMChannelCB.boInterruptEnable = TRUE;
+			stTEPMChannelCB.u32Sequence = 0x10000000 + USERCAL_stRAMCAL.VVTInputType;
+
+			USER_vSVC(SYSAPI_enInitialiseIOResource, (void*)&enEHIOResource,
+				(void*)&enEHIOType,	(void*)&stTEPMChannelCB);
+		}
+
+		stTimedEvent.enMethod = TEPMAPI_enLinkVVT1Input;
+		stTimedEvent.pfEventCB = NULL;
+
+		USER_vSVC(SYSAPI_enConfigureUserTEPMInput, (void*)&enEHIOResource,
+			(void*)&stTimedEvent, (void*)NULL);
+	}
+
+
 
 	/* Set up EST active output */
 	if (EH_IO_Invalid != USERCAL_stRAMCAL.enESTBypass)
@@ -263,8 +300,8 @@ void EST_vStart(puint32 const pu32Arg)
 	}
 
 	/* Matthew testing ADD the rest later!!! */
-	enEHIOResource = USERCAL_stRAMCAL.aESTIOMuxResource[0];
-	SETUP_vSetupDigitalIO(enEHIOResource, enEHIOType, enDriveStrength, pu32Arg);
+	//enEHIOResource = USERCAL_stRAMCAL.aESTIOMuxResource[0];
+	//SETUP_vSetupDigitalIO(enEHIOResource, enEHIOType, enDriveStrength, pu32Arg);
 }
 
 void EST_vRun(puint32 const pu32Arg)

@@ -23,6 +23,8 @@
 #define CEM_nEdgesMax   80u
 #define CEM_nSeqGroupCount 2
 #define CEM_nSeqcount 4
+#define CEM_nEarlySyncError -1
+#define CEM_nLateSyncError -2
 
 #ifdef EXTERN
 	#undef EXTERN
@@ -38,6 +40,8 @@ typedef enum
    CEM_enAutocorrelationMode,
    CEM_enOneGroupMissing,
    CEM_enTypeSuzukiM15A,
+   CEM_enEA888,
+   CEM_enToyota2NFE,
    CEM_enModeCount
 } CEM_tenTriggerType;
 

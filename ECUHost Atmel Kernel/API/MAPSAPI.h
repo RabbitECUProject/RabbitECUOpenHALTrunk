@@ -26,7 +26,7 @@ typedef void (*MAPSAPI_pfPIDResultCB)(sint32);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wattributes"
 
-typedef __packed struct
+typedef struct
 {
 	void* pvMapData;
 	void* pvOutputData;

@@ -723,13 +723,13 @@ static void FUEL_vCyclicCalculate(void)
 
 	if (TRUE == boSequentialMode)
 	{
-		if (49500 > u32Temp)
+		if (59500 > u32Temp)
 		{
 			/* Assign the end of event angles */
-			FUEL_tStartHoldFraction[0] = 50000 - u32Temp;
-			FUEL_tStartHoldFraction[1] = 50000 - u32Temp;
-			FUEL_tStartHoldFraction[2] = 50000 - u32Temp;
-			FUEL_tStartHoldFraction[3] = 50000 - u32Temp;
+			FUEL_tStartHoldFraction[0] = 60000 - u32Temp;
+			FUEL_tStartHoldFraction[1] = 60000 - u32Temp;
+			FUEL_tStartHoldFraction[2] = 60000 - u32Temp;
+			FUEL_tStartHoldFraction[3] = 60000 - u32Temp;
 		}
 		else
 		{

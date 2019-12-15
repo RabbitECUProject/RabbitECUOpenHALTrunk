@@ -55,7 +55,10 @@ typedef enum
 	TEPMAPI_enMaxDelta,
 	TEPMAPI_enMinDelta,
 	TEPMAPI_enLinkPrimaryProgram,
-	TEPMAPI_enLinkPhaseProgram,
+	TEPMAPI_enLinkVVT1Input,
+	TEPMAPI_enLinkVVT2Input,
+	TEPMAPI_enLinkVVT3Input,
+	TEPMAPI_enLinkVVT4Input,
 	TEPMAPI_enLinkFreqInput,
 	TEPMAPI_enLinkDutyInput
 } TEPMAPI_tenMethod;/*CR1_122*/	
@@ -109,6 +112,7 @@ typedef struct
 	Bool boInterruptEnable;
 	Bool boAsyncRequestEnable;
 	uint32 u32Sequence;
+	IOAPI_tenEHIOResource enLinkedResource;
 } TEPMAPI_tstTEPMChannelCB;
 
 typedef struct

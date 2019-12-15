@@ -27,6 +27,7 @@
 #include "EST.h"
 #include "FILM.h"
 #include "FUEL.h"
+#include "GENDATA.h"
 #include "MAP.h"
 #include "IAC.h"
 #include "RELAYS.h"
@@ -42,22 +43,23 @@
 /* GLOBAL MACRO DEFINITIONS ***************************************************/
 #define USER_nUserModuleFunctions																																														\
 {																																																														\
-	{NULL, NULL, NULL, NULL, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},																			\
-	{&MAP_vStart,	&MAP_vRun, &MAP_vTerminate, &MAP_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},											\
-	{&AFM_vStart,	&AFM_vRun, &AFM_vTerminate, &AFM_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},											\
-	{&TPS_vStart,	&TPS_vRun, &TPS_vTerminate, &TPS_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},											\
-	{&BVM_vStart,	&BVM_vRun, &BVM_vTerminate, &BVM_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},											\
-	{&CAM_vStart,	&CAM_vRun, &CAM_vTerminate, &CAM_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask10ms},										\
-	{&FUEL_vStart,	&FUEL_vRun, &FUEL_vTerminate, &FUEL_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},								\
-	{&CTS_vStart,	&CTS_vRun, &CTS_vTerminate, &CTS_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},											\
-	{&ATS_vStart,	&ATS_vRun, &ATS_vTerminate, &ATS_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},											\
-	{&EST_vStart,	&EST_vRun, &EST_vTerminate, &EST_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},											\
-	{&IAC_vStart,	&IAC_vRun, &IAC_vTerminate, &IAC_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask5ms},										\
-	{&USERDIAG_vStart, &USERDIAG_vRun, &USERDIAG_vTerminate, &USERDIAG_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},	\
-	{&SENSORS_vStart, &SENSORS_vRun, &SENSORS_vTerminate, &SENSORS_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},			\
-	{&FILM_vStart, &FILM_vRun, &FILM_vTerminate, &FILM_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask10ms},								\
-	{&RELAYS_vStart, &RELAYS_vRun, &RELAYS_vTerminate, &RELAYS_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask2ms},								\
-	{&USERCAL_vStart,	&USERCAL_vRun, &USERCAL_vTerminate, NULL, TASKAPI_enTaskPrLowest, TASKAPI_enTask5ms}										\
+	{NULL, NULL, NULL, NULL, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},                                                        \
+	{&MAP_vStart,	&MAP_vRun, &MAP_vTerminate, &MAP_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},                     \
+	{&AFM_vStart,	&AFM_vRun, &AFM_vTerminate, &AFM_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},                     \
+	{&TPS_vStart,	&TPS_vRun, &TPS_vTerminate, &TPS_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},                     \
+	{&BVM_vStart,	&BVM_vRun, &BVM_vTerminate, &BVM_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},                     \
+	{&CAM_vStart,	&CAM_vRun, &CAM_vTerminate, &CAM_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask10ms},                    \
+	{&FUEL_vStart,	&FUEL_vRun, &FUEL_vTerminate, &FUEL_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},                  \
+	{&CTS_vStart,	&CTS_vRun, &CTS_vTerminate, &CTS_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},                     \
+	{&ATS_vStart,	&ATS_vRun, &ATS_vTerminate, &ATS_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},                     \
+	{&EST_vStart,	&EST_vRun, &EST_vTerminate, &EST_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},                     \
+	{&IAC_vStart,	&IAC_vRun, &IAC_vTerminate, &IAC_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask5ms},                     \
+	{&USERDIAG_vStart, &USERDIAG_vRun, &USERDIAG_vTerminate, &USERDIAG_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},   \
+	{&SENSORS_vStart, &SENSORS_vRun, &SENSORS_vTerminate, &SENSORS_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},       \
+	{&FILM_vStart, &FILM_vRun, &FILM_vTerminate, &FILM_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask10ms},                  \
+	{&RELAYS_vStart, &RELAYS_vRun, &RELAYS_vTerminate, &RELAYS_vCallBack, TASKAPI_enTaskPrLowest, TASKAPI_enTask2ms},           \
+	{&USERCAL_vStart,	&USERCAL_vRun, &USERCAL_vTerminate, NULL, TASKAPI_enTaskPrLowest, TASKAPI_enTask5ms},                   \
+	{&GENDATA_vStart,	&GENDATA_vRun, &GENDATA_vTerminate, NULL, TASKAPI_enTaskPrLowest, TASKAPI_enTask1ms},                   \
 }
 
 #ifdef EXTERN
@@ -106,6 +108,7 @@ typedef enum
 	USER_enFILM,
 	USER_enRELAYS,
 	USER_enUSERCAL,
+	USER_enGENDATA,
 	USER_enUserCount
 } USER_tenUserModules;/*CR1_126*/
 

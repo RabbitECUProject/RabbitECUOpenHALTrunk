@@ -33,7 +33,8 @@
 #pragma GCC diagnostic ignored "-Wmissing-braces"
 
 //#define TESTCAL
-#define C18CAL
+//#define C18CAL
+#define TWONR_FE_CAL
 //#define KTM_SC_CAL
 //#define L98CAL
 //#define M15A_CAL
@@ -44,6 +45,10 @@
 
 #ifdef C18CAL
 #include "C18_CAL.h"	
+#endif
+
+#ifdef TWONR_FE_CAL
+#include "2NR_FE_CAL.h"
 #endif
 
 #ifdef L98CAL
@@ -267,6 +272,41 @@ typedef __packed struct
 	IOAPI_tenEHIOResource enThermoFanRelay;
 	uint16 aESTIOMuxResource[4];
 	Bool boUEGOCANPrimary;
+	uint16 aPWM2DAxesSourceXIDX[8];
+	uint16 aPWM3DAxesSourceXIDX[4];
+	uint16 aPWM3DAxesSourceYIDX[4];
+	uint16 aPWM2DIOOutputResource[8];
+	uint16 aPWM3DIOOutputResource[4];
+	sint32 aUserPWM2D_1SpreadX[17];
+	sint32 aUserPWM2D_2SpreadX[17];
+	sint32 aUserPWM2D_3SpreadX[17];
+	sint32 aUserPWM2D_4SpreadX[17];
+	sint32 aUserPWM2D_5SpreadX[17];
+	sint32 aUserPWM2D_6SpreadX[17];
+	sint32 aUserPWM2D_7SpreadX[17];
+	sint32 aUserPWM2D_8SpreadX[17];
+	uint16 aUserPWM2D_1Data[17];
+	uint16 aUserPWM2D_2Data[17];
+	uint16 aUserPWM2D_3Data[17];
+	uint16 aUserPWM2D_4Data[17];
+	uint16 aUserPWM2D_5Data[17];
+	uint16 aUserPWM2D_6Data[17];
+	uint16 aUserPWM2D_7Data[17];
+	uint16 aUserPWM2D_8Data[17];
+	sint32 aUserPWM3D_1SpreadX[17];
+	sint32 aUserPWM3D_2SpreadX[17];
+	sint32 aUserPWM3D_3SpreadX[17];
+	sint32 aUserPWM3D_4SpreadX[17];	
+	sint32 aUserPWM3D_1SpreadY[17];
+	sint32 aUserPWM3D_2SpreadY[17];
+	sint32 aUserPWM3D_3SpreadY[17];
+	sint32 aUserPWM3D_4SpreadY[17];
+	uint16 aUserPWM3D_1Data[17][17];
+	uint16 aUserPWM3D_2Data[17][17];
+	uint16 aUserPWM3D_3Data[17][17];
+	uint16 aUserPWM3D_4Data[17][17];
+	uint16 VVTInputResource;
+	uint8 VVTInputType;
 	uint16 u16CRC16;
 	uint32* offsets;
 } USERCAL_tstCalibration;
@@ -316,10 +356,10 @@ EXTERN USERCAL_tstCalibration __attribute__ ((packed)) USERCAL_stRAMCAL;
 //ASAM mode=writemap name="TAFR Map" parent="USERCAL_stRAMCAL" type=uint16 offset=844 min=0 max=20 m=0.01 b=0 units="dl" format=4.3 help="TAFR Map" xcount=17 xindexvar="Engine Speed Raw" ycount=17 yindexvar="Throttle Angle"
 //ASAM mode=writeaxis_pts name="Timing Map_XAXIS" parent="USERCAL_stRAMCAL" type=uint32 offset=1424 min=0 max=8000 m=1 b=0 units="RPM" format=4.0 help="VE MAP Y Axis" xcount=17 xindexvar="Engine Speed Raw"
 //ASAM mode=writeaxis_pts name="Timing Map_YAXIS" parent="USERCAL_stRAMCAL" type=uint32 offset=1492 min=0 max=110000 m=0.001 b=0 units="kPa" format=3.1 help="VE MAP X Axis" xcount=17 xindexvar="MAP kPa"
-//ASAM mode=writemap name="Timing Map" parent="USERCAL_stRAMCAL" type=uint16 offset=1560 min=0 max=50 m=0.1 b=0 units="Degrees" format=3.1 help="Timing Map" xcount=17 xindexvar="Engine Speed Raw" ycount=17 yindexvar="Throttle Angle"
+//ASAM mode=writemap name="Timing Map" parent="USERCAL_stRAMCAL" type=uint16 offset=1560 min=0 max=50 m=0.1 b=0 units="Degrees" format=3.1 help="Timing Map" xcount=17 xindexvar="Engine Speed Raw" ycount=17 yindexvar="MAP kPa"
 //ASAM mode=writeaxis_pts name="VE Map_XAXIS" parent="USERCAL_stRAMCAL" type=uint32 offset=2140 min=0 max=8000 m=1 b=0 units="RPM" format=4.0 help="VE MAP Y Axis" xcount=17 xindexvar="Engine Speed Raw"
 //ASAM mode=writeaxis_pts name="VE Map_YAXIS" parent="USERCAL_stRAMCAL" type=uint32 offset=2208 min=0 max=110000 m=0.001 b=0 units="kPa" format=3.1 help="VE MAP X Axis" xcount=17 xindexvar="MAP kPa"
-//ASAM mode=writemap name="VE Map" parent="USERCAL_stRAMCAL" type=uint16 offset=2276 min=0 max=1.5 m=0.001 b=0 units="dl" format=4.3 help="VE Map" xcount=17 xindexvar="Engine Speed Raw" ycount=17 yindexvar="Throttle Angle"
+//ASAM mode=writemap name="VE Map" parent="USERCAL_stRAMCAL" type=uint16 offset=2276 min=0 max=1.5 m=0.001 b=0 units="dl" format=4.3 help="VE Map" xcount=17 xindexvar="Engine Speed Raw" ycount=17 yindexvar="MAP kPa"
 //ASAM mode=writeaxis_pts name="CTS Start Enrichment Table_XAXIS" parent="USERCAL_stRAMCAL" type=sint32 offset=2856 min=0 max=200 m=0.001 b=0 units="degrees C" format=4.3 help="CTS Start Enrichment X Axis" xcount=17 xindexvar="Coolant Temperature"
 //ASAM mode=writecurve name="CTS Start Enrichment Table" parent="USERCAL_stRAMCAL" type=sint32 offset=2924 min=0 max=4 m=0.001 b=0 units="%" format=4.3 help="CTS Start Enrichment Curve" xcount=17 xindexvar="Coolant Temperature"
 //ASAM mode=writeaxis_pts name="CTS Post Start Enrichment Table_XAXIS" parent="USERCAL_stRAMCAL" type=sint32 offset=2992 min=0 max=200 m=0.001 b=0 units="degrees C" format=4.3 help="CTS Post Start Enrichment X Axis" xcount=17 xindexvar="Coolant Temperature"
@@ -528,7 +568,76 @@ EXTERN USERCAL_tstCalibration __attribute__ ((packed)) USERCAL_stRAMCAL;
 //ASAM mode=writevalue name="EST 4 IO Mux Resource" parent="USERCAL_stRAMCAL" type=uint16 offset=5668 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="EST Sequence 4 IO Mux Resource"
 //ASAM mode=writevalue name="UEGO CAN Primary" parent="USERCAL_stRAMCAL" type=uint8 offset=5670 min=0 max=2 m=1 b=0 units="dl" format=1.0 help="UEGO CAN Enable"
 
-//ASAM mode=writevalue name="CAL CRC" parent="USERCAL_stRAMCAL" type=uint8 offset=5672 min=0 max=255 m=1 b=0 units="counts" format=3.0 help="CAL CRC16"
+//ASAM mode=writevalue name="PWM 2D 1 Axis Source X" parent="USERCAL_stRAMCAL" type=uint16 offset=5672 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 2D 1 Axis Source X"
+//ASAM mode=writevalue name="PWM 2D 2 Axis Source X" parent="USERCAL_stRAMCAL" type=uint16 offset=5674 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 2D 2 Axis Source X"
+//ASAM mode=writevalue name="PWM 2D 3 Axis Source X" parent="USERCAL_stRAMCAL" type=uint16 offset=5676 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 2D 3 Axis Source X"
+//ASAM mode=writevalue name="PWM 2D 4 Axis Source X" parent="USERCAL_stRAMCAL" type=uint16 offset=5678 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 2D 4 Axis Source X"
+//ASAM mode=writevalue name="PWM 2D 5 Axis Source X" parent="USERCAL_stRAMCAL" type=uint16 offset=5680 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 2D 5 Axis Source X"
+//ASAM mode=writevalue name="PWM 2D 6 Axis Source X" parent="USERCAL_stRAMCAL" type=uint16 offset=5682 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 2D 6 Axis Source X"
+//ASAM mode=writevalue name="PWM 2D 7 Axis Source X" parent="USERCAL_stRAMCAL" type=uint16 offset=5684 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 2D 7 Axis Source X"
+//ASAM mode=writevalue name="PWM 2D 8 Axis Source X" parent="USERCAL_stRAMCAL" type=uint16 offset=5686 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 2D 8 Axis Source X"
+	
+//ASAM mode=writevalue name="PWM 3D 1 Axis Source X" parent="USERCAL_stRAMCAL" type=uint16 offset=5688 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 3D 1 Axis Source X"
+//ASAM mode=writevalue name="PWM 3D 2 Axis Source X" parent="USERCAL_stRAMCAL" type=uint16 offset=5690 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 3D 2 Axis Source X"
+//ASAM mode=writevalue name="PWM 3D 3 Axis Source X" parent="USERCAL_stRAMCAL" type=uint16 offset=5692 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 3D 3 Axis Source X"
+//ASAM mode=writevalue name="PWM 3D 4 Axis Source X" parent="USERCAL_stRAMCAL" type=uint16 offset=5694 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 3D 4 Axis Source X"	
+	
+//ASAM mode=writevalue name="PWM 3D 1 Axis Source Y" parent="USERCAL_stRAMCAL" type=uint16 offset=5696 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 3D 1 Axis Source Y"
+//ASAM mode=writevalue name="PWM 3D 2 Axis Source Y" parent="USERCAL_stRAMCAL" type=uint16 offset=5698 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 3D 2 Axis Source Y"
+//ASAM mode=writevalue name="PWM 3D 3 Axis Source Y" parent="USERCAL_stRAMCAL" type=uint16 offset=5700 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 3D 3 Axis Source Y"
+//ASAM mode=writevalue name="PWM 3D 4 Axis Source Y" parent="USERCAL_stRAMCAL" type=uint16 offset=5702 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 3D 4 Axis Source Y"
+
+//ASAM mode=writevalue name="PWM 2D 1 IO Resource" parent="USERCAL_stRAMCAL" type=uint16 offset=5704 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 2D 1 IO Resource"
+//ASAM mode=writevalue name="PWM 2D 2 IO Resource" parent="USERCAL_stRAMCAL" type=uint16 offset=5706 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 2D 2 IO Resource"
+//ASAM mode=writevalue name="PWM 2D 3 IO Resource" parent="USERCAL_stRAMCAL" type=uint16 offset=5708 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 2D 3 IO Resource"
+//ASAM mode=writevalue name="PWM 2D 4 IO Resource" parent="USERCAL_stRAMCAL" type=uint16 offset=5710 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 2D 4 IO Resource"
+//ASAM mode=writevalue name="PWM 2D 5 IO Resource" parent="USERCAL_stRAMCAL" type=uint16 offset=5712 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 2D 5 IO Resource"
+//ASAM mode=writevalue name="PWM 2D 6 IO Resource" parent="USERCAL_stRAMCAL" type=uint16 offset=5714 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 2D 6 IO Resource"
+//ASAM mode=writevalue name="PWM 2D 7 IO Resource" parent="USERCAL_stRAMCAL" type=uint16 offset=5716 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 2D 7 IO Resource"
+//ASAM mode=writevalue name="PWM 2D 8 IO Resource" parent="USERCAL_stRAMCAL" type=uint16 offset=5718 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 2D 8 IO Resource"
+
+//ASAM mode=writevalue name="PWM 3D 1 IO Resource" parent="USERCAL_stRAMCAL" type=uint16 offset=5720 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 3D 1 IO Resource"
+//ASAM mode=writevalue name="PWM 3D 2 IO Resource" parent="USERCAL_stRAMCAL" type=uint16 offset=5722 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 3D 2 IO Resource"
+//ASAM mode=writevalue name="PWM 3D 3 IO Resource" parent="USERCAL_stRAMCAL" type=uint16 offset=5724 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 3D 3 IO Resource"
+//ASAM mode=writevalue name="PWM 3D 4 IO Resource" parent="USERCAL_stRAMCAL" type=uint16 offset=5726 min=0 max=255 m=1 b=0 units="dl" format=3.0 help="PWM 3D 4 IO Resource"
+
+//ASAM mode=writeaxis_pts name="PWM 2D Table 1_XAXIS" parent="USERCAL_stRAMCAL" type=sint32 offset=5728 min=0 max=65535 m=1 b=0 units="%" format=4.3 help="PWM 2D 1 X Axis" xcount=17 xindexvar="Generic Source IDX1"
+//ASAM mode=writeaxis_pts name="PWM 2D Table 2_XAXIS" parent="USERCAL_stRAMCAL" type=sint32 offset=5796 min=0 max=65535 m=1 b=0 units="%" format=4.3 help="PWM 2D 2 X Axis" xcount=17 xindexvar="Generic Source IDX2"
+//ASAM mode=writeaxis_pts name="PWM 2D Table 3_XAXIS" parent="USERCAL_stRAMCAL" type=sint32 offset=5864 min=0 max=65535 m=1 b=0 units="%" format=4.3 help="PWM 2D 3 X Axis" xcount=17 xindexvar="Generic Source IDX3"
+//ASAM mode=writeaxis_pts name="PWM 2D Table 4_XAXIS" parent="USERCAL_stRAMCAL" type=sint32 offset=5932 min=0 max=65535 m=1 b=0 units="%" format=4.3 help="PWM 2D 4 X Axis" xcount=17 xindexvar="Generic Source IDX4"
+//ASAM mode=writeaxis_pts name="PWM 2D Table 5_XAXIS" parent="USERCAL_stRAMCAL" type=sint32 offset=6000 min=0 max=65535 m=1 b=0 units="%" format=4.3 help="PWM 2D 5 X Axis" xcount=17 xindexvar="Generic Source IDX5"
+//ASAM mode=writeaxis_pts name="PWM 2D Table 6_XAXIS" parent="USERCAL_stRAMCAL" type=sint32 offset=6068 min=0 max=65535 m=1 b=0 units="%" format=4.3 help="PWM 2D 6 X Axis" xcount=17 xindexvar="Generic Source IDX6"
+//ASAM mode=writeaxis_pts name="PWM 2D Table 7_XAXIS" parent="USERCAL_stRAMCAL" type=sint32 offset=6136 min=0 max=65535 m=1 b=0 units="%" format=4.3 help="PWM 2D 7 X Axis" xcount=17 xindexvar="Generic Source IDX7"
+//ASAM mode=writeaxis_pts name="PWM 2D Table 8_XAXIS" parent="USERCAL_stRAMCAL" type=sint32 offset=6204 min=0 max=65535 m=1 b=0 units="%" format=4.3 help="PWM 2D 8 X Axis" xcount=17 xindexvar="Generic Source IDX8"
+		
+//ASAM mode=writecurve name="PWM 2D Table 1" parent="USERCAL_stRAMCAL" type=uint16 offset=6272 min=0 max=100 m=0.1 b=0 units="%" format=4.3 help="PWM 2D Curve 1" xcount=17 xindexvar="Generic Source IDX1"
+//ASAM mode=writecurve name="PWM 2D Table 2" parent="USERCAL_stRAMCAL" type=uint16 offset=6306 min=0 max=100 m=0.1 b=0 units="%" format=4.3 help="PWM 2D Curve 2" xcount=17 xindexvar="Generic Source IDX2"
+//ASAM mode=writecurve name="PWM 2D Table 3" parent="USERCAL_stRAMCAL" type=uint16 offset=6340 min=0 max=100 m=0.1 b=0 units="%" format=4.3 help="PWM 2D Curve 3" xcount=17 xindexvar="Generic Source IDX3"
+//ASAM mode=writecurve name="PWM 2D Table 4" parent="USERCAL_stRAMCAL" type=uint16 offset=6374 min=0 max=100 m=0.1 b=0 units="%" format=4.3 help="PWM 2D Curve 4" xcount=17 xindexvar="Generic Source IDX4"
+//ASAM mode=writecurve name="PWM 2D Table 5" parent="USERCAL_stRAMCAL" type=uint16 offset=6408 min=0 max=100 m=0.1 b=0 units="%" format=4.3 help="PWM 2D Curve 5" xcount=17 xindexvar="Generic Source IDX5"
+//ASAM mode=writecurve name="PWM 2D Table 6" parent="USERCAL_stRAMCAL" type=uint16 offset=6442 min=0 max=100 m=0.1 b=0 units="%" format=4.3 help="PWM 2D Curve 6" xcount=17 xindexvar="Generic Source IDX6"
+//ASAM mode=writecurve name="PWM 2D Table 7" parent="USERCAL_stRAMCAL" type=uint16 offset=6476 min=0 max=100 m=0.1 b=0 units="%" format=4.3 help="PWM 2D Curve 7" xcount=17 xindexvar="Generic Source IDX7"
+//ASAM mode=writecurve name="PWM 2D Table 8" parent="USERCAL_stRAMCAL" type=uint16 offset=6510 min=0 max=100 m=0.1 b=0 units="%" format=4.3 help="PWM 2D Curve 8" xcount=17 xindexvar="Generic Source IDX8"
+
+//ASAM mode=writeaxis_pts name="PWM 3D Map 1_XAXIS" parent="USERCAL_stRAMCAL" type=sint32 offset=6544 min=0 max=65535 m=1 b=0 units="%" format=4.3 help="PWM 3D 1 X Axis" xcount=17 xindexvar="Generic Source IDX9"
+//ASAM mode=writeaxis_pts name="PWM 3D Map 2_XAXIS" parent="USERCAL_stRAMCAL" type=sint32 offset=6612 min=0 max=65535 m=1 b=0 units="%" format=4.3 help="PWM 3D 2 X Axis" xcount=17 xindexvar="Generic Source IDX10"
+//ASAM mode=writeaxis_pts name="PWM 3D Map 3_XAXIS" parent="USERCAL_stRAMCAL" type=sint32 offset=6680 min=0 max=65535 m=1 b=0 units="%" format=4.3 help="PWM 3D 3 X Axis" xcount=17 xindexvar="Generic Source IDX11"
+//ASAM mode=writeaxis_pts name="PWM 3D Map 4_XAXIS" parent="USERCAL_stRAMCAL" type=sint32 offset=6748 min=0 max=65535 m=1 b=0 units="%" format=4.3 help="PWM 3D 4 X Axis" xcount=17 xindexvar="Generic Source IDX12"
+//ASAM mode=writeaxis_pts name="PWM 3D Map 1_YAXIS" parent="USERCAL_stRAMCAL" type=sint32 offset=6816 min=0 max=65535 m=1 b=0 units="%" format=4.3 help="PWM 3D 1 Y Axis" xcount=17 xindexvar="Generic Source IDX13"
+//ASAM mode=writeaxis_pts name="PWM 3D Map 2_YAXIS" parent="USERCAL_stRAMCAL" type=sint32 offset=6884 min=0 max=65535 m=1 b=0 units="%" format=4.3 help="PWM 3D 2 Y Axis" xcount=17 xindexvar="Generic Source IDX14"
+//ASAM mode=writeaxis_pts name="PWM 3D Map 3_YAXIS" parent="USERCAL_stRAMCAL" type=sint32 offset=6952 min=0 max=65535 m=1 b=0 units="%" format=4.3 help="PWM 3D 3 Y Axis" xcount=17 xindexvar="Generic Source IDX15"
+//ASAM mode=writeaxis_pts name="PWM 3D Map 4_YAXIS" parent="USERCAL_stRAMCAL" type=sint32 offset=7020 min=0 max=65535 m=1 b=0 units="%" format=4.3 help="PWM 3D 4 Y Axis" xcount=17 xindexvar="Generic Source IDX16"
+	
+//ASAM mode=writemap name="PWM 3D Map 1" parent="USERCAL_stRAMCAL" type=uint16 offset=7088 min=0 max=100 m=0.1 b=0 units="dl" format=4.3 help="PWM 3D Map 1" xcount=17 xindexvar="Generic Source IDX9" ycount=17 yindexvar="Generic Source IDX13"
+//ASAM mode=writemap name="PWM 3D Map 2" parent="USERCAL_stRAMCAL" type=uint16 offset=7666 min=0 max=100 m=0.1 b=0 units="dl" format=4.3 help="PWM 3D Map 2" xcount=17 xindexvar="Generic Source IDX10" ycount=17 yindexvar="Generic Source IDX14"
+//ASAM mode=writemap name="PWM 3D Map 3" parent="USERCAL_stRAMCAL" type=uint16 offset=8244 min=0 max=100 m=0.1 b=0 units="dl" format=4.3 help="PWM 3D Map 3" xcount=17 xindexvar="Generic Source IDX11" ycount=17 yindexvar="Generic Source IDX15"
+//ASAM mode=writemap name="PWM 3D Map 4" parent="USERCAL_stRAMCAL" type=uint16 offset=8822 min=0 max=100 m=0.1 b=0 units="dl" format=4.3 help="PWM 3D Map 4" xcount=17 xindexvar="Generic Source IDX12" ycount=17 yindexvar="Generic Source IDX16"
+
+//ASAM mode=writevalue name="VVT Input Resource" parent="USERCAL_stRAMCAL" type=uint16 offset=9400 min=1 max=100 m=1 b=0 units="dl" format=4.0 help="VVT Input Resource"
+//ASAM mode=writevalue name="VVT Input Type" parent="USERCAL_stRAMCAL" type=uint8 offset=9402 min=1 max=100 m=1 b=0 units="dl" format=4.0 help="VVT Input Type"
+
+
+//ASAM mode=writevalue name="CAL CRC" parent="USERCAL_stRAMCAL" type=uint8 offset=9404 min=0 max=255 m=1 b=0 units="counts" format=3.0 help="CAL CRC16"
 /* 	NOTE MUST ALWAYS INCLUDE CAL STRUCT ELEMENTS ONE FOR ONE AND IN ORDER */
 
 /* Testing offsets table for ASAM parsing tool here */
@@ -705,10 +814,45 @@ EXTERN USERCAL_tstCalibration __attribute__ ((packed)) USERCAL_stRAMCAL;
 	offsetof(USERCAL_tstCalibration, enThermoFanRelay),\
 	offsetof(USERCAL_tstCalibration, aESTIOMuxResource),\
 	offsetof(USERCAL_tstCalibration, boUEGOCANPrimary),\
+	offsetof(USERCAL_tstCalibration, aPWM2DAxesSourceXIDX),\
+	offsetof(USERCAL_tstCalibration, aPWM3DAxesSourceXIDX),\
+	offsetof(USERCAL_tstCalibration, aPWM3DAxesSourceYIDX),\
+	offsetof(USERCAL_tstCalibration, aPWM2DIOOutputResource),\
+	offsetof(USERCAL_tstCalibration, aPWM3DIOOutputResource),\
+	offsetof(USERCAL_tstCalibration, aUserPWM2D_1SpreadX),\
+	offsetof(USERCAL_tstCalibration, aUserPWM2D_2SpreadX),\
+	offsetof(USERCAL_tstCalibration, aUserPWM2D_3SpreadX),\
+	offsetof(USERCAL_tstCalibration, aUserPWM2D_4SpreadX),\
+	offsetof(USERCAL_tstCalibration, aUserPWM2D_5SpreadX),\
+	offsetof(USERCAL_tstCalibration, aUserPWM2D_6SpreadX),\
+	offsetof(USERCAL_tstCalibration, aUserPWM2D_7SpreadX),\
+	offsetof(USERCAL_tstCalibration, aUserPWM2D_8SpreadX),\
+	offsetof(USERCAL_tstCalibration, aUserPWM2D_1Data),\
+	offsetof(USERCAL_tstCalibration, aUserPWM2D_2Data),\
+	offsetof(USERCAL_tstCalibration, aUserPWM2D_3Data),\
+	offsetof(USERCAL_tstCalibration, aUserPWM2D_4Data),\
+	offsetof(USERCAL_tstCalibration, aUserPWM2D_5Data),\
+	offsetof(USERCAL_tstCalibration, aUserPWM2D_6Data),\
+	offsetof(USERCAL_tstCalibration, aUserPWM2D_7Data),\
+	offsetof(USERCAL_tstCalibration, aUserPWM2D_8Data),\
+	offsetof(USERCAL_tstCalibration, aUserPWM3D_1SpreadX),\
+	offsetof(USERCAL_tstCalibration, aUserPWM3D_2SpreadX),\
+	offsetof(USERCAL_tstCalibration, aUserPWM3D_3SpreadX),\
+	offsetof(USERCAL_tstCalibration, aUserPWM3D_4SpreadX),\
+	offsetof(USERCAL_tstCalibration, aUserPWM3D_1SpreadY),\
+	offsetof(USERCAL_tstCalibration, aUserPWM3D_2SpreadY),\
+	offsetof(USERCAL_tstCalibration, aUserPWM3D_3SpreadY),\
+	offsetof(USERCAL_tstCalibration, aUserPWM3D_4SpreadY),\
+	offsetof(USERCAL_tstCalibration, aUserPWM3D_1Data),\
+	offsetof(USERCAL_tstCalibration, aUserPWM3D_2Data),\
+	offsetof(USERCAL_tstCalibration, aUserPWM3D_3Data),\
+	offsetof(USERCAL_tstCalibration, aUserPWM3D_4Data),\
+	offsetof(USERCAL_tstCalibration, VVTInputResource),\
+	offsetof(USERCAL_tstCalibration, VVTInputType),\
 	offsetof(USERCAL_tstCalibration, u16CRC16)}
 
 const uint32 __attribute__((used)) au32Offsets[] = OFFSETS_DATA;
-//ASAM mode=readvalue name="au32Offsets" type=uint32 offset=5674 min=0 max=65535 m=1 b=0 units="dl" format=8.0 help="Internal"
+//ASAM mode=readvalue name="au32Offsets" type=uint32 offset=9408 min=0 max=65535 m=1 b=0 units="dl" format=8.0 help="Internal"
 #endif
 
 /* GLOBAL FUNCTION DECLARATIONS ***********************************************/

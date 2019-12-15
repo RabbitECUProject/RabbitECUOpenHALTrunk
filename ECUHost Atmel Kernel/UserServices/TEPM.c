@@ -55,6 +55,9 @@ Bool TEPM_aboSynchroniseEnable[TEPMHA_nEventChannels];
 volatile Bool TEPM_aboQueueOverflow[TEPMHA_nEventChannels];
 EXTERN uint32 CAM_u32RPMRaw;	
 Bool TEPM_boDisableSequences;
+IOAPI_tenEHIOResource TEPM_stTEPMVVTInput;
+IOAPI_tenEHIOResource TEPM_astTEPMLinkedResource[TEPMHA_nEventChannels];
+uint32 TEPM_u32PrimaryPhaseIDX;
 
 #define TEPM_nTableCount sizeof(TEPM_rastTEPMChannel) / sizeof(TEPM_tstTEPMChannel)
 
@@ -88,7 +91,13 @@ void TEPM_vStart(puint32 const pu32Arg)
 		TEPM_aboTEPMChannelAsyncRequestEnable[u32QueueIDX] = FALSE;
 		TEPM_au32TEPMChannelSequence[u32QueueIDX] = ~0;
 		TEPM_boDisableSequences = FALSE;
+		TEPM_astTEPMLinkedResource[u32QueueIDX] = EH_IO_Invalid;
 	}
+}
+
+IOAPI_tenEHIOResource TEPM_enGetPrimaryLinkedResource(void)
+{
+	return TEPM_astTEPMLinkedResource[TEPM_u32PrimaryPhaseIDX];
 }
 
 void TEPM_vAsyncRequest(void)
@@ -128,6 +137,7 @@ uint32 TEPM_u32InitTEPMChannel(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_tst
 
 	TEPMHA_vInitTEPMChannel(enEHIOResource, pstTEPMChannelCB);
 	u32TableIDX = TEPMHA_u32GetFTMTableIndex(enEHIOResource);
+	TEPM_astTEPMLinkedResource[u32TableIDX] = pstTEPMChannelCB->enLinkedResource;
 
 	if ((pstTEPMChannelCB->enAction == TEPMAPI_enCapAny) |
 	    (pstTEPMChannelCB->enAction == TEPMAPI_enCapRising) |
@@ -218,13 +228,15 @@ void TEPM_vConfigureUserTEPMInput(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_
 		case TEPMAPI_enLinkPrimaryProgram:
 		{
 			TEPM_atpfEventKernelCB[u32TableIDX] = &CEM_vPrimaryEventCB;	
+			TEPM_u32PrimaryPhaseIDX = u32TableIDX;
 			break;			
 		}
-		case TEPMAPI_enLinkPhaseProgram:
+		case TEPMAPI_enLinkVVT1Input:
 		{
-			TEPM_atpfEventKernelCB[u32TableIDX] = &CEM_vPhaseEventCB;	
-			break;			
-		}	
+			TEPM_atpfEventKernelCB[u32TableIDX] = &CEM_vPhaseEventCB;
+			TEPM_stTEPMVVTInput = enEHIOResource;
+			break;
+		}
 		case TEPMAPI_enLinkFreqInput:
 		{
 			TEPM_atpfEventKernelCB[u32TableIDX] = & CEM_vFreqEventCB;	
@@ -525,6 +537,17 @@ void TEPM_vSynchroniseEventProgramKernelQueues(void)
 	uint32 u32ChannelIDX;
 	uint32 u32TimerChannelIDX;
 	uint32 u32TableIDX;
+	
+#define DEBUG_SEQ
+
+#ifdef DEBUG_SEQ
+	volatile static uint32 test[16];
+	volatile static uint32 testcount;
+	
+	testcount = (testcount + 1) % 16;
+	
+	test[testcount] = CEM_u32GlobalCycleFraction;
+#endif
 
 	
 	for (u32TimerChannelIDX = 0; u32TimerChannelIDX < TEPMHA_nEventChannels; u32TimerChannelIDX++)
@@ -560,6 +583,13 @@ static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelID
 
 	/* Mask out the sequence index  alternate origin index and windows span */
 	u32SequenceIDX &= 0xff;
+
+#define DEBUG_TEPM
+
+#ifdef DEBUG_TEPM
+	static volatile uint32 test[15];
+	static uint32 test_idx;
+#endif
 
 	
 	if (FALSE == CQUEUE_xIsEmpty(TEPM_astProgramKernelQueue + u32TableIDX))
@@ -604,7 +634,12 @@ static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelID
 			{
 				case TEPMAPI_enGlobalLinkedFraction:
 				{				
-				    u32ModulePhaseCorrect = (uint32)CEM_ttGetModulePhase(3 * TEPMHA_enTimerEnumFromModule(pvModule) + u32ChannelIDX / 2);					
+#ifdef DEBUG_TEPM
+					test[test_idx] = CEM_u32GlobalCycleTime;
+					test_idx = (test_idx + 1) & 0x0f;
+#endif
+
+				    u32ModulePhaseCorrect = (uint32)CEM_ttGetModulePhase(3 * (uint32)TEPMHA_enTimerEnumFromModule(pvModule) + u32ChannelIDX / 2);					
 
 					if (1 == (TEPM_au32TEPMChannelSequence[u32TableIDX] >> 24))
 					{

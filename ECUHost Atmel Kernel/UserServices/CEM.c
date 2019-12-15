@@ -35,6 +35,10 @@ uint32 CEM_au32TimerOffsets[9];
 CEM_tenTriggerType CEM_enTriggerType;
 uint8 CEM_u8SimpleMissingSync;
 TEPMAPI_tstSimpleCamSync stSimpleCamSync;
+extern IOAPI_tenEHIOResource TEPM_stTEPMVVTInput;
+TEPMAPI_ttEventTime CEM_tLastVVTTimer;
+TEPMAPI_ttEventTime CEM_tLastVVTHighTime;
+TEPMAPI_ttEventTime CEM_tLastVVTLowTime;
 
 static void CEM_vSequenceReset(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttEventTime tEventTime, uint32 u32OriginGlobalCycleFraction, Bool boLatePhase);
 static TEPMAPI_ttEventTime CEM_tCalculateGlobalTime(TEPMAPI_ttEventTime tEventTime, uint16 u16LastGapFraction, Bool boGlobalTimeEnable);
@@ -245,6 +249,14 @@ void CEM_vPrimaryEventCB(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttEventTi
 	//static CEM_enGapStatus enGapStatusOld;
 	//CEM_enGapStatus enGapStatus;
 	static uint8 u8SameGapCount;
+	
+#define DEBUG_SYNC
+
+#ifdef DEBUG_SYNC
+	volatile static uint32 temp1[16];
+	volatile static uint32 temp2[16];
+	volatile static uint32 tempcount;
+#endif
 
 	if (FALSE == CEM_boEdgesReady) return;
 
@@ -313,7 +325,7 @@ void CEM_vPrimaryEventCB(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttEventTi
 	}
 
 
-    u16LastGapFraction = CEM_au16AllEdge[CEM_u8CrankEdgeCounter] / CEM_u8PhaseRepeats;
+    u16LastGapFraction = CEM_au16AllEdge[(CEM_u8CrankEdgeCounter - 1) % CEM_xEdgesCount] / CEM_u8PhaseRepeats;
 
 	tLastGapTime = CEM_tCalculateGlobalTime(tEventTime, u16LastGapFraction, CEM_aboSyncEdge[CEM_u8CrankEdgeCounter]);
 
@@ -673,6 +685,98 @@ void CEM_vPrimaryEventCB(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttEventTi
 
 				break;
 			}
+			case CEM_enToyota2NFE:
+			{
+				CEM_u32GlobalCycleFraction += CEM_au16AllEdge[(CEM_u8CrankEdgeCounter - 1) % CEM_xEdgesCount];
+
+		        if (au32InputArray[CEM_nEdgesMax - 1] > au32InputArray[CEM_nEdgesMax - 2] * 2)
+				{
+					if ((CEM_u8CrankEdgeCounter != CEM_u8SimpleMissingSync) &&
+						(100 < u32EdgeCount))
+					{
+						CEM_vPhaseError(CEM_u8CrankEdgeCounter);
+					} 
+
+			        CEM_u8CrankEdgeCounter = CEM_u8SimpleMissingSync;
+				}
+
+				if (10 == CEM_u8CrankEdgeCounter)
+				{
+#ifdef DEBUG_SYNC
+					tempcount = (tempcount + 1) % 16;
+					temp1[tempcount] = 	(CEM_tLastVVTHighTime << 16) + CEM_tLastVVTLowTime;
+					temp2[tempcount] = 	CEM_u32GlobalCycleFraction;					
+#endif
+
+					if (CEM_tLastVVTHighTime < CEM_tLastVVTLowTime)	
+					{
+						if (0x10000 <= CEM_u32GlobalCycleFraction)
+						{
+							CEM_vPhaseError(CEM_nEarlySyncError);								
+						}
+		
+						boLatePhase = false;
+					}
+					else
+					{
+						if (0x10000 > CEM_u32GlobalCycleFraction)
+						{
+							CEM_vPhaseError(CEM_nLateSyncError);								
+						}
+		
+						boLatePhase = true;
+					}
+				}
+
+				if (0 == CEM_u8CrankEdgeCounter)
+				{
+				    CEM_vSequenceReset(enEHIOResource, tEventTime, 0, boLatePhase);
+				    TEPM_vSynchroniseEventProgramKernelQueues();
+				}
+
+				if (1 == CEM_u8PhaseRepeats)
+				{
+					if (CEM_u32GlobalCycleFraction == CEM_au16SyncPoints[1])
+					{
+						CEM_vSequenceReset(enEHIOResource, tEventTime, 0x4000, boLatePhase);
+						TEPM_vSynchroniseEventProgramKernelQueues();
+					}
+					if (CEM_u32GlobalCycleFraction == CEM_au16SyncPoints[2])
+					{
+						CEM_vSequenceReset(enEHIOResource, tEventTime, 0x8000, boLatePhase);
+						TEPM_vSynchroniseEventProgramKernelQueues();
+					}
+					if (CEM_u32GlobalCycleFraction == CEM_au16SyncPoints[3])
+					{
+						CEM_vSequenceReset(enEHIOResource, tEventTime, 0xc000, boLatePhase);
+						TEPM_vSynchroniseEventProgramKernelQueues();
+					}
+				}
+				else if (2 == CEM_u8PhaseRepeats)
+				{
+					if ((0xffff & CEM_u32GlobalCycleFraction) == CEM_au16SyncPoints[1])
+					{
+						CEM_vSequenceReset(enEHIOResource, tEventTime, CEM_u32GlobalCycleFraction, boLatePhase);
+						TEPM_vSynchroniseEventProgramKernelQueues();
+					}
+					if ((0xffff & CEM_u32GlobalCycleFraction) == CEM_au16SyncPoints[2])
+					{
+						CEM_vSequenceReset(enEHIOResource, tEventTime, CEM_u32GlobalCycleFraction, boLatePhase);
+						TEPM_vSynchroniseEventProgramKernelQueues();
+					}
+					if ((0xffff & CEM_u32GlobalCycleFraction) == CEM_au16SyncPoints[3])
+					{
+						CEM_vSequenceReset(enEHIOResource, tEventTime, CEM_u32GlobalCycleFraction, boLatePhase);
+						TEPM_vSynchroniseEventProgramKernelQueues();
+					}
+				}
+
+
+				CEM_u8CrankEdgeCounter = (CEM_u8CrankEdgeCounter + 1) % CEM_xEdgesCount;
+
+				break;
+
+			}
 			default:
 			{
 				break;
@@ -709,8 +813,22 @@ static Bool CEM_boGetLatePhaseSimpleCamSync(void)
 static void CEM_vPhaseError(int code_in)
 {
 	volatile static int code;
+	volatile static int early_phase_err;
+	volatile static int late_phase_err;
 	code = code_in; 
-	CEM_u32CrankErrorCounts++;
+	
+	if (0 <= code_in)
+	{
+		CEM_u32CrankErrorCounts++;		
+	}
+	else if (CEM_nLateSyncError == code_in)
+	{
+		late_phase_err++;
+	}
+	else
+	{
+		early_phase_err++;
+	}
 	
 	UNUSED(code);
 }
@@ -722,7 +840,20 @@ static TEPMAPI_ttEventTime CEM_tCalculateGlobalTime(TEPMAPI_ttEventTime tEventTi
 	TEPMAPI_ttEventTime tGlobalTimeNew = 0;
 	uint32 u32Temp;
 	
-    tTemp = tEventTime - CEM_tEventTimeLast;		
+#ifdef DEBUG_GLOB_TIME
+	volatile static uint32 test1[16];
+	volatile static uint32 test2[16];
+	volatile static uint32 testcount;
+	
+	testcount = (testcount + 1) % 16;
+#endif
+	
+    tTemp = tEventTime - CEM_tEventTimeLast;
+	
+#ifdef DEBUG_GLOB_TIME
+	test1[testcount] = tTemp;
+	test2[testcount] = u16LastGapFraction;
+#endif		
 
 	if (0xffff >= tTemp)
 	{
@@ -807,8 +938,7 @@ static void CEM_vSequenceReset(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttE
 		{
 			u16LastResetFraction = CEM_u32GlobalCycleFraction;
 			 
-			if (((0x10000 <= CEM_u32GlobalCycleFraction) && (false == boLatePhase)) ||
-			    ((0x10000 > CEM_u32GlobalCycleFraction) && (true == boLatePhase)))
+			if ((0x10001 < CEM_u32GlobalCycleFraction) && (false == boLatePhase)) 
 			{
 				CEM_u32CamErrorCounts++;
 				CEM_u32CamRunningErrorCounts = 5 > CEM_u32CamRunningErrorCounts ? CEM_u32CamRunningErrorCounts + 1 : 5;
@@ -889,8 +1019,29 @@ static void CEM_vSequenceReset(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttE
 
 void CEM_vPhaseEventCB(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttEventTime tEventTime)
 {
+	IOAPI_tenTriState enTriState;
+	volatile static samples[16];
+	volatile static samplecounter;
 	
-	
+	samplecounter = (samplecounter + 1) % 16;
+
+	if (enEHIOResource == TEPM_stTEPMVVTInput)
+	{
+		enTriState = IO_enGetDIOResourceState(enEHIOResource);
+
+		/* Note logic is inverted */
+		if (IOAPI_enLow == enTriState)
+		{
+			CEM_tLastVVTLowTime = tEventTime - CEM_tLastVVTTimer;
+		}
+		else
+		{
+			CEM_tLastVVTHighTime = tEventTime - CEM_tLastVVTTimer;
+		}
+
+		samples[samplecounter] = tEventTime - CEM_tLastVVTTimer;
+		CEM_tLastVVTTimer = tEventTime;
+	}
 }
 
 

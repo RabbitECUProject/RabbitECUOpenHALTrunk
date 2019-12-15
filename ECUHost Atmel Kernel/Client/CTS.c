@@ -119,7 +119,8 @@ void CTS_vRun(puint32 const pu32Arg)
 	static uint8 u8CANCTSOld = 0;
 
 	
-	if ((TRUE == CTS_boNewSample) || (true == SENSORS_boCANCTSNewSample))
+	if ((TRUE == CTS_boNewSample) || 
+		((true == SENSORS_boCANCTSNewSample) && (true == USERCAL_stRAMCAL.boCTSCANPrimary)))
 	{
 		CTS_u32SampleCount++;
 

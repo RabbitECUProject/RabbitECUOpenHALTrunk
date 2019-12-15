@@ -56,6 +56,7 @@ void ATS_vStart(puint32 const pu32Arg)
 	ATS_u32SampleCount = 0;
 	ATS_boNewSample = FALSE;
 	ATS_tTempCRaw = 20000;
+	ATS_tTempCFiltered = 20000;
 	
 	if (FALSE == USERCAL_stRAMCAL.boATSCANPrimary)	
 	{
@@ -92,7 +93,8 @@ void ATS_vRun(puint32 const pu32Arg)
 	static uint32 u32RunCount;
 
 	
-	if ((TRUE == ATS_boNewSample) || (true == SENSORS_boCANATSNewSample))
+	if ((TRUE == ATS_boNewSample) || 
+		((true == SENSORS_boCANATSNewSample) && (true == USERCAL_stRAMCAL.boATSCANPrimary)))
 	{
 		ATS_u32SampleCount++;
 
