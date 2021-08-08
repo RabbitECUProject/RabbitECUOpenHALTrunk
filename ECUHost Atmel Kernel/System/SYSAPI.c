@@ -409,6 +409,10 @@ void SYS_vAPISVC(void* svc_args)
 			break;
 		}
 		
+		case SYSAPI_enConfigureMissingToothInterrupt:
+		{
+			TEPM_vConfigureMissingToothInterrupt();
+		}
 		default:
 		{
 			OS_stSVCDataStruct.enSVCResult = SYSAPI_enBadArgument;

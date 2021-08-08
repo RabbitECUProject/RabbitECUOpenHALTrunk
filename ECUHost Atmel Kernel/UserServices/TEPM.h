@@ -18,6 +18,7 @@
 #include "SYSAPI.h"
 
 #define TEPM_nSoonCounts  250
+#define TEPM_nSoonCountsEDIS  50
 #define TEPM_nFarCounts   0xe0000000
 
 #ifdef EXTERN
@@ -70,11 +71,14 @@ void TEPM_vInitiateUserCallBack(IOAPI_tenEHIOResource, TEPMAPI_ttEventTime);
 void TEPM_vGetTimerVal(IOAPI_tenEHIOResource, puint32);
 void TEPM_u32GetFreeVal(IOAPI_tenEHIOResource, puint32);
 void TEPM_vInterruptHandler(IOAPI_tenEHIOResource, void*);
+void TEPM_vMissingToothInterruptHandler(IOAPI_tenEHIOResource, void*);
 uint32 TEPM_u32GetFTMTableIndex(IOAPI_tenEHIOResource);
 void TEPM_vStartEventProgramKernelQueues(Bool, uint32);
+void TEPM_vRunEventToothProgramKernelQueues(Bool, uint32, uint32);
 void TEPM_vSynchroniseEventProgramKernelQueues(void);
 IOAPI_tenTriState TEPM_enGetTimerDigitalState(IOAPI_tenEHIOResource);
 void TEPM_vEnableSequences(Bool boEnable);
-
+void TEPM_vConfigureMissingToothInterrupt(void);
+void TEPM_vSetNextMissingToothInterrupt(IOAPI_tenEHIOResource, TEPMAPI_ttEventTime, uint32);
 #endif //TEPM_H
 

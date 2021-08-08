@@ -20,7 +20,7 @@
 #include "USER.h"
 
 /* GLOBAL MACRO DEFINITIONS ***************************************************/
-#define CTS_nADFiltVal (0x10)
+#define CTS_nADFiltVal (0x40)
 #define CTS_nFanRelayOutput  (RELAY_BIT0)
 
 #ifdef EXTERN

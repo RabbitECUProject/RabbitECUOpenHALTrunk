@@ -210,13 +210,34 @@ void ATS_vRun(puint32 const pu32Arg)
 		}
 		else
 		{
+			if (100000 < ATS_tTempCRaw)
+			{
+				ATS_tTempCFiltered = ATS_tTempCRaw;	
+			}
+			else
+			{
 			if (ATS_tTempCRaw < ATS_tTempCFiltered)
 			{
-				ATS_tTempCFiltered -= 50;
+					if (1000 < (ATS_tTempCFiltered - ATS_tTempCRaw))
+					{
+						ATS_tTempCFiltered -= 1000;						
+					}
+					else
+					{
+						ATS_tTempCFiltered = ATS_tTempCRaw;
+					}
 			}
 			else if (ATS_tTempCRaw > ATS_tTempCFiltered)
 			{
-				ATS_tTempCFiltered += 50;
+					if (1000 < (ATS_tTempCRaw - ATS_tTempCFiltered))
+					{
+						ATS_tTempCFiltered += 1000;
+					}
+					else
+					{
+						ATS_tTempCFiltered = ATS_tTempCRaw;
+					}
+				}				
 			}
 		}
 	}

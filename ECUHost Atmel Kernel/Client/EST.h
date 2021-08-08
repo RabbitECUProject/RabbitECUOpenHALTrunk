@@ -49,6 +49,10 @@ EXTERN TEPMAPI_ttEventTime EST_tStartFractionC;
 EXTERN TEPMAPI_ttEventTime EST_tStartFractionB;
 EXTERN TEPMAPI_ttEventTime EST_tStartFractionA;	
 //ASAM mode=readvalue name="EST Start Fraction" type=uint16 offset=0 min=0 max=1 m=0.00001526 b=0 units="dl" format=6.0 help="EST Dwell Start Fraction"  
+EXTERN TEPMAPI_ttEventTime EST_tEndFractionD;
+EXTERN TEPMAPI_ttEventTime EST_tEndFractionC;
+EXTERN TEPMAPI_ttEventTime EST_tEndFractionB;
+EXTERN TEPMAPI_ttEventTime EST_tEndFractionA;
 EXTERN TEPMAPI_ttEventTime EST_tDwellUs;	
 //ASAM mode=readvalue name="EST Dwell Fraction" type=uint16 offset=0 min=0 max=1 m=0.00001526 b=0 units="dl" format=6.0 help="EST Dwell Fraction" 
 EXTERN GPM6_ttMTheta EST_tIgnitionAdvanceMtheta;	

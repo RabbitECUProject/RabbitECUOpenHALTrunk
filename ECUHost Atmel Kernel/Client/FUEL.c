@@ -61,14 +61,14 @@ void FUEL_vStart(puint32 const pu32Arg)
 	FUEL_u32FuelPumpRunCount = 3000;
 		
 	/* Set injection time to Xms */
-	FUEL_tTimeHoldUs[0] = 1000;
-	FUEL_tTimeHoldUs[1] = 1000;
-	FUEL_tTimeHoldUs[2] = 1000;
-	FUEL_tTimeHoldUs[3] = 1000;
-	FUEL_tTimeHoldUs[4] = 1000;
-	FUEL_tTimeHoldUs[5] = 1000;
-	FUEL_tTimeHoldUs[6] = 1000;
-	FUEL_tTimeHoldUs[7] = 1000;
+	FUEL_tTimeHoldUs[0] = 2000;
+	FUEL_tTimeHoldUs[1] = 2000;
+	FUEL_tTimeHoldUs[2] = 2000;
+	FUEL_tTimeHoldUs[3] = 2000;
+	FUEL_tTimeHoldUs[4] = 2000;
+	FUEL_tTimeHoldUs[5] = 2000;
+	FUEL_tTimeHoldUs[6] = 2000;
+	FUEL_tTimeHoldUs[7] = 2000;
 	
 	FUEL_tTimeHold[0] = FUEL_xUsToSlowTicks(FUEL_tTimeHoldUs[0]);
 	FUEL_tTimeHold[1] = FUEL_xUsToSlowTicks(FUEL_tTimeHoldUs[1]);
@@ -267,13 +267,14 @@ void FUEL_vStart(puint32 const pu32Arg)
 	/* Request and initialise required Kernel managed table for injector short opening */
 	FUEL_tTableInjShortOpeningIDX = SETUP_tSetupTable((void*)&USERCAL_stRAMCAL.aUserInjShortOpeningTable, (void*)&FUEL_tTimePredictedShortOpeningUs, TYPE_enUInt32, 11, FUEL_tSpreadInjShortOpeningIDX, NULL);
 
-	FUEL_bo720Injection = TRUE;
+	FUEL_bo720Injection = FALSE;
 
 	for (u32SequenceIDX = 0; u32SequenceIDX < FUEL_nFuelSequenceCount; u32SequenceIDX++)
 	{
-		if ((USERCAL_stRAMCAL.au32InjectionSequence[u32SequenceIDX] & 0xff) == ((USERCAL_stRAMCAL.au32InjectionSequence[u32SequenceIDX] & 0xff00) >> 8))
+		if (((USERCAL_stRAMCAL.au32InjectionSequence[u32SequenceIDX] & 0xff) == 0xff) ||
+				((USERCAL_stRAMCAL.au32InjectionSequence[u32SequenceIDX] & 0xff00) == 0xff00))
 		{
-		    FUEL_bo720Injection = FALSE;
+		    FUEL_bo720Injection = TRUE;
 		}
 	}
 

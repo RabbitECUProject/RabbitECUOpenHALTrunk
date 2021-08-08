@@ -149,8 +149,11 @@ typedef enum
 	SYSAPI_enGetMode6Buffer = 0x107d,
 	/* USER_vSVC(SYSAPI_enGetMode6Buffer, uint32, uint32, NULL) */
 
-	SYSAPI_enGetMode7Buffer = 0x107e
+	SYSAPI_enGetMode7Buffer = 0x107e,
 	/* USER_vSVC(SYSAPI_enGetMode7Buffer, uint32, uint32, NULL) */
+
+	SYSAPI_enConfigureMissingToothInterrupt = 0x1083
+	/* USER_vSVC(SYSAPI_enConfigureMissingToothInterrupt, NULL, NULL) */
 } SYSAPI_tenSVCID;
 
 typedef enum

@@ -318,6 +318,8 @@ TEPMHA_tenModule TEPMHA_enTimerEnumFromModule(tstTimerModule*);
 IOAPI_tenEHIOResource TEPMHA_enGetTimerResourceFromVIOAndIndex(IOAPI_tenEHIOResource, uint32);
 TEPMAPI_ttEventTime TEPMHA_u32GetTimerVal(IOAPI_tenEHIOResource);
 Bool TEPMHA_boCheckFalseAlarm(void* pvModule, uint32 u32ChannelIDX, uint32 u32SubChannelIDX);
+void TEPMHA_vConfigureMissingToothInterrupt(void);
+uint32 TEPMHA_u32SetNextMissingToothInterrupt(TEPMAPI_ttEventTime tReference, TEPMAPI_ttEventTime, uint32);
 
 #endif //TEPMHA_H
 

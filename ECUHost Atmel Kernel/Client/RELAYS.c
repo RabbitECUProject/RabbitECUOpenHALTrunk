@@ -152,13 +152,13 @@ void RELAYS_vRun(uint32* const pu32Arg)
 
 	if (511 < u32Count++)
 	{
-		SETUP_vSetDigitalIOLow(RELAYS_nSPI_CS_RESOURCE);
+		//SETUP_vSetDigitalIOLow(RELAYS_nSPI_CS_RESOURCE);
 		MCP23S08_vSetDataDirection(0);
 		u32Count = 0;
 	}
 	else
 	{
-		SETUP_vSetDigitalIOLow(RELAYS_nSPI_CS_RESOURCE);
+		//SETUP_vSetDigitalIOLow(RELAYS_nSPI_CS_RESOURCE);
 		(void)MCP23S08_boTransferData(IOAPI_IO_TX, (void*)&RELAYS_u8RelayBitState, 1);
 	}
 

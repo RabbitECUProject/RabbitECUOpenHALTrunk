@@ -502,7 +502,7 @@
             <Value>%24(PackRepoDir)\atmel\SAM3X_DFP\1.0.50\include</Value>
           </ListValues>
         </armgcc.preprocessingassembler.general.IncludePaths>
-      </ArmGcc>
+</ArmGcc>
     </ToolchainSettings>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -689,7 +689,7 @@
           </ListValues>
         </armgcc.preprocessingassembler.general.IncludePaths>
         <armgcc.preprocessingassembler.debugging.DebugLevel>Default (-Wa,-g)</armgcc.preprocessingassembler.debugging.DebugLevel>
-      </ArmGcc>
+</ArmGcc>
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
