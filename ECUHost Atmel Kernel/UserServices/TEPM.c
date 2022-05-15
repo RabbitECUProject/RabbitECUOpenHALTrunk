@@ -49,25 +49,37 @@ MSG_tstMBX* TEPM_apstMBX[TEPMHA_nEventChannels];
 Bool TEPM_aboTEPMChannelModeInput[TEPMHA_nEventChannels];
 Bool TEPM_aboTEPMChannelModeOutput[TEPMHA_nEventChannels];
 Bool TEPM_aboTEPMChannelAsyncRequestEnable[TEPMHA_nEventChannels];
+Bool TEPM_aboTEPMChannelModeToothScheduled[TEPMHA_nEventChannels];
 uint32 TEPM_au32TEPMChannelSequence[TEPMHA_nEventChannels];
 uint32 TEPM_u32PortClockRequested;
 Bool TEPM_aboSynchroniseEnable[TEPMHA_nEventChannels];
 volatile Bool TEPM_aboQueueOverflow[TEPMHA_nEventChannels];
-EXTERN uint32 CAM_u32RPMRaw;	
+EXTERN uint32 CAM_u32RPMRaw;
+EXTERN IOAPI_tenEdgePolarity CEM_enEdgePolarity;
+EXTERN uint32 CEM_u32ToothEdgeCounter;
+EXTERN uint32 CEM_u32CycleToothEdgeCounter;
+EXTERN CEM_tenTriggerType CEM_enTriggerType;
+EXTERN uint32 CEM_u8FallingEdgesCount;
+EXTERN uint32 CEM_u8RisingEdgesCount;
+EXTERN uint32 CEM_u8MissingToothCountMax;
 Bool TEPM_boDisableSequences;
 IOAPI_tenEHIOResource TEPM_stTEPMVVTInput;
 IOAPI_tenEHIOResource TEPM_astTEPMLinkedResource[TEPMHA_nEventChannels];
 uint32 TEPM_u32PrimaryPhaseIDX;
+uint32 TEPM_u32StartLinkPending;
 
 #define TEPM_nTableCount sizeof(TEPM_rastTEPMChannel) / sizeof(TEPM_tstTEPMChannel)
 
 /* Private function declarations
    ----------------------------*/
+   static void TEPM_vFirstStartLinkToothFractions(uint32, uint32, uint32);
 static void TEPM_vRunEventProgramUserQueue(void);
 static void TEPM_vRunEventProgramKernelQueue(void*, uint32, uint32, uint32, Bool);	 
 static void* TEPM_pvGetModule(IOAPI_tenEHIOResource);	 
 static void* TEPM_pstGetModuleFromEnum(TEPMHA_tenModule);
 static uint32 TEPM_u32GetTimerHardwareChannel(IOAPI_tenEHIOResource);
+static uint32 TEPM_u32GetToothFractionTime(TEPMAPI_ttEventTime, uint32, uint32);
+static bool TEPM_boToothCheck(TEPMAPI_tstTimedKernelEvent* pstToothTimedEvent, uint32 u32ToothCount, uint32 u32TableIDX);
 
 /* Public function definitions
    ---------------------------*/	 
@@ -93,11 +105,6 @@ void TEPM_vStart(puint32 const pu32Arg)
 		TEPM_boDisableSequences = FALSE;
 		TEPM_astTEPMLinkedResource[u32QueueIDX] = EH_IO_Invalid;
 	}
-}
-
-IOAPI_tenEHIOResource TEPM_enGetPrimaryLinkedResource(void)
-{
-	return TEPM_astTEPMLinkedResource[TEPM_u32PrimaryPhaseIDX];
 }
 
 void TEPM_vAsyncRequest(void)
@@ -266,12 +273,30 @@ void TEPM_vConfigureKernelTEPMOutput(IOAPI_tenEHIOResource enEHIOResource, TEPMA
 		
 	TEPM_atpfEventUserCB[u32TableIDX] = pstTimedEvents->pfEventCB;	
 	
+	if ((CEM_enAutocorrelationMode != CEM_enTriggerType) &&
+			(CEM_enTypeSuzukiM15A != CEM_enTriggerType))
+	{
+		TEPM_aboTEPMChannelModeToothScheduled[u32TableIDX] = pstTimedEvents->boToothScheduled;
+
+		if (0 != pstTimedEvents->boToothScheduled)
+		{
+			TEPM_u32StartLinkPending |= (1 << u32TableIDX);
+		}
+	}
+
 	/* Reset the queue count it is not possible to append a Kernel output queue */
 	CQUEUE_xClearCount(TEPM_astProgramKernelQueue + u32TableIDX);
 	
 	while ((0 < tEventCount--)
 			&& (FALSE == CQUEUE_xIsFull(TEPM_astProgramKernelQueue + u32TableIDX)))
 	{
+		if ((CEM_enAutocorrelationMode == CEM_enTriggerType) ||
+				(CEM_enTypeSuzukiM15A == CEM_enTriggerType))
+		{
+			/* Schedule to the tooth not supported for these crank sensor configurations */
+			pstTimedEvents->boToothScheduled = FALSE;
+		}
+
 		memcpy((void*)&TEPM_aastTimedKernelEvents[u32TableIDX][TEPM_astProgramKernelQueue[u32TableIDX].u32Tail],
 						 (void*)pstTimedEvents++, sizeof(TEPMAPI_tstTimedKernelEvent));
 		CQUEUE_xAddItem(TEPM_astProgramKernelQueue + u32TableIDX);		
@@ -384,6 +409,32 @@ void TEPM_vInterruptHandler(IOAPI_tenEHIOResource enEHVIOResource, void* pvData)
 	CPU_xExitCritical();
 }
 
+void TEPM_vMissingToothInterruptHandler(IOAPI_tenEHIOResource enEHVIOResource, void* pvData)
+{
+	static bool flag;
+	uint32 u32LastGap;
+
+	u32LastGap = TEPMHA_u32SetNextMissingToothInterrupt(0, 0, 0);
+
+	CEM_tToothEventTimeLast += u32LastGap;
+
+	TEPM_vRunEventToothProgramKernelQueues(FALSE, CEM_u32CycleToothEdgeCounter, u32LastGap);
+	CEM_u32ToothEdgeCounter++;
+	CEM_u32CycleToothEdgeCounter++;
+
+	if (flag)
+	{
+		//PIM_vAssertPortBit(PIMAPI_enPHYS_PORT_B, 0x04000000, IOAPI_enLow);
+	}
+	else
+	{
+		//PIM_vAssertPortBit(PIMAPI_enPHYS_PORT_B, 0x04000000, IOAPI_enHigh);
+	}
+
+	flag = !flag;
+
+}
+
 IOAPI_tenTriState TEPM_enGetTimerDigitalState(IOAPI_tenEHIOResource enEHIOResource)
 {
     return TEPMHA_enGetTimerDigitalState(enEHIOResource);
@@ -469,7 +520,7 @@ void TEPM_vStartEventProgramKernelQueues(Bool boAsyncRequest, uint32 u32Sequence
 	const IOAPI_tenEHIOResource raenResourceList[] = TEPMHA_nChannelResourceList;
 	uint32 u32TimerChannelIDX;
 	uint32 u32TableIDX;
-	static uint32 u32SyncRPMLimit = 2000;
+	static uint32 u32SyncRPMLimit = 4000;
 
 	if (TRUE == boAsyncRequest)
 	{
@@ -482,7 +533,8 @@ void TEPM_vStartEventProgramKernelQueues(Bool boAsyncRequest, uint32 u32Sequence
 		u32TableIDX = TEPMHA_u32GetFTMTableIndex(enEHIOResource);
 		
 		if ((TRUE == TEPM_aboTEPMChannelModeOutput[u32TableIDX]) &&
-			((u32SequenceIDX == (TEPM_au32TEPMChannelSequence[u32TableIDX] & 0xff)) ||
+			 ((0xfe == (TEPM_au32TEPMChannelSequence[u32TableIDX] & 0xff)) ||
+             (u32SequenceIDX == (TEPM_au32TEPMChannelSequence[u32TableIDX] & 0xff)) ||
 			 (u32SequenceIDX == ((TEPM_au32TEPMChannelSequence[u32TableIDX] & 0xff00) >> 8))))
 		{
 			TEPM_aboSynchroniseEnable[u32TimerChannelIDX] = u32SyncRPMLimit < CAM_u32RPMRaw ? FALSE : TRUE;
@@ -490,12 +542,12 @@ void TEPM_vStartEventProgramKernelQueues(Bool boAsyncRequest, uint32 u32Sequence
 			if (((TRUE == TEPM_aboTEPMChannelAsyncRequestEnable[u32TableIDX]) && (TRUE == boAsyncRequest)) ||
 				(FALSE == boAsyncRequest))
 			{
-				//if ((TRUE == CQUEUE_xIsEmpty(TEPM_astProgramKernelQueue + u32TableIDX)) &&
-				//		(TRUE == CQUEUE_xIsStaticActive(TEPM_astProgramKernelQueue + u32TableIDX)))
-				/* EMPTY TEST MAYBE NOT REQUIRED */
 				if ((TRUE == CQUEUE_xIsEmpty(TEPM_astProgramKernelQueue + u32TableIDX)) &&
-                    (TRUE == CQUEUE_xIsStaticActive(TEPM_astProgramKernelQueue + u32TableIDX)) &&
-                    (FALSE == CQUEUE_xIsAtStaticHead(TEPM_astProgramKernelQueue + u32TableIDX)))
+						(TRUE == CQUEUE_xIsStaticActive(TEPM_astProgramKernelQueue + u32TableIDX)))
+				/* EMPTY TEST MAYBE NOT REQUIRED FIRST WAS TRUE == !!!*/
+				//if ((FALSE == CQUEUE_xIsEmpty(TEPM_astProgramKernelQueue + u32TableIDX)) &&
+                //    (TRUE == CQUEUE_xIsStaticActive(TEPM_astProgramKernelQueue + u32TableIDX)) &&
+                //    (FALSE == CQUEUE_xIsAtStaticHead(TEPM_astProgramKernelQueue + u32TableIDX)))
 				{
 					pvModule = TEPMHA_pvGetModuleFromEnum(TEPM_rastTEPMChannel[u32TableIDX].enModule);		
 					u32ChannelIDX = TEPM_u32GetTimerHardwareChannel(enEHIOResource);	
@@ -518,6 +570,178 @@ void TEPM_vStartEventProgramKernelQueues(Bool boAsyncRequest, uint32 u32Sequence
 						u32SequenceIDX, false);
 
 					TEPM_aboQueueOverflow[u32TimerChannelIDX] = FALSE;
+				}
+			}
+		}
+	}
+}
+
+void TEPM_vRunEventToothProgramKernelQueues(Bool boAsyncRequest, uint32 u32ToothCount, uint32 u32ToothTime)
+{
+	IOAPI_tenEHIOResource enEHIOResource;
+	void* pvModule;
+	uint32 u32ChannelIDX;
+	uint32 u32SubChannelIDX;
+	const IOAPI_tenEHIOResource raenResourceList[] = TEPMHA_nChannelResourceList;
+	uint32 u32TimerChannelIDX;
+	uint32 u32TableIDX;
+	TEPMAPI_tstTimedKernelEvent* pstToothTimedEvent;
+	TEPMAPI_ttEventTime tEventTimeScheduled;
+	uint32 u32Temp;
+	uint32 u32ModulePhaseCorrect = 0;
+
+	if (TRUE == boAsyncRequest)
+	{
+		CEM_u32GlobalCycleTime = 0x8000;
+	}
+
+	for (u32TimerChannelIDX = 0; u32TimerChannelIDX < TEPMHA_nEventChannels; u32TimerChannelIDX++)
+	{
+		enEHIOResource = raenResourceList[u32TimerChannelIDX];
+
+#ifndef TEPM_SPEED_MK6X
+		u32TableIDX = TEPMHA_u32GetFTMTableIndex(enEHIOResource);
+#else
+		u32TableIDX = enEHIOResource - EH_IO_TMR1;
+#endif //TEPM_SPEED_MK6X
+
+		if (TRUE == TEPM_aboTEPMChannelModeToothScheduled[u32TableIDX])
+		{
+			pstToothTimedEvent = &TEPM_aastTimedKernelEvents[u32TableIDX][0];
+
+			if (TRUE == pstToothTimedEvent->boToothScheduled)
+			{
+				if (TEPM_boToothCheck(pstToothTimedEvent, u32ToothCount, u32TableIDX))
+				{
+					if ((TRUE == CQUEUE_xIsEmpty(TEPM_astProgramKernelQueue + u32TableIDX)) &&
+						(TRUE == CQUEUE_xIsStaticActive(TEPM_astProgramKernelQueue + u32TableIDX)) &&
+						(FALSE == CQUEUE_xIsAtStaticHead(TEPM_astProgramKernelQueue + u32TableIDX)))
+					{
+						pvModule = TEPMHA_pvGetModuleFromEnum(TEPM_rastTEPMChannel[u32TableIDX].enModule);
+						u32ChannelIDX = TEPM_u32GetTimerHardwareChannel(enEHIOResource);
+						u32SubChannelIDX = TEPMHA_u32GetTimerHardwareSubChannel(u32TableIDX);
+
+						/* Queue didn't end normally last cycle */
+						TEPMHA_vForceQueueTerminate(pvModule, u32ChannelIDX, u32SubChannelIDX);
+						CQUEUE_xResetStaticHead(TEPM_astProgramKernelQueue + u32TableIDX);
+					}
+
+					if (FALSE == CQUEUE_xIsEmpty(TEPM_astProgramKernelQueue + u32TableIDX) &&
+							TRUE == CQUEUE_xIsAtStaticHead(TEPM_astProgramKernelQueue + u32TableIDX))
+					{
+						/* This queue is populated and head is at zero (static head) */
+						pvModule = TEPMHA_pvGetModuleFromEnum(TEPM_rastTEPMChannel[u32TableIDX].enModule);
+						u32ChannelIDX = TEPM_u32GetTimerHardwareChannel(enEHIOResource);
+
+						u32SubChannelIDX = TEPMHA_u32GetTimerHardwareSubChannel(u32TableIDX);
+
+						/* Timed event pointer is NULL for a failed synchronise */
+						switch (pstToothTimedEvent->enMethod)
+						{
+							case TEPMAPI_enGlobalLinkedFraction:
+							{
+								u32Temp = (pstToothTimedEvent->tFractionalEventTime & 0xffff) * u32ToothTime;
+								u32Temp /= 0x10000;
+								u32Temp += u32ToothTime;
+								u32ModulePhaseCorrect = (uint32)CEM_ttGetModulePhase(3 * (uint32)TEPMHA_enTimerEnumFromModule(pvModule) + u32ChannelIDX / 2);
+								tEventTimeScheduled = u32Temp + CEM_tToothEventTimeLast + u32ModulePhaseCorrect;
+								TEPMHA_vCapComAction(pstToothTimedEvent->enAction, pvModule, u32ChannelIDX, u32SubChannelIDX, tEventTimeScheduled);			
+							}
+							default:
+							{
+								break;
+							}
+						}
+
+						CQUEUE_xRemoveItem(TEPM_astProgramKernelQueue + u32TableIDX);
+					}
+
+					TEPM_aboQueueOverflow[u32TimerChannelIDX] = FALSE;
+				}
+			}
+
+			pstToothTimedEvent = &TEPM_aastTimedKernelEvents[u32TableIDX][1];
+
+			if (TRUE == pstToothTimedEvent->boToothScheduled)
+			{
+				if (TEPM_boToothCheck(pstToothTimedEvent, u32ToothCount, u32TableIDX))
+				{
+					pvModule = TEPMHA_pvGetModuleFromEnum(TEPM_rastTEPMChannel[u32TableIDX].enModule);
+					u32ChannelIDX = TEPM_u32GetTimerHardwareChannel(enEHIOResource);
+
+					u32SubChannelIDX = TEPMHA_u32GetTimerHardwareSubChannel(u32TableIDX);
+
+					/* Timed event pointer is NULL for a failed synchronise */
+					switch (pstToothTimedEvent->enMethod)
+					{
+						case TEPMAPI_enGlobalLinkedFraction:
+						{
+							u32Temp = (pstToothTimedEvent->tFractionalEventTime & 0xffff) * u32ToothTime;
+							u32Temp /= 0x10000;
+							u32Temp += u32ToothTime;
+							u32ModulePhaseCorrect = (uint32)CEM_ttGetModulePhase(3 * (uint32)TEPMHA_enTimerEnumFromModule(pvModule) + u32ChannelIDX / 2);
+							tEventTimeScheduled = u32Temp + CEM_tToothEventTimeLast + u32ModulePhaseCorrect;
+							TEPMHA_vCapComAction(pstToothTimedEvent->enAction, pvModule, u32ChannelIDX, u32SubChannelIDX, tEventTimeScheduled);	
+						}
+						default:
+						{
+							break;
+						}
+					}
+
+					CQUEUE_xRemoveItem(TEPM_astProgramKernelQueue + u32TableIDX);
+					TEPM_aboQueueOverflow[u32TimerChannelIDX] = FALSE;
+				}
+				
+				/* Now check for after the falling edge prep tooth */
+				u32Temp = u32ToothCount - 2;
+				
+				if (u32ToothCount > 1)
+				{
+					u32Temp = u32ToothCount - 2;
+				}
+				else
+				{	
+					u32Temp = u32ToothCount + CEM_u8FallingEdgesCount + CEM_u8RisingEdgesCount + CEM_u8MissingToothCountMax;
+					u32Temp -= 2;
+				}
+				
+				if (TEPM_boToothCheck(pstToothTimedEvent, u32Temp, u32TableIDX))
+				{				
+					if (((TEPM_au32TEPMChannelSequence[u32TableIDX] & 0xff) == 0x00) ||
+					((TEPM_au32TEPMChannelSequence[u32TableIDX] & 0xff00) == 0x00))
+					{
+						u32Temp = CEM_u8PhaseRepeats * (CEM_u8FallingEdgesCount + CEM_u8RisingEdgesCount + CEM_u8MissingToothCountMax);
+						
+						if (1 == CEM_u8PhaseRepeats)
+						{
+							/* A wasted spark system */
+							
+						}
+						else
+						{
+							#if (0)
+							if ((CEM_u32CycleToothEdgeCounter < (u32Temp / 4)) ||
+								(CEM_u32CycleToothEdgeCounter > (3 * u32Temp / 4)))
+							#endif
+							
+							static Bool toggle;
+							
+							if (toggle)
+							{
+								IO_vAssertDIOResource(EH_IO_IO23, IOAPI_enLow);	
+							}	
+							else
+							{
+								IO_vAssertDIOResource(EH_IO_IO23, IOAPI_enHigh);
+							}		
+							
+							toggle = !toggle;				
+						}
+					}
+					
+					IO_vAssertDIOResource(EH_IO_IO25, IOAPI_enHigh);
+					IO_vAssertDIOResource(EH_IO_IO25, IOAPI_enLow);
 				}
 			}
 		}
@@ -573,9 +797,13 @@ void TEPM_vSynchroniseEventProgramKernelQueues(void)
 static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelIDX, uint32 u32TableIDX, uint32 u32SequenceIDX, Bool boSynchroniseUpdate)
 {
 	TEPMAPI_tstTimedKernelEvent* pstTimedEvent = NULL;
+	TEPMAPI_tstTimedKernelEvent* pstToothTimedEvent = NULL;
+	TEPMAPI_tstTimedKernelEvent* pstToothSecondTimedEvent = NULL;
 	TEPMAPI_ttEventTime tEventTimeScheduled = 0;
 	TEPMAPI_ttEventTime tEventTimeRemains;	
 	uint32 u32Temp;
+	uint32 u32ToothDelta;
+	uint32 u32EdgeCount;
 	uint32 u32ModulePhaseCorrect = 0;
 	uint32 u32SubChannelIDX;
 	volatile Bool boSynchroniseAbort = FALSE;
@@ -595,10 +823,11 @@ static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelID
 	if (FALSE == CQUEUE_xIsEmpty(TEPM_astProgramKernelQueue + u32TableIDX))
 	{
 		if (TRUE == boSynchroniseUpdate)
-		{			
-			if (1 == TEPM_astProgramKernelQueue[u32TableIDX].u32Head)
+		{				
+			if ((1 == TEPM_astProgramKernelQueue[u32TableIDX].u32Head) &&
+					(FALSE == TEPM_aboTEPMChannelModeToothScheduled[u32TableIDX]))
 			{
-				/* If waiting for first event, let's look at it */					
+				/* If waiting for first event, let's look at it as long as it isn't a tooth scheduled channel */			
 				pstTimedEvent = &TEPM_aastTimedKernelEvents[u32TableIDX][TEPM_astProgramKernelQueue[u32TableIDX].u32Head - 1];					
 				
 				switch (pstTimedEvent->enMethod)
@@ -622,7 +851,91 @@ static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelID
 		}
 		else
 		{		
-			pstTimedEvent = &TEPM_aastTimedKernelEvents[u32TableIDX][TEPM_astProgramKernelQueue[u32TableIDX].u32Head];		
+			if (FALSE == TEPM_aboTEPMChannelModeToothScheduled[u32TableIDX])
+			{
+				pstTimedEvent = &TEPM_aastTimedKernelEvents[u32TableIDX][TEPM_astProgramKernelQueue[u32TableIDX].u32Head];
+			}
+			else
+			{
+				/* Start schedule to the tooth */
+				if (0 == TEPM_astProgramKernelQueue[u32TableIDX].u32Head)
+				{
+					pstToothTimedEvent = &TEPM_aastTimedKernelEvents[u32TableIDX][TEPM_astProgramKernelQueue[u32TableIDX].u32Head];
+
+					if (1 == (TEPM_au32TEPMChannelSequence[u32TableIDX] >> 24))
+					{
+						pstToothTimedEvent->tFractionalEventTime = TEPM_u32GetToothFractionTime(*pstToothTimedEvent->ptEventTime, u32SequenceIDX, 1);
+
+						/* Let's go look at second event */
+						pstToothSecondTimedEvent = pstToothTimedEvent + 1;
+
+						if (TRUE == pstToothSecondTimedEvent->boToothScheduled)
+						{
+							pstToothSecondTimedEvent->tFractionalEventTime = TEPM_u32GetToothFractionTime(*pstToothSecondTimedEvent->ptEventTime, u32SequenceIDX, 1);
+							u32ToothDelta = pstToothSecondTimedEvent->tFractionalEventTime - pstToothTimedEvent->tFractionalEventTime;
+							//matthew here rollover problems!!!!!!
+							
+							if (0x20000 >= u32ToothDelta)
+							{
+								/* a problem - minimum tooth delta of 2 */
+								u32EdgeCount = CEM_u32GetAllEdgesCount();
+
+								u32Temp = pstToothSecondTimedEvent->tFractionalEventTime;
+								u32Temp /= 0x10000;
+								u32Temp -= 2;
+								u32Temp = u32Temp % u32EdgeCount;
+								u32Temp *= 0x10000;
+								pstToothTimedEvent->tFractionalEventTime = u32Temp + (pstToothSecondTimedEvent->tFractionalEventTime & 0xffff);
+							}
+
+							TEPM_vFirstStartLinkToothFractions(0, u32TableIDX, pstToothTimedEvent->tFractionalEventTime);
+							TEPM_vFirstStartLinkToothFractions(1, u32TableIDX, pstToothSecondTimedEvent->tFractionalEventTime);
+						}
+					}
+					else if (2 == (TEPM_au32TEPMChannelSequence[u32TableIDX] >> 24))
+					{
+						pstToothTimedEvent->tFractionalEventTime = TEPM_u32GetToothFractionTime(*pstToothTimedEvent->ptEventTime, u32SequenceIDX, 2);
+
+						/* Let's go look at second event */
+						pstToothSecondTimedEvent = pstToothTimedEvent + 1;
+
+						if (TRUE == pstToothSecondTimedEvent->boToothScheduled)
+						{
+							pstToothSecondTimedEvent->tFractionalEventTime = TEPM_u32GetToothFractionTime(*pstToothSecondTimedEvent->ptEventTime, u32SequenceIDX, 2);
+							u32ToothDelta = pstToothSecondTimedEvent->tFractionalEventTime - pstToothTimedEvent->tFractionalEventTime;
+
+							if (0x8000000 < u32ToothDelta)
+							{
+								/* If wrapped around */
+								u32Temp = CEM_u32GetAllEdgesCount();
+								u32Temp *= 0x10000;
+								u32ToothDelta += u32Temp;
+							}
+
+							if (0x20000 >= u32ToothDelta)
+							{
+								/* a problem - minimum tooth delta of 2 */
+								u32EdgeCount = CEM_u32GetAllEdgesCount();
+								u32EdgeCount *= CEM_u8PhaseRepeats;
+
+								u32Temp = pstToothSecondTimedEvent->tFractionalEventTime;
+								u32Temp /= 0x10000;
+								u32Temp -= 2;
+								u32Temp = u32Temp % u32EdgeCount;
+								u32Temp *= 0x10000;
+								pstToothTimedEvent->tFractionalEventTime = u32Temp + (pstToothSecondTimedEvent->tFractionalEventTime & 0xffff);
+							}
+						}
+
+						TEPM_vFirstStartLinkToothFractions(0, u32TableIDX, pstToothTimedEvent->tFractionalEventTime);
+						TEPM_vFirstStartLinkToothFractions(1, u32TableIDX, pstToothSecondTimedEvent->tFractionalEventTime);
+					}
+				}
+				else
+				{
+					pstTimedEvent = &TEPM_aastTimedKernelEvents[u32TableIDX][TEPM_astProgramKernelQueue[u32TableIDX].u32Head];		
+				}
+			}
 		}
 		
 		if (NULL != pstTimedEvent)
@@ -710,6 +1023,20 @@ static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelID
 
 					break;
 				}	
+				case TEPMAPI_enGlobalLinkedTimeStep:
+				{		
+					u32ModulePhaseCorrect = (uint32)CEM_ttGetModulePhase(3 * (uint32)TEPMHA_enTimerEnumFromModule(pvModule) + u32ChannelIDX / 2);
+								
+					tEventTimeScheduled = CEM_tSyncTimeLast + u32ModulePhaseCorrect + *(pstTimedEvent->ptEventTime);
+					tEventTimeRemains = tEventTimeScheduled - TEPMHA_u32GetFreeVal(pvModule, u32ChannelIDX);
+					
+					if ((TEPM_nSoonCountsEDIS > tEventTimeRemains) || ((uint32)-TEPM_nSoonCountsEDIS < tEventTimeRemains))
+					{
+						tEventTimeScheduled = TEPMHA_u32GetFreeVal(pvModule, u32ChannelIDX) + 0x10;
+					}
+
+					break;
+				}	
 				case TEPMAPI_enHardLinkedTimeStep:
 				{		
 					if ((uint32)-TEPM_nSoonCounts > *(pstTimedEvent->ptEventTime))
@@ -778,6 +1105,33 @@ static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelID
 	}
 }
 
+static uint32 TEPM_u32GetToothFractionTime(TEPMAPI_ttEventTime tEventTime, uint32 u32SequenceIDX, uint32 u32PhaseRepeats)
+{
+	uint32 u32CycleToothCount;
+	uint32 u32Temp;
+	uint16 u16Temp;
+
+	u32CycleToothCount = CEM_u32GetAllEdgesCount();
+	u32CycleToothCount *= u32PhaseRepeats;
+
+	u32Temp = tEventTime * u32CycleToothCount;
+	u32Temp += (0x10000 * (u32SequenceIDX * CEM_u32GetAllEdgesCount()) / CEM_u32SyncPoints);
+	u16Temp = u32Temp / 0x10000;
+
+	/* Cheeky prior tooth here */
+	u16Temp--;
+	u16Temp = u16Temp % u32CycleToothCount;
+
+	/* Mask tooth fraction */
+	u32Temp &= 0xffff;
+
+	/* Set is active bit */
+	u32Temp |= 1;
+	u32Temp += (u16Temp << 16);
+
+	return u32Temp;
+}
+
 static void* TEPM_pvGetModule(IOAPI_tenEHIOResource enEHIOResource)
 {
 	uint32 u32ChannelIDX;
@@ -808,6 +1162,119 @@ uint32 TEPM_u32GetFTMTableIndex(IOAPI_tenEHIOResource enEHIOResource)
 	return TEPMHA_u32GetFTMTableIndex(enEHIOResource);
 }
 
+void TEPM_vConfigureMissingToothInterrupt()
+{
+	TEPMHA_vConfigureMissingToothInterrupt();
+}
+
+void TEPM_vSetNextMissingToothInterrupt(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttEventTime tLastGap, uint32 u32Repeats)
+{
+	uint32 u32ModuleDelta = 0;
+	uint32 u32TableIDX;
+	void* pvModule;
+
+	u32TableIDX = TEPMHA_u32GetFTMTableIndex(enEHIOResource);
+	pvModule = TEPMHA_pvGetModuleFromEnum(TEPM_rastTEPMChannel[u32TableIDX].enModule);
+	//u32ModuleDelta = TEPMHA_u32GetFreeVal((void*)FTM1, 0) - TEPMHA_u32GetFreeVal(pvModule, 0);
+
+	(void)TEPMHA_u32SetNextMissingToothInterrupt(CEM_tEventTimeLast + u32ModuleDelta, tLastGap, u32Repeats);
+}
+
+static void TEPM_vFirstStartLinkToothFractions(uint32 u32EventIDX, uint32 u32TableIDX, TEPMAPI_ttEventTime tFractionalEventTime)
+{
+
+	uint32 u32InputBitMask;
+	uint32 u32Temp;
+	uint32 u32IDX;
+	uint32 u32TempTooth = (tFractionalEventTime & 0xff0000) >> 16;
+	uint32 u32Fraction = tFractionalEventTime & 0xffff;
+	uint32 u32ToothTotal = CEM_u8PhaseRepeats * CEM_u32GetAllEdgesCount();
+	uint32 u32BitMask = 1;
+
+	if (0 != TEPM_u32StartLinkPending)
+	{
+		/* Get the bit mask of the donor */
+		u32InputBitMask = MATH_u32IDXToMask(u32TableIDX);
+
+		/* Get tooth for origin channel */
+		u32Temp = u32ToothTotal * (TEPM_au32TEPMChannelSequence[u32TableIDX] & 0xff);
+		u32Temp /= 8;
+		u32Temp = ~u32Temp;
+		u32Temp++;
+		u32Temp += u32TempTooth;
+		u32TempTooth = u32Temp;
+
+		while (0x8000 < u32TempTooth) {u32TempTooth += u32ToothTotal;}
+		while (u32ToothTotal <= u32TempTooth) {u32TempTooth -= u32ToothTotal;}
+
+		while (0x10000 > u32BitMask)
+		{
+			if (0 != (u32BitMask & TEPM_u32StartLinkPending))
+			{
+				u32IDX = MATH_u32MaskToIDX(u32BitMask);
+
+				u32Temp = u32TempTooth + ((u32ToothTotal * (TEPM_au32TEPMChannelSequence[u32IDX] & 0xff)) / 8);
+				u32Temp = u32Temp % u32ToothTotal;
+				u32Temp *= 0x10000;
+				u32Temp += u32Fraction;
+
+				TEPM_aastTimedKernelEvents[u32IDX][u32EventIDX].tFractionalEventTime = u32Temp;
+
+				if (0 < u32EventIDX)
+				{
+					TEPM_u32StartLinkPending &= ~ u32BitMask;
+				}
+			}
+
+			u32BitMask *= 2;
+		}
+	}
+}
+
+static bool TEPM_boToothCheck(TEPMAPI_tstTimedKernelEvent* pstToothTimedEvent, uint32 u32ToothCount, uint32 u32TableIDX)
+{
+	uint32 u32PhaseRepeats;
+	uint32 u32ToothPerRotation;
+	bool boToothMatch = false;
+	
+	u32PhaseRepeats = TEPM_au32TEPMChannelSequence[u32TableIDX] >> 24;
+	
+	if (u32PhaseRepeats == 2)
+	{
+		if (((pstToothTimedEvent->tFractionalEventTime >> 16) == u32ToothCount) &&
+			(0 != (pstToothTimedEvent->tFractionalEventTime & 0xffff)))	
+		{
+			boToothMatch = true;
+		}	
+	}
+	else
+	{
+		if (((pstToothTimedEvent->tFractionalEventTime >> 16) == u32ToothCount) &&
+			(0 != (pstToothTimedEvent->tFractionalEventTime & 0xffff)))	
+		{
+			boToothMatch = true;
+		}
+		
+		u32ToothPerRotation = CEM_u32GetAllEdgesCount();
+		
+		if (u32ToothCount >= u32ToothPerRotation)
+		{
+			u32ToothCount -= u32ToothPerRotation;
+		}
+		else
+		{
+			u32ToothCount += u32ToothPerRotation;
+		}
+		
+		if (((pstToothTimedEvent->tFractionalEventTime >> 16) == u32ToothCount) &&
+			(0 != (pstToothTimedEvent->tFractionalEventTime & 0xffff)))	
+		{
+			boToothMatch = true;
+		}
+	}
+		
+	return boToothMatch;					
+};
 
 
 

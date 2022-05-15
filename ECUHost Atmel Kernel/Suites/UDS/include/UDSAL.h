@@ -158,7 +158,7 @@ typedef enum
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-braces"
 
-typedef struct
+typedef __packed struct
 {
 	uint8 u8Service;
 	uint8 u8BytesMin;
@@ -180,6 +180,13 @@ typedef struct
 	bool boComplete;
 } UDSAL_tstDLControlBlock;
 
+typedef enum
+{
+	UDSAL_enDiagSessionInactive,
+	UDSAL_enDiagSessionDefault,
+	UDSAL_enDiagSessionProgramming,
+	UDSAL_enDiagSessionExtended
+} UDSAL_tenDiagSession;
 
 #define UDSAL_nALProcessInfo																															\
 {																																													\

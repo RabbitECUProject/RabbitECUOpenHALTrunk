@@ -38,6 +38,8 @@
    -------------------------*/
 const TEPM_tstTEPMChannel TEPMHA_rastTEPMChannel[] = TEPMHA_nChannelInfo;
 TEPMAPI_ttEventTime* TEPMHA_ptMasterClock;
+uint32 TEPMHA_u32MissingRepeats;
+EXTERN CEM_au32TimerOffsets[];
 
 #define TEPM_nTableCount sizeof(TEPMHA_rastTEPMChannel) / sizeof(TEPM_tstTEPMChannel)
 
@@ -1145,6 +1147,84 @@ static Bool TEPMHA_boModuleIsPWM(void* pvModule)
 #endif //BUILD_SAM3X8E
 
     return boRetVal;
+}
+
+void TEPMHA_vConfigureMissingToothInterrupt(void)
+{
+	uint32 u32ControlWord = 0;
+		
+#if defined(BUILD_MK60) || defined(BUILD_MK64)
+	vpuint32 vpuFTMReg;
+	tstTimerModule* pstTimerModule = FTM1;
+	vpuFTMReg = (vpuint32)((uint32)pstTimerModule + (uint32)offsetof(tstTimerModule, CONTROLS[0]));
+
+	u32ControlWord = (FTM_CnSC_MSA_MASK | FTM_CnSC_ELSB_MASK | FTM_CnSC_ELSA_MASK);
+	u32ControlWord |= FTM_CnSC_CHIE_MASK;
+	*vpuFTMReg = u32ControlWord;
+
+	IRQ_vEnableIRQ(FTM1_IRQn, IRQ_enPRIO_15, TEPM_vMissingToothInterruptHandler, NULL);
+#endif //BUILD_MK6X
+
+#ifdef BUILD_SAM3X8E
+	tstTimerModule* pstTimerModule = TC1;
+
+	u32ControlWord = pstTimerModule->TC_CHANNEL[0].TC_CMR;
+	u32ControlWord |= TC_CMR_TCCLKS_TIMER_CLOCK4;
+	u32ControlWord |= TC_CMR_ACPA_SET;
+	u32ControlWord |= TC_CMR_WAVE;
+	
+	tc_init(pstTimerModule, 0, u32ControlWord);
+	tc_start(pstTimerModule, 0);
+	
+	IRQ_vEnableIRQ(TC3_IRQn, IRQ_enPRIO_15, TEPM_vMissingToothInterruptHandler, NULL);
+#endif
+}
+
+uint32 TEPMHA_u32SetNextMissingToothInterrupt(TEPMAPI_ttEventTime tReference, TEPMAPI_ttEventTime tLastGap, uint32 u32Repeats)
+{
+	static uint32 u32Gap = 0;
+	uint32 u32ControlWord;
+	uint32 u32FlagsCache;
+	
+#if defined (BUILD_SAM3X8E)
+	tstTimerModule* pstTimerModule = TC1;
+	uint32 u32TimerVal;
+	uint32 u32Temp;
+
+	if (0 != u32Repeats)
+	{
+		u32TimerVal = tReference;
+		u32TimerVal += CEM_au32TimerOffsets[3];
+		u32Gap = tLastGap;
+		TEPMHA_u32MissingRepeats = u32Repeats;
+	}
+	else
+	{
+		u32TimerVal = pstTimerModule->TC_CHANNEL[0].TC_RA;
+	}
+
+	if (0 != TEPMHA_u32MissingRepeats)
+	{
+		u32TimerVal += u32Gap;
+		
+		/* Read status register to clear flags */
+		u32FlagsCache = pstTimerModule->TC_CHANNEL[0].TC_SR;
+		
+		tc_write_ra(pstTimerModule, 0, u32TimerVal);
+		tc_enable_interrupt(pstTimerModule, 0, TC_SR_CPAS);
+		TEPMHA_u32MissingRepeats--;
+	}
+	else
+	{
+		tc_disable_interrupt(pstTimerModule, 0, TC_SR_CPAS);
+	}
+#endif //BUILD_SAM3X8E
+
+#if defined(BUILD_MK60) || defined(BUILD_MK64)
+
+#endif //BUILD_MK6X
+
+	return u32Gap;
 }
 
 #pragma GCC diagnostic pop

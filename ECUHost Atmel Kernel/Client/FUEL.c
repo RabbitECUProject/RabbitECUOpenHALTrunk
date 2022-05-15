@@ -61,14 +61,14 @@ void FUEL_vStart(puint32 const pu32Arg)
 	FUEL_u32FuelPumpRunCount = 3000;
 		
 	/* Set injection time to Xms */
-	FUEL_tTimeHoldUs[0] = 1000;
-	FUEL_tTimeHoldUs[1] = 1000;
-	FUEL_tTimeHoldUs[2] = 1000;
-	FUEL_tTimeHoldUs[3] = 1000;
-	FUEL_tTimeHoldUs[4] = 1000;
-	FUEL_tTimeHoldUs[5] = 1000;
-	FUEL_tTimeHoldUs[6] = 1000;
-	FUEL_tTimeHoldUs[7] = 1000;
+	FUEL_tTimeHoldUs[0] = 2000;
+	FUEL_tTimeHoldUs[1] = 2000;
+	FUEL_tTimeHoldUs[2] = 2000;
+	FUEL_tTimeHoldUs[3] = 2000;
+	FUEL_tTimeHoldUs[4] = 2000;
+	FUEL_tTimeHoldUs[5] = 2000;
+	FUEL_tTimeHoldUs[6] = 2000;
+	FUEL_tTimeHoldUs[7] = 2000;
 	
 	FUEL_tTimeHold[0] = FUEL_xUsToSlowTicks(FUEL_tTimeHoldUs[0]);
 	FUEL_tTimeHold[1] = FUEL_xUsToSlowTicks(FUEL_tTimeHoldUs[1]);
@@ -80,14 +80,14 @@ void FUEL_vStart(puint32 const pu32Arg)
 	FUEL_tTimeHold[7] = FUEL_xUsToSlowTicks(FUEL_tTimeHoldUs[7]);
 	
 	/* Set injection phase to 360 degrees */
-	FUEL_tStartHoldFraction[0] = (0x10000 * 2) / 720;		
-	FUEL_tStartHoldFraction[1] = (0x10000 * 2) / 720;	
-	FUEL_tStartHoldFraction[2] = (0x10000 * 2) / 720;	
-	FUEL_tStartHoldFraction[3] = (0x10000 * 2) / 720;	
-	FUEL_tStartHoldFraction[4] = (0x10000 * 2) / 720;	
-	FUEL_tStartHoldFraction[5] = (0x10000 * 5) / 720;	
-	FUEL_tStartHoldFraction[6] = (0x10000 * 5) / 720;	
-	FUEL_tStartHoldFraction[7] = (0x10000 * 5) / 720;									
+	FUEL_tStartHoldFraction[0] = 60000;
+	FUEL_tStartHoldFraction[1] = 60000;
+	FUEL_tStartHoldFraction[2] = 60000;	
+	FUEL_tStartHoldFraction[3] = 60000;
+	FUEL_tStartHoldFraction[4] = 60000;	
+	FUEL_tStartHoldFraction[5] = 60000;	
+	FUEL_tStartHoldFraction[6] = 60000;	
+	FUEL_tStartHoldFraction[7] = 60000;								
 
 	/* Request and initialise Fuel Injector group A */
 	if ((0xffff > USERCAL_stRAMCAL.au32InjectionSequence[0]) && (EH_IO_Invalid > USERCAL_stRAMCAL.aFuelIOResource[0]))
@@ -267,13 +267,14 @@ void FUEL_vStart(puint32 const pu32Arg)
 	/* Request and initialise required Kernel managed table for injector short opening */
 	FUEL_tTableInjShortOpeningIDX = SETUP_tSetupTable((void*)&USERCAL_stRAMCAL.aUserInjShortOpeningTable, (void*)&FUEL_tTimePredictedShortOpeningUs, TYPE_enUInt32, 11, FUEL_tSpreadInjShortOpeningIDX, NULL);
 
-	FUEL_bo720Injection = TRUE;
+	FUEL_bo720Injection = FALSE;
 
 	for (u32SequenceIDX = 0; u32SequenceIDX < FUEL_nFuelSequenceCount; u32SequenceIDX++)
 	{
-		if ((USERCAL_stRAMCAL.au32InjectionSequence[u32SequenceIDX] & 0xff) == ((USERCAL_stRAMCAL.au32InjectionSequence[u32SequenceIDX] & 0xff00) >> 8))
+		if (((USERCAL_stRAMCAL.au32InjectionSequence[u32SequenceIDX] & 0xff) == 0xff) ||
+				((USERCAL_stRAMCAL.au32InjectionSequence[u32SequenceIDX] & 0xff00) == 0xff00))
 		{
-		    FUEL_bo720Injection = FALSE;
+		    FUEL_bo720Injection = TRUE;
 		}
 	}
 
@@ -418,6 +419,7 @@ static void FUEL_vCyclicCalculate(void)
 	static uint32 u32SequentialModeCount;
 	uint32 u32MaxFuel;
 	uint32 u32ReturnlessPressureKpa;
+	uint32 u32TempTarget;
 
 	if ((FALSE == FUEL_boFuelPrimed) && (400 > CAM_u32RPMRaw))
 	{
@@ -720,34 +722,45 @@ static void FUEL_vCyclicCalculate(void)
 	boSequentialMode = FUEL_nSeqModeCountLimit <= u32SequentialModeCount ? TRUE : boSequentialMode;
 	boSequentialMode = 0 == u32SequentialModeCount ? FALSE : boSequentialMode;
 
-
-	if (TRUE == boSequentialMode)
+	if ((TRUE == boSequentialMode) && (59500 > u32Temp))
 	{
-		if (59500 > u32Temp)
+		u32TempTarget = 60000 - u32Temp;
+	}
+	else
+	{
+		u32TempTarget = 500;
+	}
+	
+	if (FUEL_tStartHoldFraction[0] <= u32TempTarget)
+	{
+		if ((u32TempTarget - FUEL_tStartHoldFraction[0]) > 5000)
 		{
-			/* Assign the end of event angles */
-			FUEL_tStartHoldFraction[0] = 60000 - u32Temp;
-			FUEL_tStartHoldFraction[1] = 60000 - u32Temp;
-			FUEL_tStartHoldFraction[2] = 60000 - u32Temp;
-			FUEL_tStartHoldFraction[3] = 60000 - u32Temp;
+			FUEL_tStartHoldFraction[0] += 5000;
 		}
 		else
 		{
-			/* Assign the end of event angles */
-			FUEL_tStartHoldFraction[0] = 500;
-			FUEL_tStartHoldFraction[1] = 500;
-			FUEL_tStartHoldFraction[2] = 500;
-			FUEL_tStartHoldFraction[3] = 500;
+			FUEL_tStartHoldFraction[0] = u32TempTarget;
 		}
 	}
 	else
 	{
-		/* Assign the end of event angles */
-		FUEL_tStartHoldFraction[0] = 500;
-		FUEL_tStartHoldFraction[1] = 500;
-		FUEL_tStartHoldFraction[2] = 500;
-		FUEL_tStartHoldFraction[3] = 500;
-	}		
+		if ((FUEL_tStartHoldFraction[0] - u32TempTarget) > 5000)
+		{
+			FUEL_tStartHoldFraction[0] -= 5000;
+		}
+		else
+		{
+			FUEL_tStartHoldFraction[0] = u32TempTarget;
+		}		
+	}
+			
+	/* Assign the end of event angles */
+	FUEL_tStartHoldFraction[1] = FUEL_tStartHoldFraction[0];
+	FUEL_tStartHoldFraction[2] = FUEL_tStartHoldFraction[0];
+	FUEL_tStartHoldFraction[3] = FUEL_tStartHoldFraction[0];
+	
+	
+			
 }
 
 

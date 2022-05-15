@@ -20,7 +20,7 @@
 #include "USER.h"
 
 /* GLOBAL MACRO DEFINITIONS ***************************************************/
-#define ATS_nADFiltVal (0x10)
+#define ATS_nADFiltVal (0x40)
 
 #ifdef EXTERN
 	#undef EXTERN

@@ -20,6 +20,7 @@
 #include "declarations.h"
 
 #define CEM_xEdgesCount (CEM_u8FallingEdgesCount + CEM_u8RisingEdgesCount)
+#define CEM_xAllEdgesCount (CEM_u8FallingEdgesCount + CEM_u8RisingEdgesCount + CEM_u8MissingToothCountMax)
 #define CEM_nEdgesMax   80u
 #define CEM_nSeqGroupCount 2
 #define CEM_nSeqcount 4
@@ -58,6 +59,7 @@ EXTERN uint8 CEM_u8PhaseRepeats;
 EXTERN uint32 CEM_u32GlobalCycleTime;
 EXTERN uint32 CEM_u32GlobalCycleOriginCount;
 EXTERN TEPMAPI_ttEventTime CEM_tEventTimeLast;
+EXTERN TEPMAPI_ttEventTime CEM_tToothEventTimeLast;
 EXTERN TEPMAPI_ttEventTime CEM_tSyncTimeLast;
 EXTERN uint32 CEM_u32SequenceFraction;
 EXTERN uint32 CEM_u32CrankErrorCounts;
@@ -79,7 +81,8 @@ void CEM_vPhaseEventCB(IOAPI_tenEHIOResource, TEPMAPI_ttEventTime);
 TEPMAPI_ttEventTime CEM_ttGetModulePhase(uint32 u32ChannelIDX);
 void CEM_vFreqEventCB(IOAPI_tenEHIOResource, TEPMAPI_ttEventTime);
 void CEM_vSetupSimpleCamSync(IOAPI_tenEHIOResource, Bool, uint32);
-void CEM_vSetSyncPhaseRepeats(uint32 u32SyncPhaseRepeats);
+void CEM_vSetSyncPhaseRepeats(uint32);
+uint32 CEM_u32GetAllEdgesCount(void);
 
 #endif //CEM_H
 

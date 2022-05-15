@@ -94,5 +94,7 @@
 //#define BUILD_BSP_CTS_PULLUP_SENSE
 #define BUILD_BSP_IAC_STEPPER
 
+#define BUILD_14_SHIFT_MUX
+
 #endif //BUILD_H
 

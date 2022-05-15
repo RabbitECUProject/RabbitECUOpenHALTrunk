@@ -112,6 +112,22 @@ void SENSORS_vStart(puint32 const pu32Arg)
 		USER_vSVC(SYSAPI_enInitialiseIOResource, (void*)&enEHIOResource,
 		(void*)&enEHIOType,	(void*)&stTEPMResourceCB);	
 	}	
+	
+	/* Request and initialise TC1 for missing tooth interrupt */
+	enEHIOResource = EH_VIO_TC1;
+	enEHIOType = IOAPI_enTEPM;
+	USER_vSVC(SYSAPI_enRequestIOResource, (void*)&enEHIOResource,	(void*)NULL, (void*)NULL);
+	
+	/* ONLY CONFIGURE THE TC1 MODULE ONCE PER PROJECT! */
+	if (SYSAPI_enOK == pstSVCDataStruct->enSVCResult)	
+	{
+		stTEPMResourceCB.enEHIOResource = EH_VIO_TC1;
+		stTEPMResourceCB.enPreScalar = SENSORS_nFastFTMDivisor;
+		stTEPMResourceCB.enCountType = TEPMAPI_enCountUp;		
+					
+		USER_vSVC(SYSAPI_enInitialiseIOResource, (void*)&enEHIOResource,
+		(void*)&enEHIOType,	(void*)&stTEPMResourceCB);	
+	}	
 		
 	/* Request and initialise CRANK_nInput */
 	enEHIOResource = CRANK_nInput;
@@ -134,7 +150,7 @@ void SENSORS_vStart(puint32 const pu32Arg)
 	USER_vSVC(SYSAPI_enConfigureUserTEPMInput, (void*)&enEHIOResource, 
 		(void*)&stTimedEvent, (void*)NULL);	
 
-	/* Request and initialise TC2 for AFM frequency input */
+	/* Request and initialise TC2 for AFM frequency or cam sensor input */
 	enEHIOResource = EH_VIO_TC2;
 	enEHIOType = IOAPI_enTEPM;
 	USER_vSVC(SYSAPI_enRequestIOResource, (void*)&enEHIOResource,	(void*)NULL, (void*)NULL);
@@ -150,7 +166,6 @@ void SENSORS_vStart(puint32 const pu32Arg)
 		USER_vSVC(SYSAPI_enInitialiseIOResource, (void*)&enEHIOResource,
 		(void*)&enEHIOType,	(void*)&stTEPMResourceCB);
 	}
-
 
 	/* Request and initialise AFM_FREQ_nInput */
 	enEHIOResource = AFM_FREQ_nInput;

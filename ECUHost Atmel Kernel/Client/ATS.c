@@ -65,10 +65,10 @@ void ATS_vStart(puint32 const pu32Arg)
 	}
 	
 	/* Request and initialise required Kernel managed spread for air sensor */
-	ATS_tSpreadSensorIDX = SETUP_tSetupSpread((void*)&ATS_tSensorVolts, (void*)&USERCAL_stRAMCAL.aUserCoolantSensorSpread, TYPE_enUInt32, 17, SPREADAPI_enSpread4ms, NULL);
+	ATS_tSpreadSensorIDX = SETUP_tSetupSpread((void*)&ATS_tSensorVolts, (void*)&USERCAL_stRAMCAL.aUserAirSensorSpread, TYPE_enUInt32, 17, SPREADAPI_enSpread4ms, NULL);
 
 	/* Request and initialise required Kernel managed table for air sensor */
-	ATS_tTableSensorIDX = SETUP_tSetupTable((void*)&USERCAL_stRAMCAL.aUserCoolantSensorTable, (void*)&ATS_tTempCRaw, TYPE_enInt32, 17, ATS_tSpreadSensorIDX, NULL);		
+	ATS_tTableSensorIDX = SETUP_tSetupTable((void*)&USERCAL_stRAMCAL.aUserAirSensorTable, (void*)&ATS_tTempCRaw, TYPE_enInt32, 17, ATS_tSpreadSensorIDX, NULL);		
 	
 	/* Request and initialise required Kernel managed spread for air temp enrichment */
 	ATS_tSpreadEnrichmentIDX = SETUP_tSetupSpread((void*)&ATS_tTempCPort, (void*)&USERCAL_stRAMCAL.aUserAirTempCorrectionSpread, TYPE_enInt32, 17, SPREADAPI_enSpread4ms, NULL);
@@ -210,13 +210,34 @@ void ATS_vRun(puint32 const pu32Arg)
 		}
 		else
 		{
-			if (ATS_tTempCRaw < ATS_tTempCFiltered)
+			if (100000 < ATS_tTempCRaw)
 			{
-				ATS_tTempCFiltered -= 50;
+				ATS_tTempCFiltered = ATS_tTempCRaw;	
 			}
-			else if (ATS_tTempCRaw > ATS_tTempCFiltered)
+			else
 			{
-				ATS_tTempCFiltered += 50;
+				if (ATS_tTempCRaw < ATS_tTempCFiltered)
+				{
+					if (1000 < (ATS_tTempCFiltered - ATS_tTempCRaw))
+					{
+						ATS_tTempCFiltered -= 1000;						
+					}
+					else
+					{
+						ATS_tTempCFiltered = ATS_tTempCRaw;
+					}
+				}
+				else if (ATS_tTempCRaw > ATS_tTempCFiltered)
+				{
+					if (1000 < (ATS_tTempCRaw - ATS_tTempCFiltered))
+					{
+						ATS_tTempCFiltered += 1000;
+					}
+					else
+					{
+						ATS_tTempCFiltered = ATS_tTempCRaw;
+					}
+				}				
 			}
 		}
 	}
