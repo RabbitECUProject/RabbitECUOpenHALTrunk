@@ -251,7 +251,7 @@
         <documentation help="http://asf.atmel.com/docs/3.31.0/common.applications.user_application.arduino_due_x/html/index.html" />
         <offline-documentation help="" />
         <dependencies>
-          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.34.1" />
+          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.44.1" />
         </dependencies>
         <project id="common.applications.user_application.arduino_due_x" value="Add" config="" content-id="Atmel.ASF" />
         <board id="board.arduino_due_x" value="Add" config="" content-id="Atmel.ASF" />
@@ -284,7 +284,8 @@
       <ToolNumber>281100004</ToolNumber>
       <ToolName>J-Link Ultra</ToolName>
     </com_atmel_avrdbg_tool_samice>
-    <avrtoolinterface>JTAG</avrtoolinterface>
+    <avrtoolinterface>
+    </avrtoolinterface>
     <avrtoolinterfaceclock>7500000</avrtoolinterfaceclock>
     <com_atmel_avrdbg_tool_edbgc>
       <ToolOptions>
