@@ -42,6 +42,9 @@
 *.idb
 *.pdb
 
+# WinMerge backup
+*.bak
+
 # Kernel Module Compile Results
 *.mod*
 *.cmd
