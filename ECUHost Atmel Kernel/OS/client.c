@@ -60,6 +60,8 @@ void CLIENT_vRunUserCBQueue(void)
 
 	while (!CQUEUE_xIsEmpty(&stCBQueue))
 	{
+        CPU_vEnterCritical();
+			
 		switch (astCBInfo[stCBQueue.u32Head].pstMBX->enMSGType)
 		{
 			case MSG_enADCResult:
@@ -67,7 +69,12 @@ void CLIENT_vRunUserCBQueue(void)
 				/* Run the callback if not NULL */		
 				pstADCResult = (ADC_tstADCResult*)astCBInfo[stCBQueue.u32Head].pstMBX->pstMSG;
 				pfADCResultCB = (ADCAPI_tpfResultCB)astCBInfo[stCBQueue.u32Head].pfCB;
-				pfADCResultCB(pstADCResult->enEHIOResource, pstADCResult->u32Result);
+				
+                if (NULL != pfADCResultCB)
+				{
+				    pfADCResultCB(pstADCResult->enEHIOResource, pstADCResult->u32Result);
+	            }
+					
 				break;
 			}		
 			case MSG_enTEPMEvent:
@@ -100,7 +107,9 @@ void CLIENT_vRunUserCBQueue(void)
 				break;
 			}
 		}
-		CQUEUE_xRemoveItem(&stCBQueue);
+		
+		CQUEUE_xRemoveItemUnsafe(&stCBQueue);
+        CPU_vExitCritical();
 	}	
 	
 	/* TODO suppress warning for now */
@@ -110,15 +119,19 @@ void CLIENT_vRunUserCBQueue(void)
 CLIENT_tenErr CLIENT_enEnqueueCB(MSG_tstMBX* pstMBX, tpfClientCB pfCB)
 {
 	CLIENT_tenErr enErr = CLIENT_enFailQueueFull;
+
+	CPU_xEnterCritical();
 	
 	if (!CQUEUE_xIsFull(&stCBQueue))
 	{
 		astCBInfo[stCBQueue.u32Tail].pfCB = pfCB;
 		astCBInfo[stCBQueue.u32Tail].pstMBX = pstMBX;		
-		CQUEUE_xAddItem(&stCBQueue);
+		CQUEUE_xAddItemUnsafe(&stCBQueue);
 		enErr = CLIENT_enOK;
 	}	
 	
+	CPU_xExitCritical();
+
 	return enErr;
 }
 

@@ -34,9 +34,9 @@
 
 //#define TESTCAL
 //#define C18CAL
-//#define TWONR_FE_CAL
+#define TWONR_FE_CAL
 //#define KTM_SC_CAL
-#define L98CAL
+//#define L98CAL
 //#define M15A_CAL
 //#define EDIS_CAL
 
@@ -314,7 +314,11 @@ typedef __packed struct
 	uint8 VVTInputType;
 	uint8 boEDISEnable;
 	uint8 u8ScheduleToothIgnition;
-	uint8 u8Dummy;
+	uint8 u8ESTRegMux;
+    uint8 u8Dummy1;
+    uint8 u8Dummy2;
+    uint8 u8Dummy3;
+	uint8 u8Dummy4;
 	uint16 u16CRC16;
 	uint32* offsets;
 } USERCAL_tstCalibration;
@@ -646,10 +650,11 @@ EXTERN USERCAL_tstCalibration __attribute__ ((packed)) USERCAL_stRAMCAL;
 //ASAM mode=writevalue name="EDIS Enable" parent="USERCAL_stRAMCAL" type=uint8 offset=9403 min=1 max=100 units="ENUMERATION OFF=0 ON=1"  format=4.0 help="EDIS Enable HTML=280.HTML"
 
 //ASAM mode=writevalue name="Ignition Tooth Timing Enable" parent="USERCAL_stRAMCAL" type=uint8 offset=9404 min=1 max=255 units="ENUMERATION OFF=0 ON=1" format=4.0 help="Ignition Tooth Timing Enable HTML=450.HTML"
+//ASAM mode=writevalue name="Ignition Register Mux Enable" parent="USERCAL_stRAMCAL" type=uint8 offset=9405 min=0 max=1 units="ENUMERATION OFF=0 ON=1" format=4.0 help="EST Register Mux Enable HTML=452.HTML"
+	
+//ASAM mode=writevalue name="DUMMY RELAY" parent="USERCAL_stRAMCAL" type=uint8 offset=9409 min=0 max=255 units="ENUMERATION EH_IO_ADD5=4 EH_IO_ADD7=6 EH_IO_ADD8=7 EH_IO_TMR1=58 EH_IO_TMR2=59 EH_IO_TMR3=60 EH_IO_TMR4=61 EH_IO_TMR5=62 EH_IO_TMR6=63 EH_IO_TMR7=64 EH_IO_TMR8=65 EH_IO_TMR9=66 EH_IO_TMR10=67 EH_IO_TMR11=68 EH_IO_TMR12=69 EH_IO_EXTINT=70 EH_VIO_REL1=71 EH_VIO_REL2=72 EH_VIO_REL3=73 EH_VIO_REL4=74 EH_VIO_REL5=75 EH_VIO_REL6=76 EH_VIO_REL7=77 EH_VIO_REL8=78 EH_IO_Invalid=121" format=3.0 help="IAC 1 IO Resource HTML=451.HTML"
 
-//ASAM mode=writevalue name="DUMMY RELAY" parent="USERCAL_stRAMCAL" type=uint16 offset=9405 min=0 max=255 units="ENUMERATION EH_IO_ADD5=4 EH_IO_ADD7=6 EH_IO_ADD8=7 EH_IO_TMR1=58 EH_IO_TMR2=59 EH_IO_TMR3=60 EH_IO_TMR4=61 EH_IO_TMR5=62 EH_IO_TMR6=63 EH_IO_TMR7=64 EH_IO_TMR8=65 EH_IO_TMR9=66 EH_IO_TMR10=67 EH_IO_TMR11=68 EH_IO_TMR12=69 EH_IO_EXTINT=70 EH_VIO_REL1=71 EH_VIO_REL2=72 EH_VIO_REL3=73 EH_VIO_REL4=74 EH_VIO_REL5=75 EH_VIO_REL6=76 EH_VIO_REL7=77 EH_VIO_REL8=78 EH_IO_Invalid=121" format=3.0 help="IAC 1 IO Resource HTML=451.HTML"
-
-//ASAM mode=writevalue name="CAL CRC" parent="USERCAL_stRAMCAL" type=uint8 offset=9407 min=0 max=255 m=1 b=0 units="counts" format=3.0 help="CAL CRC16"
+//ASAM mode=writevalue name="CAL CRC" parent="USERCAL_stRAMCAL" type=uint8 offset=9410 min=0 max=255 m=1 b=0 units="counts" format=3.0 help="CAL CRC16"
 /* 	NOTE MUST ALWAYS INCLUDE CAL STRUCT ELEMENTS ONE FOR ONE AND IN ORDER */
 
 /* Testing offsets table for ASAM parsing tool here */
@@ -863,6 +868,11 @@ EXTERN USERCAL_tstCalibration __attribute__ ((packed)) USERCAL_stRAMCAL;
 	offsetof(USERCAL_tstCalibration, VVTInputType),\
 	offsetof(USERCAL_tstCalibration, boEDISEnable),\
 	offsetof(USERCAL_tstCalibration, u8ScheduleToothIgnition),\
+	offsetof(USERCAL_tstCalibration, u8ESTRegMux),\
+	offsetof(USERCAL_tstCalibration, u8Dummy1),\
+	offsetof(USERCAL_tstCalibration, u8Dummy2),\
+	offsetof(USERCAL_tstCalibration, u8Dummy3),\
+	offsetof(USERCAL_tstCalibration, u8Dummy4),\
 	offsetof(USERCAL_tstCalibration, u16CRC16)}
 
 const uint32 __attribute__((used)) au32Offsets[] = OFFSETS_DATA;

@@ -56,6 +56,7 @@ typedef enum
 EXTERN uint32 CEM_u32GlobalCycleFraction;
 EXTERN uint8 CEM_u32SyncPoints;
 EXTERN uint8 CEM_u8PhaseRepeats;
+EXTERN uint8 CEM_boESTRegMux;
 EXTERN uint32 CEM_u32GlobalCycleTime;
 EXTERN uint32 CEM_u32GlobalCycleOriginCount;
 EXTERN TEPMAPI_ttEventTime CEM_tEventTimeLast;
@@ -82,6 +83,7 @@ TEPMAPI_ttEventTime CEM_ttGetModulePhase(uint32 u32ChannelIDX);
 void CEM_vFreqEventCB(IOAPI_tenEHIOResource, TEPMAPI_ttEventTime);
 void CEM_vSetupSimpleCamSync(IOAPI_tenEHIOResource, Bool, uint32);
 void CEM_vSetSyncPhaseRepeats(uint32);
+void CEM_vSetESTRegMux(uint8);
 uint32 CEM_u32GetAllEdgesCount(void);
 
 #endif //CEM_H

@@ -1183,13 +1183,11 @@ void TEPMHA_vConfigureMissingToothInterrupt(void)
 uint32 TEPMHA_u32SetNextMissingToothInterrupt(TEPMAPI_ttEventTime tReference, TEPMAPI_ttEventTime tLastGap, uint32 u32Repeats)
 {
 	static uint32 u32Gap = 0;
-	uint32 u32ControlWord;
 	uint32 u32FlagsCache;
 	
 #if defined (BUILD_SAM3X8E)
 	tstTimerModule* pstTimerModule = TC1;
 	uint32 u32TimerVal;
-	uint32 u32Temp;
 
 	if (0 != u32Repeats)
 	{
@@ -1221,7 +1219,7 @@ uint32 TEPMHA_u32SetNextMissingToothInterrupt(TEPMAPI_ttEventTime tReference, TE
 #endif //BUILD_SAM3X8E
 
 #if defined(BUILD_MK60) || defined(BUILD_MK64)
-
+	uint32 u32ControlWord;
 #endif //BUILD_MK6X
 
 	return u32Gap;

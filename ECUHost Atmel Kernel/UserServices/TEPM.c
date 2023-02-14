@@ -708,40 +708,29 @@ void TEPM_vRunEventToothProgramKernelQueues(Bool boAsyncRequest, uint32 u32Tooth
 				
 				if (TEPM_boToothCheck(pstToothTimedEvent, u32Temp, u32TableIDX))
 				{				
+					/* If this is sequence AE */
 					if (((TEPM_au32TEPMChannelSequence[u32TableIDX] & 0xff) == 0x00) ||
 					((TEPM_au32TEPMChannelSequence[u32TableIDX] & 0xff00) == 0x00))
 					{
-						u32Temp = CEM_u8PhaseRepeats * (CEM_u8FallingEdgesCount + CEM_u8RisingEdgesCount + CEM_u8MissingToothCountMax);
-						
-						if (1 == CEM_u8PhaseRepeats)
+						/* If sequence is set to wasted spark - multiplex not possible for DFI */
+						if (((TEPM_au32TEPMChannelSequence[u32TableIDX] >> 24) == 0x01)
+							&& (0 < CEM_boESTRegMux))
 						{
-							/* A wasted spark system */
-							
-						}
-						else
-						{
-							#if (0)
-							if ((CEM_u32CycleToothEdgeCounter < (u32Temp / 4)) ||
-								(CEM_u32CycleToothEdgeCounter > (3 * u32Temp / 4)))
-							#endif
-							
-							static Bool toggle;
-							
-							if (toggle)
+						    u32Temp = CEM_u8FallingEdgesCount + CEM_u8RisingEdgesCount + CEM_u8MissingToothCountMax;		
+												
+							if (CEM_u32CycleToothEdgeCounter > u32Temp)
 							{
 								IO_vAssertDIOResource(EH_IO_IO23, IOAPI_enLow);	
 							}	
 							else
 							{
 								IO_vAssertDIOResource(EH_IO_IO23, IOAPI_enHigh);
-							}		
+							}	
 							
-							toggle = !toggle;				
+							IO_vAssertDIOResource(EH_IO_IO25, IOAPI_enHigh);
+							IO_vAssertDIOResource(EH_IO_IO25, IOAPI_enLow);											
 						}
 					}
-					
-					IO_vAssertDIOResource(EH_IO_IO25, IOAPI_enHigh);
-					IO_vAssertDIOResource(EH_IO_IO25, IOAPI_enLow);
 				}
 			}
 		}
@@ -771,6 +760,8 @@ void TEPM_vSynchroniseEventProgramKernelQueues(void)
 	testcount = (testcount + 1) % 16;
 	
 	test[testcount] = CEM_u32GlobalCycleFraction;
+	
+	UNUSED(test);
 #endif
 
 	
@@ -950,6 +941,8 @@ static void TEPM_vRunEventProgramKernelQueue(void* pvModule, uint32 u32ChannelID
 #ifdef DEBUG_TEPM
 					test[test_idx] = CEM_u32GlobalCycleTime;
 					test_idx = (test_idx + 1) & 0x0f;
+					
+					UNUSED(test);
 #endif
 
 				    u32ModulePhaseCorrect = (uint32)CEM_ttGetModulePhase(3 * (uint32)TEPMHA_enTimerEnumFromModule(pvModule) + u32ChannelIDX / 2);					
@@ -1182,8 +1175,6 @@ void TEPM_vSetNextMissingToothInterrupt(IOAPI_tenEHIOResource enEHIOResource, TE
 
 static void TEPM_vFirstStartLinkToothFractions(uint32 u32EventIDX, uint32 u32TableIDX, TEPMAPI_ttEventTime tFractionalEventTime)
 {
-
-	uint32 u32InputBitMask;
 	uint32 u32Temp;
 	uint32 u32IDX;
 	uint32 u32TempTooth = (tFractionalEventTime & 0xff0000) >> 16;
@@ -1193,9 +1184,6 @@ static void TEPM_vFirstStartLinkToothFractions(uint32 u32EventIDX, uint32 u32Tab
 
 	if (0 != TEPM_u32StartLinkPending)
 	{
-		/* Get the bit mask of the donor */
-		u32InputBitMask = MATH_u32IDXToMask(u32TableIDX);
-
 		/* Get tooth for origin channel */
 		u32Temp = u32ToothTotal * (TEPM_au32TEPMChannelSequence[u32TableIDX] & 0xff);
 		u32Temp /= 8;

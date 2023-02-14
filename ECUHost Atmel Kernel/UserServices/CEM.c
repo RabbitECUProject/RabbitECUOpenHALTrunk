@@ -236,6 +236,11 @@ void CEM_vSetSyncPhaseRepeats(uint32 u32SyncPhaseRepeats)
     CEM_u8PhaseRepeats = (uint8)u32SyncPhaseRepeats;
 }
 
+void CEM_vSetESTRegMux(uint8 est_reg_mux)
+{
+	CEM_boESTRegMux = est_reg_mux;
+}
+
 TEPMAPI_ttEventTime CEM_ttGetModulePhase(uint32 u32ChannelIDX)
 {
     TEPMAPI_ttEventTime tPhaseOffset = 0;
@@ -904,7 +909,7 @@ void CEM_vPrimaryEventCB(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttEventTi
 
 static uint32 CEM_u32GetMissingThreshold(uint32 u32GapPrev)
 {
-	uint32 u32MissingThreshold;
+	uint32 u32MissingThreshold = u32GapPrev;
 
 	if (1 == CEM_u8MissingToothCountMax)
 	{
@@ -948,7 +953,7 @@ static void CEM_vPhaseError(uint32 code_in)
 	{
 		CEM_u32CrankErrorCounts++;		
 	}
-	else if (CEM_nLateSyncError == code_in)
+	else if (CEM_nLateSyncError == (sint32)code_in)
 	{
 		late_phase_err++;
 	}
@@ -1148,8 +1153,8 @@ static void CEM_vSequenceReset(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttE
 void CEM_vPhaseEventCB(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttEventTime tEventTime)
 {
 	IOAPI_tenTriState enTriState;
-	volatile static samples[16];
-	volatile static samplecounter;
+	volatile static uint32 samples[16];
+	volatile static uint32 samplecounter;
 	
 	samplecounter = (samplecounter + 1) % 16;
 
@@ -1169,6 +1174,8 @@ void CEM_vPhaseEventCB(IOAPI_tenEHIOResource enEHIOResource, TEPMAPI_ttEventTime
 
 		samples[samplecounter] = tEventTime - CEM_tLastVVTTimer;
 		CEM_tLastVVTTimer = tEventTime;
+		
+		UNUSED(samples);
 	}
 }
 

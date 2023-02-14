@@ -56,6 +56,7 @@ void EST_vStart(puint32 const pu32Arg)
 	TEPMAPI_tstTimedUserEvent stTimedEvent;
 	uint32 u32CamSyncSampleToothCount;
 	CEM_tstPatternSetupCB stPatternSetupCB;
+	uint32 u32Temp;
 
 	IOAPI_tenEdgePolarity enEdgePolarity = USERCAL_stRAMCAL.u8UserPrimaryEdgeSetup;
 	Bool boFirstRising = 0 != USERCAL_stRAMCAL.u8UserFirstEdgeRisingPrimary;
@@ -77,7 +78,7 @@ void EST_vStart(puint32 const pu32Arg)
 	stPatternSetupCB.boFirstEdgeRising = boFirstRising;
 
 	USER_vSVC(SYSAPI_enSetupCrankTriggerEdgePattern, (void*)&USERCAL_stRAMCAL.aUserPrimaryTriggerTable[0], (void*)&stPatternSetupCB, NULL);
-	USER_vSVC(SYSAPI_enSetupSyncPointsPattern, (void*)&USERCAL_stRAMCAL.aUserSyncPointsTable[0], (void*)&USERCAL_stRAMCAL.u32SyncPhaseRepeats, NULL);
+	USER_vSVC(SYSAPI_enSetupSyncPointsPattern, (void*)&USERCAL_stRAMCAL.aUserSyncPointsTable[0], (void*)&USERCAL_stRAMCAL.u32SyncPhaseRepeats, (void*)&USERCAL_stRAMCAL.u8ESTRegMux);
 
 	/* Configure the missing tooth interrupt channel */
 	USER_vSVC(SYSAPI_enConfigureMissingToothInterrupt, (void*)NULL, (void*)NULL, (void*)NULL);
@@ -416,6 +417,20 @@ void EST_vStart(puint32 const pu32Arg)
 		enDriveStrength = IOAPI_enStrong;
 		
 		SETUP_vSetupDigitalIO(enEHIOResource, enEHIOType, enDriveStrength, pu32Arg);
+	}
+	
+	/* Set up the v1.4 board ignition demux registers */
+	if (0 == USERCAL_stRAMCAL.u8ESTRegMux)
+	{
+		IO_vAssertDIOResource(EH_IO_IO23, IOAPI_enHigh);
+		
+		for (u32Temp = 0; u32Temp < 4; u32Temp++)
+		{
+			IO_vAssertDIOResource(EH_IO_IO25, IOAPI_enLow);
+			IO_vAssertDIOResource(EH_IO_IO25, IOAPI_enHigh);				
+		}
+		
+		IO_vAssertDIOResource(EH_IO_IO25, IOAPI_enLow);
 	}
 
 	/* Matthew testing ADD the rest later!!! */

@@ -248,6 +248,9 @@ static void UDSNL_vSegmentTXBuffer(puint8 pu8TXData, uint32 u32TransferByteCount
 				*(pu8TXData + u8ByteIDX) = 0;
 			}
 		}
+		
+		// force 8 byte chunks
+		*pu32TXByteCount = 8;
 	}
 	else
 	{

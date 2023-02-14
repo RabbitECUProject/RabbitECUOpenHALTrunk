@@ -336,6 +336,7 @@ void SYS_vAPISVC(void* svc_args)
 
 		case SYSAPI_enSetupSyncPointsPattern:
 		{
+			CEM_vSetESTRegMux(*(uint8*)OS_stSVCDataStruct.pvArg3);
 		    CEM_vSetSyncPhaseRepeats(*(uint32*)OS_stSVCDataStruct.pvArg2);
 			boResult = CEM_boPopulateSyncPointsArray((puint16)OS_stSVCDataStruct.pvArg1);
 			OS_stSVCDataStruct.enSVCResult = (TRUE == boResult) ? SYSAPI_enOK : SYSAPI_enBadArgument;			

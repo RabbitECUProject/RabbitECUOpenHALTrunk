@@ -56,15 +56,19 @@ x##.pvData = (void*)&##z;
 
 #define CQUEUE_xIsFull(x)	((x)->u32Head == ((x)->u32Tail + 1) % (x)->u32Size ? true : false)
 
-#define CQUEUE_vAddItem(x)                             \
-	CPU_xEnterCritical();                              \
-	x##.u32Tail = (x##.u32Tail + 1) % x##.u32Size;     \
+#define CQUEUE_vAddItem(x)                              \
+	CPU_xEnterCritical();                               \
+	x##.u32Tail = (x##.u32Tail + 1) % x##.u32Size;      \
 	CPU_xExitCritical()
 
-#define CQUEUE_xAddItem(x)                           \
-CPU_xEnterCritical();                                \
-(x)->u32Tail = ((x)->u32Tail + 1) % (x)->u32Size;    \
+#define CQUEUE_xAddItem(x)                              \
+CPU_xEnterCritical();                                   \
+(x)->u32Tail = ((x)->u32Tail + 1) % (x)->u32Size;       \
 CPU_xExitCritical()
+
+#define CQUEUE_xAddItemUnsafe(x)                        \
+(x)->u32Tail = ((x)->u32Tail + 1) % (x)->u32Size;       \
+
 	
 #define CQUEUE_vRemoveItem(x)                           \
 	CPU_xEnterCritical();                               \
@@ -74,25 +78,31 @@ CPU_xExitCritical()
 	}                                                   \
 	CPU_xExitCritical()
 
-#define CQUEUE_xRemoveItem(x)                         \
-CPU_xEnterCritical();                                 \
-if (false == (CQUEUE_xIsEmpty(x)))                    \
-{                                                     \
-	(x)->u32Head = ((x)->u32Head + 1) % (x)->u32Size; \
-}                                                     \
+#define CQUEUE_xRemoveItem(x)                          \
+CPU_xEnterCritical();                                  \
+if (false == (CQUEUE_xIsEmpty(x)))                     \
+{                                                      \
+	(x)->u32Head = ((x)->u32Head + 1) % (x)->u32Size;  \
+}                                                      \
 CPU_xExitCritical()
 
-#define CQUEUE_xSetHead(x, y)                         \
-CPU_xEnterCritical();                                 \
-(x)->u32Head = y;                                 \
+#define CQUEUE_xRemoveItemUnsafe(x)                    \
+if (false == (CQUEUE_xIsEmpty(x)))                     \
+{                                                      \
+	(x)->u32Head = ((x)->u32Head + 1) % (x)->u32Size;  \
+}                                                      \
+
+#define CQUEUE_xSetHead(x, y)                          \
+CPU_xEnterCritical();                                  \
+(x)->u32Head = y;                                      \
 CPU_xExitCritical()
 
-#define CQUEUE_vClearCount(x)	\
-x##.u32Head = 0;							\
+#define CQUEUE_vClearCount(x)                          \
+x##.u32Head = 0;                                       \
 x##.u32Tail = 0
 
-#define CQUEUE_xClearCount(x)	\
-(x)->u32Head = 0;							\
+#define CQUEUE_xClearCount(x)                          \
+(x)->u32Head = 0;                                      \
 (x)->u32Tail = 0
 	
 #endif //CQUEUE_H
